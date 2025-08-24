@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  fermentation:
+    build: 
+      context: ./src/modules/fermentation
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/wine_fermentation
+      - JWT_SECRET=your-secret-key-here
+    depends_on:
+      - db
+    volumes:
+      - ./src/modules/fermentation/src:/app/src
+    
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=wine_fermentation
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

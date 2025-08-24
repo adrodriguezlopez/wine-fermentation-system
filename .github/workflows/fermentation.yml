@@ -1,0 +1,52 @@
+name: Fermentation Module CI
+
+on:
+  push:
+    paths:
+      - 'src/modules/fermentation/**'
+      - '.github/workflows/fermentation.yml'
+  pull_request:
+    paths:
+      - 'src/modules/fermentation/**'
+      - '.github/workflows/fermentation.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/modules/fermentation
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      
+    - name: Install dependencies
+      run: poetry install
+        
+    - name: Run tests
+      run: poetry run pytest
+      
+    - name: Run linting
+      run: |
+        poetry run black . --check
+        poetry run flake8 .
+        poetry run mypy src
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build and push Docker image
+      run: docker build -t wine-fermentation-module ./src/modules/fermentation
