@@ -1,7 +1,9 @@
 from enum import Enum
 
+
 class FermentationStatus(str, Enum):
-    '''Fermentation status progression: ACTIVE -> SLOW -> STUCK -> COMPLETED'''
+    """Fermentation status progression: ACTIVE -> SLOW -> STUCK -> COMPLETED"""
+
     ACTIVE = "ACTIVE"
     COMPLETED = "COMPLETED"
     DECLINE = "DECLINE"

@@ -12,14 +12,14 @@ class ISampleRepository(ABC):
     Interface for sample data persistence.
     Defines core operations for storing and retrieving fermentation samples.
     """
-    
+
     @abstractmethod
     async def create_sample(
         self,
         fermentation_id: int,
         timestamp: datetime,
         measurements: Dict[str, float],
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> int:
         """
         Creates a new sample record.
@@ -27,7 +27,8 @@ class ISampleRepository(ABC):
         Args:
             fermentation_id: ID of the fermentation this sample belongs to
             timestamp: When the sample was taken
-            measurements: Dictionary with measurement values (glucose, ethanol, temperature)
+            measurements: Dictionary with measurement values
+            (glucose, ethanol, temperature)
             metadata: Optional metadata about the sample
 
         Returns:
@@ -42,9 +43,7 @@ class ISampleRepository(ABC):
 
     @abstractmethod
     async def get_sample_by_id(
-        self,
-        sample_id: int,
-        fermentation_id: Optional[int] = None
+        self, sample_id: int, fermentation_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Retrieves a sample by its ID.
@@ -67,7 +66,7 @@ class ISampleRepository(ABC):
         self,
         fermentation_id: int,
         limit: Optional[int] = None,
-        offset: Optional[int] = None
+        offset: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Retrieves samples for a specific fermentation with pagination.
@@ -87,10 +86,7 @@ class ISampleRepository(ABC):
 
     @abstractmethod
     async def get_samples_in_timerange(
-        self,
-        fermentation_id: int,
-        start_time: datetime,
-        end_time: datetime
+        self, fermentation_id: int, start_time: datetime, end_time: datetime
     ) -> List[Dict[str, Any]]:
         """
         Retrieves samples within a specific time range.
@@ -114,7 +110,7 @@ class ISampleRepository(ABC):
         self,
         sample_id: int,
         measurements: Optional[Dict[str, float]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Updates an existing sample's measurements or metadata.
@@ -136,9 +132,8 @@ class ISampleRepository(ABC):
 
     @abstractmethod
     async def get_latest_sample(
-        self,
-        fermentation_id: int
-    ) -> Optional[Dict[str, Any]]:
+            self,
+            fermentation_id: int) -> Optional[Dict[str, Any]]:
         """
         Retrieves the most recent sample for a fermentation.
 
@@ -146,7 +141,8 @@ class ISampleRepository(ABC):
             fermentation_id: ID of the fermentation
 
         Returns:
-            Optional[Dict[str, Any]]: Latest sample data or None if no samples exist
+            Optional[Dict[str, Any]]: Latest sample data or None if no samples
+            exist
 
         Raises:
             NotFoundError: If fermentation_id doesn't exist

@@ -11,10 +11,10 @@ from .sample_repository_interface import ISampleRepository
 from .analysis_engine_client_interface import IAnalysisEngineClient
 
 __all__ = [
-    'IFermentationService',
-    'ISampleService',
-    'IValidationService',
-    'IFermentationRepository',
-    'ISampleRepository',
-    'IAnalysisEngineClient'
+    "IFermentationService",
+    "ISampleService",
+    "IValidationService",
+    "IFermentationRepository",
+    "ISampleRepository",
+    "IAnalysisEngineClient",
 ]

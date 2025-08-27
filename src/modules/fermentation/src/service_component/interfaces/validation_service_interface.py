@@ -10,21 +10,23 @@ from datetime import datetime
 class IValidationService(ABC):
     """
     Interface for fermentation validation service.
-    Defines core operations for validating measurements, chronology, and trends.
+    Defines core operations for validating measurements, chronology,
+    and trends.
     """
-    
+
     @abstractmethod
     async def validate_measurements(
-        self,
-        measurements: Dict[str, float],
-        fermentation_stage: str
+        self, measurements: Dict[str, float], fermentation_stage: str
     ) -> Dict[str, Any]:
         """
-        Validates that measurements are within expected ranges for the fermentation stage.
+        Validates that measurements are within expected ranges
+        for the fermentation stage.
 
         Args:
-            measurements: Dictionary with measurement values (glucose, ethanol, temperature)
-            fermentation_stage: Current stage of fermentation (e.g., 'INITIAL', 'ACTIVE', 'FINAL')
+            measurements: Dictionary with measurement values
+            (glucose, ethanol, temperature)
+            fermentation_stage: Current stage of fermentation
+            (e.g., 'INITIAL', 'ACTIVE', 'FINAL')
 
         Returns:
             Dict[str, Any]: Validation results including:
@@ -39,9 +41,7 @@ class IValidationService(ABC):
 
     @abstractmethod
     async def validate_chronology(
-        self,
-        fermentation_id: int,
-        new_sample_time: datetime
+        self, fermentation_id: int, new_sample_time: datetime
     ) -> bool:
         """
         Validates that a new sample's timestamp maintains chronological order.
@@ -60,9 +60,7 @@ class IValidationService(ABC):
 
     @abstractmethod
     async def validate_trend(
-        self,
-        fermentation_id: int,
-        new_measurements: Dict[str, float]
+        self, fermentation_id: int, new_measurements: Dict[str, float]
     ) -> Dict[str, Any]:
         """
         Validates that new measurements follow expected fermentation trends.
@@ -85,9 +83,7 @@ class IValidationService(ABC):
 
     @abstractmethod
     async def check_anomalies(
-        self,
-        fermentation_id: int,
-        time_window_hours: int = 24
+        self, fermentation_id: int, time_window_hours: int = 24
     ) -> List[Dict[str, Any]]:
         """
         Checks for anomalies in recent measurements.

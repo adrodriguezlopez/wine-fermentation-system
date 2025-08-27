@@ -12,7 +12,7 @@ class ISampleService(ABC):
     Interface for sample management service.
     Defines core operations for sample validation and retrieval.
     """
-    
+
     @abstractmethod
     async def validate_sample(
         self,
@@ -26,7 +26,8 @@ class ISampleService(ABC):
         Args:
             fermentation_id: ID of the fermentation this sample belongs to
             timestamp: When the sample was taken
-            measurements: Dictionary with measurement values (glucose, ethanol, temperature)
+            measurements: Dictionary with measurement values
+            (glucose, ethanol, temperature)
 
         Returns:
             Dict[str, Any]: Validation results with any warnings or errors
@@ -38,11 +39,9 @@ class ISampleService(ABC):
         pass
 
     @abstractmethod
-    async def get_sample(
-        self,
-        fermentation_id: int,
-        sample_id: int
-    ) -> Dict[str, Any]:
+    async def get_sample(self,
+                         fermentation_id: int,
+                         sample_id: int) -> Dict[str, Any]:
         """
         Retrieves a specific sample by ID.
 
@@ -55,16 +54,14 @@ class ISampleService(ABC):
 
         Raises:
             NotFoundError: If sample_id doesn't exist
-            UnauthorizedError: If caller is not authorized to access this sample
+            UnauthorizedError: If caller is not authorized to access this
+            sample
         """
         pass
 
     @abstractmethod
     async def get_samples_in_range(
-        self,
-        fermentation_id: int,
-        start_time: datetime,
-        end_time: datetime
+        self, fermentation_id: int, start_time: datetime, end_time: datetime
     ) -> List[Dict[str, Any]]:
         """
         Retrieves all samples within a time range.
@@ -79,15 +76,16 @@ class ISampleService(ABC):
 
         Raises:
             ValidationError: If time range is invalid
-            UnauthorizedError: If caller is not authorized to access these samples
+            UnauthorizedError: If caller is not authorized to access these
+            samples
         """
         pass
 
     @abstractmethod
     async def get_latest_sample(
-        self,
-        fermentation_id: int
-    ) -> Optional[Dict[str, Any]]:
+                                self,
+                                fermentation_id: int
+                                ) -> Optional[Dict[str, Any]]:
         """
         Retrieves the most recent sample for a fermentation.
 
@@ -95,10 +93,12 @@ class ISampleService(ABC):
             fermentation_id: ID of the fermentation
 
         Returns:
-            Optional[Dict[str, Any]]: Latest sample data or None if no samples exist
+            Optional[Dict[str, Any]]: Latest sample data or None if no samples
+            exist
 
         Raises:
             NotFoundError: If fermentation_id doesn't exist
-            UnauthorizedError: If caller is not authorized to access this fermentation
+            UnauthorizedError: If caller is not authorized
+            to access this fermentation
         """
         pass

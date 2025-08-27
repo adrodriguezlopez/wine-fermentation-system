@@ -1,12 +1,14 @@
-from modules.fermentation.src.service_component.models.entities.samples.base_sample import BaseSample
+from typing import Any
+from ..samples.base_sample import BaseSample
 
 
-class CelciusTemperatureSample(BaseSample):
+class CelsiusTemperatureSample(BaseSample):
     """Temperature measurement in Celsius."""
+
     __mapper_args__ = {
         "polymorphic_identity": "temperature",
     }
 
-    def __init__(self, **kwargs):
-        kwargs['units'] = '°C'
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs["units"] = "°C"
         super().__init__(**kwargs)

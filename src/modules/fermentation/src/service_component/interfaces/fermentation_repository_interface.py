@@ -12,13 +12,13 @@ class IFermentationRepository(ABC):
     Interface for fermentation data persistence.
     Defines core operations for storing and retrieving fermentation data.
     """
-    
+
     @abstractmethod
     async def create(
-        self,
-        winery_id: int,
-        initial_data: Dict[str, Any]
-    ) -> int:
+            self,
+            winery_id: int,
+            initial_data: Dict[str, Any]
+            ) -> int:
         """
         Creates a new fermentation record.
 
@@ -37,9 +37,7 @@ class IFermentationRepository(ABC):
 
     @abstractmethod
     async def get_by_id(
-        self,
-        fermentation_id: int,
-        winery_id: Optional[int] = None
+        self, fermentation_id: int, winery_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Retrieves a fermentation by its ID.
@@ -62,7 +60,7 @@ class IFermentationRepository(ABC):
         self,
         fermentation_id: int,
         new_status: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Updates the status of a fermentation.
@@ -87,7 +85,7 @@ class IFermentationRepository(ABC):
         fermentation_id: int,
         timestamp: datetime,
         measurements: Dict[str, float],
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> int:
         """
         Adds a new sample to a fermentation.
@@ -113,7 +111,7 @@ class IFermentationRepository(ABC):
         self,
         fermentation_id: int,
         limit: Optional[int] = None,
-        offset: Optional[int] = None
+        offset: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Retrieves samples for a fermentation with pagination.
@@ -133,10 +131,7 @@ class IFermentationRepository(ABC):
 
     @abstractmethod
     async def get_samples_in_range(
-        self,
-        fermentation_id: int,
-        start_time: datetime,
-        end_time: datetime
+        self, fermentation_id: int, start_time: datetime, end_time: datetime
     ) -> List[Dict[str, Any]]:
         """
         Retrieves samples within a time range.
@@ -157,9 +152,9 @@ class IFermentationRepository(ABC):
 
     @abstractmethod
     async def get_latest_sample(
-        self,
-        fermentation_id: int
-    ) -> Optional[Dict[str, Any]]:
+            self,
+            fermentation_id: int
+            ) -> Optional[Dict[str, Any]]:
         """
         Retrieves the most recent sample for a fermentation.
 
@@ -176,9 +171,7 @@ class IFermentationRepository(ABC):
 
     @abstractmethod
     async def get_by_status(
-        self,
-        status: str,
-        winery_id: Optional[int] = None
+        self, status: str, winery_id: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """
         Retrieves fermentations by their current status.
@@ -188,7 +181,8 @@ class IFermentationRepository(ABC):
             winery_id: Optional winery ID for filtering
 
         Returns:
-            List[Dict[str, Any]]: List of fermentations with the specified status
+            List[Dict[str, Any]]: List of fermentations with the specified
+            status
 
         Raises:
             ValidationError: If status is invalid
@@ -197,9 +191,7 @@ class IFermentationRepository(ABC):
 
     @abstractmethod
     async def get_by_winery(
-        self,
-        winery_id: int,
-        include_completed: bool = False
+        self, winery_id: int, include_completed: bool = False
     ) -> List[Dict[str, Any]]:
         """
         Retrieves all fermentations for a winery.

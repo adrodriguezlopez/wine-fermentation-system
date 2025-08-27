@@ -4,7 +4,6 @@ Defines the contract for communication with the Analysis Engine Module.
 """
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
-from datetime import datetime
 
 
 class IAnalysisEngineClient(ABC):
@@ -12,7 +11,7 @@ class IAnalysisEngineClient(ABC):
     Interface for communication with the Analysis Engine Module.
     Defines operations for analyzing fermentation data and getting insights.
     """
-    
+
     @abstractmethod
     async def analyze_sample(
         self,
@@ -53,7 +52,8 @@ class IAnalysisEngineClient(ABC):
 
         Args:
             fermentation_id: ID of the fermentation
-            time_window_hours: Optional window for analysis, default analyzes all data
+            time_window_hours: Optional window for analysis, default analyzes
+            all data
 
         Returns:
             Dict[str, Any]: Trend analysis including:
@@ -71,10 +71,7 @@ class IAnalysisEngineClient(ABC):
         pass
 
     @abstractmethod
-    async def predict_completion(
-        self,
-        fermentation_id: int
-    ) -> Dict[str, Any]:
+    async def predict_completion(self, fermentation_id: int) -> Dict[str, Any]:
         """
         Predicts fermentation completion time and final parameters.
 
@@ -99,9 +96,7 @@ class IAnalysisEngineClient(ABC):
 
     @abstractmethod
     async def detect_anomalies(
-        self,
-        fermentation_id: int,
-        sensitivity: str = 'MEDIUM'
+        self, fermentation_id: int, sensitivity: str = "MEDIUM"
     ) -> List[Dict[str, Any]]:
         """
         Detects anomalies in fermentation patterns.
@@ -128,16 +123,15 @@ class IAnalysisEngineClient(ABC):
 
     @abstractmethod
     async def get_recommendations(
-        self,
-        fermentation_id: int,
-        context_type: str = 'CURRENT'
+        self, fermentation_id: int, context_type: str = "CURRENT"
     ) -> List[Dict[str, Any]]:
         """
         Gets actionable recommendations based on fermentation state.
 
         Args:
             fermentation_id: ID of the fermentation
-            context_type: Type of recommendations ('CURRENT', 'PREVENTIVE', 'OPTIMIZATION')
+            context_type: Type of recommendations
+            ('CURRENT', 'PREVENTIVE', 'OPTIMIZATION')
 
         Returns:
             List[Dict[str, Any]]: List of recommendations, each containing:

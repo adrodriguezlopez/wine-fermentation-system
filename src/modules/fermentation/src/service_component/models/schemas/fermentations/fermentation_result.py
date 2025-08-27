@@ -2,8 +2,10 @@ from datetime import datetime
 from ...enums.fermentation_status import FermentationStatus
 from .fermentation_base import FermentationBase
 
+
 class FermentationResult(FermentationBase):
     """Response schema for fermentation data"""
+
     id: int
     fermented_by_user_id: int
     status: FermentationStatus

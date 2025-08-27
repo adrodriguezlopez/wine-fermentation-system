@@ -1,11 +1,20 @@
-from modules.fermentation.src.service_component.models.entities.base_entity import BaseEntity
+from ...models.entities.base_entity import (
+    BaseEntity,
+)
+from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy.orm import relationship
+
 
 class FermentationNote(BaseEntity):
-    __tablename__ = 'fermentation_notes'
+    __tablename__ = "fermentation_notes"
 
     # Foreign Key
-    fermentation_id = Column(Integer, ForeignKey("fermentations.id"), nullable=False, index=True)
-    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    fermentation_id = Column(
+        Integer, ForeignKey("fermentations.id"), nullable=False, index=True
+    )
+    created_by_user_id = Column(Integer,
+                                ForeignKey("users.id"),
+                                nullable=False)
 
     # Note content
     note_text = Column(Text, nullable=False)
