@@ -52,7 +52,5 @@ class Fermentation(BaseEntity):
     )
     # A fermentation can have multiple notes associated with it
     notes = relationship(
-        "FermentationNote",
-        back_populates="fermentation",
-        cascade="all, delete-orphan"
+        "FermentationNote", back_populates="fermentation", cascade="all, delete-orphan"
     )

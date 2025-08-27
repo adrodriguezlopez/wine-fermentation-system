@@ -12,9 +12,7 @@ class FermentationNote(BaseEntity):
     fermentation_id = Column(
         Integer, ForeignKey("fermentations.id"), nullable=False, index=True
     )
-    created_by_user_id = Column(Integer,
-                                ForeignKey("users.id"),
-                                nullable=False)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     # Note content
     note_text = Column(Text, nullable=False)

@@ -131,9 +131,7 @@ class ISampleRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_latest_sample(
-            self,
-            fermentation_id: int) -> Optional[Dict[str, Any]]:
+    async def get_latest_sample(self, fermentation_id: int) -> Optional[Dict[str, Any]]:
         """
         Retrieves the most recent sample for a fermentation.
 

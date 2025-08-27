@@ -14,10 +14,7 @@ class IAnalysisEngineClient(ABC):
 
     @abstractmethod
     async def analyze_sample(
-        self,
-        fermentation_id: int,
-        sample_id: int,
-        historical_context: bool = True
+        self, fermentation_id: int, sample_id: int, historical_context: bool = True
     ) -> Dict[str, Any]:
         """
         Analyzes a new sample in the context of its fermentation.
@@ -43,9 +40,7 @@ class IAnalysisEngineClient(ABC):
 
     @abstractmethod
     async def get_trend_analysis(
-        self,
-        fermentation_id: int,
-        time_window_hours: Optional[int] = None
+        self, fermentation_id: int, time_window_hours: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Analyzes fermentation trends over time.

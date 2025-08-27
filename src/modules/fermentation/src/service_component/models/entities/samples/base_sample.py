@@ -7,6 +7,7 @@ from ..base_entity import BaseEntity
 
 class BaseSample(BaseEntity):
     """Base class for all sample types in fermentation monitoring."""
+
     __tablename__ = "samples"
 
     # Primary identification
@@ -21,8 +22,7 @@ class BaseSample(BaseEntity):
     )
     recorded_at: Mapped[datetime] = mapped_column(nullable=False, index=True)
     recorded_by_user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False
+        ForeignKey("users.id"), nullable=False
     )
 
     # Measurement data
@@ -32,5 +32,4 @@ class BaseSample(BaseEntity):
     # Relationships
     fermentation = relationship("Fermentation", back_populates="samples")
 
-    __mapper_args__ = {"polymorphic_identity": "base",
-                       "polymorphic_on": sample_type}
+    __mapper_args__ = {"polymorphic_identity": "base", "polymorphic_on": sample_type}

@@ -14,11 +14,7 @@ class IFermentationRepository(ABC):
     """
 
     @abstractmethod
-    async def create(
-            self,
-            winery_id: int,
-            initial_data: Dict[str, Any]
-            ) -> int:
+    async def create(self, winery_id: int, initial_data: Dict[str, Any]) -> int:
         """
         Creates a new fermentation record.
 
@@ -151,10 +147,7 @@ class IFermentationRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_latest_sample(
-            self,
-            fermentation_id: int
-            ) -> Optional[Dict[str, Any]]:
+    async def get_latest_sample(self, fermentation_id: int) -> Optional[Dict[str, Any]]:
         """
         Retrieves the most recent sample for a fermentation.
 

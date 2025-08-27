@@ -15,10 +15,8 @@ class IFermentationService(ABC):
 
     @abstractmethod
     async def create_fermentation(
-            self,
-            winery_id: int,
-            initial_data: Dict[str, Any]
-            ) -> int:
+        self, winery_id: int, initial_data: Dict[str, Any]
+    ) -> int:
         """
         Creates a new fermentation process.
 
@@ -55,10 +53,7 @@ class IFermentationService(ABC):
 
     @abstractmethod
     async def add_sample(
-        self,
-        fermentation_id: int,
-        timestamp: datetime,
-        measurements: Dict[str, float]
+        self, fermentation_id: int, timestamp: datetime, measurements: Dict[str, float]
     ) -> bool:
         """
         Adds a new sample measurement to a fermentation.

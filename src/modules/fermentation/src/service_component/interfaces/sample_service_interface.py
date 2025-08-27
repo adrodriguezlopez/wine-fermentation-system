@@ -15,10 +15,7 @@ class ISampleService(ABC):
 
     @abstractmethod
     async def validate_sample(
-        self,
-        fermentation_id: int,
-        timestamp: datetime,
-        measurements: Dict[str, float]
+        self, fermentation_id: int, timestamp: datetime, measurements: Dict[str, float]
     ) -> Dict[str, Any]:
         """
         Validates a sample against business rules.
@@ -39,9 +36,7 @@ class ISampleService(ABC):
         pass
 
     @abstractmethod
-    async def get_sample(self,
-                         fermentation_id: int,
-                         sample_id: int) -> Dict[str, Any]:
+    async def get_sample(self, fermentation_id: int, sample_id: int) -> Dict[str, Any]:
         """
         Retrieves a specific sample by ID.
 
@@ -82,10 +77,7 @@ class ISampleService(ABC):
         pass
 
     @abstractmethod
-    async def get_latest_sample(
-                                self,
-                                fermentation_id: int
-                                ) -> Optional[Dict[str, Any]]:
+    async def get_latest_sample(self, fermentation_id: int) -> Optional[Dict[str, Any]]:
         """
         Retrieves the most recent sample for a fermentation.
 

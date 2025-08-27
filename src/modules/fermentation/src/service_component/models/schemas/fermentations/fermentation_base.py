@@ -5,14 +5,8 @@ from pydantic import BaseModel, Field
 class FermentationBase(BaseModel):
     """Base schema with common fermentation fields"""
 
-    vintage_year: int = Field(...,
-                              ge=1900,
-                              le=2100,
-                              description="Vintage year")
-    winery: str = Field(...,
-                        min_length=1,
-                        max_length=100,
-                        description="Winery name")
+    vintage_year: int = Field(..., ge=1900, le=2100, description="Vintage year")
+    winery: str = Field(..., min_length=1, max_length=100, description="Winery name")
     vineyard: str = Field(
         ..., min_length=1, max_length=100, description="Vineyard name"
     )
@@ -28,7 +22,5 @@ class FermentationBase(BaseModel):
     initial_sugar_brix: float = Field(
         ..., gt=0, description="Initial sugar content in Brix"
     )
-    initial_density: float = Field(...,
-                                   gt=0,
-                                   description="Initial specific gravity")
+    initial_density: float = Field(..., gt=0, description="Initial specific gravity")
     start_date: datetime = Field(..., description="Fermentation start date")

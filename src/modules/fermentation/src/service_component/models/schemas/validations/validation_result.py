@@ -17,9 +17,7 @@ class ValidationResult(BaseModel):
 
     @classmethod
     def failure(
-        cls,
-        errors: List[ValidationError],
-        warnings: List[ValidationError] = []
+        cls, errors: List[ValidationError], warnings: List[ValidationError] = []
     ) -> "ValidationResult":
         """Create failed validation result."""
         return cls(is_valid=False, errors=errors)
@@ -29,9 +27,7 @@ class ValidationResult(BaseModel):
     ) -> None:
         """Add validation error."""
         self.errors.append(
-            ValidationError(field=field,
-                            message=message,
-                            current_value=current_value)
+            ValidationError(field=field, message=message, current_value=current_value)
         )
         self.is_valid = False
 
@@ -40,7 +36,5 @@ class ValidationResult(BaseModel):
     ) -> None:
         """Add validation warning."""
         self.warnings.append(
-            ValidationError(field=field,
-                            message=message,
-                            current_value=current_value)
+            ValidationError(field=field, message=message, current_value=current_value)
         )
