@@ -1,106 +1,138 @@
 """
-Interface definition for the Validation Service.
-Defines the contract that any validation service implementation must follow.
+Extended interface definition for the Validation Service.
+Combines high-level workflow methods with granular validation functions.
 """
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
+from service_component.models.schemas.validations.validation_result import ValidationResult
+from service_component.models.schemas.validations.validation_error import ValidationError
+from service_component.models.enums.sample_type import SampleType
+from service_component.models.enums.fermentation_status import FermentationStatus
 
 
 class IValidationService(ABC):
     """
-    Interface for fermentation validation service.
-    Defines core operations for validating measurements, chronology,
-    and trends.
+    Extended interface for fermentation validation service.
+    
+    Provides both high-level workflow methods for complete validation scenarios
+    and granular methods for specific validation rules that can be composed
+    and tested independently.
     """
 
+    # =============================================
+    # HIGH-LEVEL WORKFLOW METHODS (Async, Repository-dependent)
+    # =============================================
+
     @abstractmethod
-    async def validate_measurements(
-        self, measurements: Dict[str, float], fermentation_stage: str
-    ) -> Dict[str, Any]:
+    async def validate_samples(
+        self,
+        samples: List[Dict[str, Any]]
+    ) -> ValidationResult:
         """
-        Validates that measurements are within expected ranges
-        for the fermentation stage.
+        Validates a batch of samples using granular validation methods.
+        Orchestrates multiple validation rules for complete sample validation.
 
         Args:
-            measurements: Dictionary with measurement values
-            (glucose, ethanol, temperature)
-            fermentation_stage: Current stage of fermentation
-            (e.g., 'INITIAL', 'ACTIVE', 'FINAL')
+            fermentation_id: ID of the fermentation
+            samples: List of sample dictionaries to validate
+            fermentation_stage: Current stage of fermentation for context
 
         Returns:
-            Dict[str, Any]: Validation results including:
-                - is_valid: bool
-                - errors: List of validation errors if any
-                - warnings: List of warnings if measurements are near bounds
+            ValidationResult: Comprehensive validation results with errors and warnings
 
         Raises:
-            ValidationError: If measurement format is invalid
+            ValidationError: If sample format is invalid
         """
         pass
 
     @abstractmethod
     async def validate_chronology(
-        self, fermentation_id: int, new_sample_time: datetime
-    ) -> bool:
+            self,
+            fermentation_id: int,
+            new_sample: Dict[str, Any]
+    ) -> ValidationResult:
         """
         Validates that a new sample's timestamp maintains chronological order.
 
         Args:
             fermentation_id: ID of the fermentation
-            new_sample_time: Timestamp of the new sample
+            new_sample: The new sample to validate
 
         Returns:
-            bool: True if chronology is valid, False otherwise
+            ValidationResult: Success if chronology is valid, failure with details if not
 
         Raises:
             NotFoundError: If fermentation_id doesn't exist
         """
         pass
 
+
+    # =============================================
+    # GRANULAR VALIDATION METHODS (Sync, Pure functions)
+    # =============================================
+
     @abstractmethod
-    async def validate_trend(
-        self, fermentation_id: int, new_measurements: Dict[str, float]
-    ) -> Dict[str, Any]:
+    def validate_sample_value(
+        self,
+        sample_type: Union[str, SampleType],
+        value: Union[float, str, None]
+    ) -> ValidationResult:
         """
-        Validates that new measurements follow expected fermentation trends.
-
+        Validate individual measurement values are physically reasonable.
+        
         Args:
-            fermentation_id: ID of the fermentation
-            new_measurements: Latest measurements to validate
-
+            sample_type: Type of sample (sugar, temperature, density) - accepts both str and enum
+            value: Measurement value to validate
+            
         Returns:
-            Dict[str, Any]: Trend analysis including:
-                - trend_valid: bool
-                - deviations: List of parameters deviating from expected trends
-                - recommendations: List of suggested actions if trends are off
-
-        Raises:
-            NotFoundError: If fermentation_id doesn't exist
-            ValidationError: If measurement format is invalid
+            ValidationResult: Success or failure with specific error details
         """
         pass
 
     @abstractmethod
-    async def check_anomalies(
-        self, fermentation_id: int, time_window_hours: int = 24
-    ) -> List[Dict[str, Any]]:
+    def validate_sugar_trend(
+        self,
+        previous: float,
+        current: float,
+        tolerance: float = 0.0
+    ) -> ValidationResult:
         """
-        Checks for anomalies in recent measurements.
-
+        Validate sugar trend follows expected fermentation progression.
+        
         Args:
-            fermentation_id: ID of the fermentation
-            time_window_hours: Hours of history to analyze, defaults to 24
-
+            previous: Previous sugar measurement
+            current: Current sugar measurement  
+            tolerance: Acceptable tolerance for trend validation
+            
         Returns:
-            List[Dict[str, Any]]: List of detected anomalies, each containing:
-                - parameter: Name of the parameter showing anomaly
-                - severity: Severity level ('WARNING', 'CRITICAL')
-                - description: Detailed description of the anomaly
-                - suggested_action: Recommended action to address the anomaly
+            ValidationResult: Success if trend is valid, failure with details if not
+        """
+        pass
 
-        Raises:
-            NotFoundError: If fermentation_id doesn't exist
-            ValidationError: If time window is invalid
+    # =============================================
+    # FACTORY METHODS (Result builders)
+    # =============================================
+
+    @abstractmethod
+    def success(self) -> ValidationResult:
+        """
+        Factory method for successful validation result.
+        
+        Returns:
+            ValidationResult: Success result with no errors or warnings
+        """
+        pass
+
+    @abstractmethod
+    def failure(self, errors: List[ValidationError]) -> ValidationResult:
+        """
+        Factory method for failed validation result.
+        
+        Args:
+            errors: List of validation errors that occurred
+            
+        Returns:
+            ValidationResult: Failure result with specified errors
         """
         pass

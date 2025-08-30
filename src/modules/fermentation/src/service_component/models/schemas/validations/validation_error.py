@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from pydantic import BaseModel
 
 
@@ -7,5 +7,5 @@ class ValidationError(BaseModel):
 
     field: str
     message: str
-    current_value: Optional[float] = None
+    current_value: Optional[Union[float, str]] = None
     expected_range: Optional[str] = None
