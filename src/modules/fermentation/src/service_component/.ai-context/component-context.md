@@ -1,5 +1,8 @@
 # Component Context: Service Component (Fermentation Management Module)
 
+> **Parent Context**: See `../module-context.md` for module-level decisions
+> **Collaboration Guidelines**: See `/.ai-context/collaboration-principles.md`
+
 ## Component responsibility
 **Business logic and validation** for fermentation workflows within the Fermentation Management Module.
 

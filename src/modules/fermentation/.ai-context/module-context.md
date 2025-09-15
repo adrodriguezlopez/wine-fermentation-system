@@ -1,5 +1,8 @@
 # Module Context: Fermentation Management
 
+> **Parent Context**: See `/.ai-context/project-context.md` for system-level decisions
+> **Collaboration Guidelines**: See `/.ai-context/collaboration-principles.md`
+
 ## Module responsibility
 **Core CRUD operations** for fermentation tracking and sample data management within the monitoring system.
 

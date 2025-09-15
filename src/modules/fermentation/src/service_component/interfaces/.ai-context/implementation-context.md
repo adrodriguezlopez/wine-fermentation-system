@@ -1,5 +1,8 @@
 # Implementation Context: Interfaces (Service Component - Fermentation Management Module)
 
+> **Parent Context**: See `../component-context.md` for component-level decisions
+> **Collaboration Guidelines**: See `/.ai-context/collaboration-principles.md`
+
 ## GLOBAL INTERACTION RULES
 These rules are MANDATORY for ALL interactions in this conversation:
 

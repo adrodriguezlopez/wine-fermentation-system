@@ -176,8 +176,8 @@ class ValidationService(IValidationService):
         all_warnings = []
 
         # Validate each sample using granular methods
-        for sample_type, value in samples.items():
-            result = self.validate_sample_value(sample_type, value)
+        for sample in samples:
+            result = self.validate_sample_value(sample.sample_type, sample.value)
             if not result.is_valid:
                 all_errors.extend(result.errors)
             all_warnings.extend(result.warnings)
@@ -215,8 +215,8 @@ class ValidationService(IValidationService):
                 current_value=None
             )])
         
-        sample_type = new_sample.get("sample_type")
-        new_sample_time = new_sample.get("recorded_at")
+        sample_type = new_sample.sample_type
+        new_sample_time = new_sample.recorded_at
 
         if not sample_type:
             return ValidationResult.failure([

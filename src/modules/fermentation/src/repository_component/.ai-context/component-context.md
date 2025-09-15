@@ -1,5 +1,8 @@
 # Component Context: Repository Component (Fermentation Management Module)
 
+> **Parent Context**: See `../module-context.md` for module-level decisions
+> **Collaboration Guidelines**: See `/.ai-context/collaboration-principles.md`
+
 ## Component responsibility
 **Data persistence and retrieval operations** for fermentation and sample entities within the Fermentation Management Module.
 
