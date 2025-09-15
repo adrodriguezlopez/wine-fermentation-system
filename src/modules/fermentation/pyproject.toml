@@ -6,7 +6,8 @@ authors = ["Your Name <your.email@example.com>"]
 packages = [
     { include = "api_component", from = "src" },
     { include = "service_component", from = "src" },
-    { include = "repository_component", from = "src" }
+    { include = "repository_component", from = "src" },
+    { include = "domain", from = "src" }
 ]
 
 [tool.poetry.dependencies]

@@ -1,4 +1,4 @@
-from ...models.entities.base_entity import (
+from domain.entities.base_entity import (
     BaseEntity,
 )
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float
@@ -31,7 +31,7 @@ class Fermentation(BaseEntity):
 
     # Initial measurements
     # initial_fruit_quantity is the quantity
-    #  of fruit used for fermentation
+    # of fruit used for fermentation
     initial_fruit_quantity = Column(Float, nullable=False)
     # initial_sugar_brix is the sugar content of the must
     # at the start of fermentation
@@ -52,5 +52,7 @@ class Fermentation(BaseEntity):
     )
     # A fermentation can have multiple notes associated with it
     notes = relationship(
-        "FermentationNote", back_populates="fermentation", cascade="all, delete-orphan"
+        "FermentationNote",
+        back_populates="fermentation",
+        cascade="all, delete-orphan"
     )

@@ -12,17 +12,18 @@ def test_sample_repository_interface_methods() -> None:
     enforcing TDD and documentation updates.
     """
     try:
-        from service_component.interfaces import ISampleRepository
+        from domain.repositories import ISampleRepository
     except ImportError:
         pytest.fail("ISampleRepository interface is not defined")
 
     required_methods = {
-        "create_sample",
+        "upsert_sample",
         "get_sample_by_id",
-        "get_samples_by_fermentation",
+        "get_samples_by_fermentation_id",
         "get_samples_in_timerange",
-        "update_sample",
         "get_latest_sample",
+        "get_fermentation_start_date",
+        "get_latest_sample_by_type"
     }
 
     # Get all abstract methods defined in the interface

@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
-from ...enums.sample_type import SampleType
+from domain.enums.sample_type import SampleType
 
 
 class SampleBase(BaseModel):

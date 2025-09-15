@@ -1,5 +1,5 @@
 from typing import Any
-from ..samples.base_sample import BaseSample
+from domain.entities.samples.base_sample import BaseSample
 
 
 class DensitySample(BaseSample):

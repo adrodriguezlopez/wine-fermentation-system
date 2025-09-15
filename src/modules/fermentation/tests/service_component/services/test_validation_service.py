@@ -1,3 +1,4 @@
+#poetry run pytest tests/service_component/services/ -v
 import pytest
 from service_component.models.schemas.validations.validation_error import ValidationError
 from service_component.services.validation_service import ValidationService  # Add this import

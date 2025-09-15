@@ -1,5 +1,5 @@
 from datetime import datetime
-from ...enums.fermentation_status import FermentationStatus
+from domain.enums.fermentation_status import FermentationStatus
 from .fermentation_base import FermentationBase
 
 

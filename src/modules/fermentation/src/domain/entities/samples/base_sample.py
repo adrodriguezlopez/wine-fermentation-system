@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ..base_entity import BaseEntity
+from domain.entities.base_entity import BaseEntity
 
 
 class BaseSample(BaseEntity):

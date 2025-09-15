@@ -12,7 +12,7 @@ def test_fermentation_repository_interface_methods() -> None:
     enforcing TDD and documentation updates.
     """
     try:
-        from service_component.interfaces import IFermentationRepository
+        from domain.repositories import IFermentationRepository
     except ImportError:
         pytest.fail("IFermentationRepository interface is not defined")
 

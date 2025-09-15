@@ -1,10 +1,10 @@
 import datetime
 from typing import Any, Dict, List, Optional, Union
-from service_component.interfaces import ISampleRepository
+from domain.entities.samples.base_sample import BaseSample
+from domain.repositories import ISampleRepository
 from service_component.interfaces import IValidationService
-from service_component.models.enums.fermentation_status import FermentationStatus
-from service_component.models.enums.fermentation_status import FermentationStatus
-from service_component.models.enums.sample_type import SampleType
+from domain.enums.fermentation_status import FermentationStatus
+from domain.enums.sample_type import SampleType
 from service_component.models.schemas.validations.validation_result import ValidationResult
 from service_component.models.schemas.validations.validation_error import ValidationError
 
@@ -153,7 +153,7 @@ class ValidationService(IValidationService):
 
     async def validate_samples(
         self,
-        samples: List[Dict[str, float]]
+        samples: List[BaseSample]
     ) -> ValidationResult:
         """
         Validate a batch of samples using granular validation methods.
@@ -193,7 +193,7 @@ class ValidationService(IValidationService):
     async def validate_chronology(
             self,
             fermentation_id: int,
-            new_sample: Dict[str, Any]
+            new_sample: BaseSample
     ) -> ValidationResult:
         """
         Validate that a new sample's timestamp maintains chronological order.

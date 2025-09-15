@@ -5,10 +5,11 @@ Combines high-level workflow methods with granular validation functions.
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
+from domain.entities.samples.base_sample import BaseSample
 from service_component.models.schemas.validations.validation_result import ValidationResult
 from service_component.models.schemas.validations.validation_error import ValidationError
-from service_component.models.enums.sample_type import SampleType
-from service_component.models.enums.fermentation_status import FermentationStatus
+from domain.enums.sample_type import SampleType
+from domain.enums.fermentation_status import FermentationStatus
 
 
 class IValidationService(ABC):
@@ -27,7 +28,7 @@ class IValidationService(ABC):
     @abstractmethod
     async def validate_samples(
         self,
-        samples: List[Dict[str, Any]]
+        samples: List[BaseSample]
     ) -> ValidationResult:
         """
         Validates a batch of samples using granular validation methods.
@@ -50,7 +51,7 @@ class IValidationService(ABC):
     async def validate_chronology(
             self,
             fermentation_id: int,
-            new_sample: Dict[str, Any]
+            new_sample: BaseSample
     ) -> ValidationResult:
         """
         Validates that a new sample's timestamp maintains chronological order.

@@ -1,6 +1,4 @@
-from ...models.entities.base_entity import (
-    BaseEntity,
-)
+from domain.entities.base_entity import BaseEntity
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
 

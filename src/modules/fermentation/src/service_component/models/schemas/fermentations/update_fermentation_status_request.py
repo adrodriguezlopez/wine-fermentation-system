@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from ....models.enums.fermentation_status import FermentationStatus
+from domain.enums.fermentation_status import FermentationStatus
 
 
 class UpdateFermentationStatusRequest(BaseModel):
