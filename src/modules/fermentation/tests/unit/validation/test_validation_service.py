@@ -1,7 +1,13 @@
-#poetry run pytest tests/service_component/services/ -v
+# Unit tests for ValidationService - functional validation testing
 import pytest
+import sys
+from pathlib import Path
+
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
+
 from service_component.models.schemas.validations.validation_error import ValidationError
-from service_component.services.validation_service import ValidationService  # Add this import
+from service_component.services.validation_service import ValidationService
 
 
 @pytest.fixture

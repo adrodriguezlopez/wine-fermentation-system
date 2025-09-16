@@ -1,0 +1,63 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
+		"python.terminal.activateEnvironment": true,
+		"python.testing.pytestEnabled": true,
+		"python.testing.unittestEnabled": false,
+		"python.testing.pytestArgs": [
+			"tests/unit/"
+		],
+		"python.analysis.extraPaths": [
+			"./src"
+		],
+		"terminal.integrated.env.windows": {
+			"PYTHONPATH": "${workspaceFolder}/src"
+		}
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "Debug Current Test File",
+				"type": "debugpy",
+				"request": "launch",
+				"module": "pytest",
+				"args": [
+					"${file}",
+					"-v",
+					"-s"
+				],
+				"console": "integratedTerminal",
+				"cwd": "${workspaceFolder}",
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/src"
+				},
+				"justMyCode": false,
+				"python": "${workspaceFolder}/.venv/Scripts/python.exe"
+			},
+			{
+				"name": "Debug Chronology Test",
+				"type": "debugpy",
+				"request": "launch",
+				"module": "pytest",
+				"args": [
+					"tests/unit/validation/test_chronology_validation_service.py::test_chronology_validation_service_validates_chronology",
+					"-v",
+					"-s"
+				],
+				"console": "integratedTerminal",
+				"cwd": "${workspaceFolder}",
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/src"
+				},
+				"justMyCode": false,
+				"python": "${workspaceFolder}/.venv/Scripts/python.exe"
+			}
+		]
+	}
+}

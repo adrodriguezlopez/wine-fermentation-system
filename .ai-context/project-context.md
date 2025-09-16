@@ -1,5 +1,7 @@
 # System Context: Wine Fermentation Monitoring System (MVP - Single Winery)
 
+> **Collaboration Guidelines**: See `collaboration-principles.md`
+
 ## Problems this system solves
 1. **Fragmented monitoring tools**: Winemakers use disconnected tools (thermometers, Excel sheets, manual logs) without integrated analysis or alerts
 2. **Delayed anomaly detection**: Problems discovered too late during routine physical checks

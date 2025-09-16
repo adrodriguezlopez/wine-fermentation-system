@@ -1,5 +1,6 @@
 from typing import Optional, Union
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class ValidationError(BaseModel):
@@ -7,5 +8,5 @@ class ValidationError(BaseModel):
 
     field: str
     message: str
-    current_value: Optional[Union[float, str]] = None
+    current_value: Optional[Union[float, str, datetime]] = None
     expected_range: Optional[str] = None

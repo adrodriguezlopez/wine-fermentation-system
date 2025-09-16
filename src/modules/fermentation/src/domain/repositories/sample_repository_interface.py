@@ -4,7 +4,7 @@ Defines the contract that any sample repository implementation must follow.
 ARCHITECTURE: Repository returns BaseSample entities consistently across all methods.
 """
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime
 from domain.entities.samples.base_sample import BaseSample
 from domain.enums.sample_type import SampleType
@@ -161,6 +161,23 @@ class ISampleRepository(ABC):
 
         Returns:
             Optional[BaseSample]: Latest sample of the specified type, or None if no samples exist
+
+        Raises:
+            NotFoundError: If fermentation_id doesn't exist
+        """
+        pass
+
+    @abstractmethod
+    async def get_fermentation_temperature_range(self, fermentation_id: int) -> Tuple[float, float]:
+        """
+        Retrieves the acceptable temperature range for a specific fermentation.
+        Used by ValidationService to validate temperature samples.
+
+        Args:
+            fermentation_id: ID of the fermentation
+
+        Returns:
+            (float, float): Tuple of (min_temperature, max_temperature)
 
         Raises:
             NotFoundError: If fermentation_id doesn't exist
