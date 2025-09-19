@@ -61,3 +61,24 @@ Read the module-context.md for the specific module you need to work on:
 - Analysis Engine: For recommendation logic
 - Action Tracking: For intervention logging
 - Frontend: For user interface work
+
+---
+
+## Domain-Driven Design (DDD) Context
+
+La arquitectura del sistema sigue los principios de Domain-Driven Design (DDD):
+
+- **El dominio es el núcleo:** Define entidades, enums y contratos (interfaces) independientes de infraestructura.
+- **Interfaces de repositorio:** (ej: `IFermentationRepository`, `ISampleRepository`) viven en `domain` y son compartidas por Service y Repository components.
+- **Service Component:** Implementa lógica de negocio y orquestación, dependiendo solo de contratos del dominio.
+- **Repository Component:** Implementa las interfaces de repositorio del dominio, conectando con la infraestructura (ej: SQLAlchemy).
+- **Dirección de dependencias:** Siempre apunta hacia el dominio.
+
+**Diagrama de dependencias:**
+```
+repository_component ─┐
+service_component     │
+        └─────────────┴──► domain
+```
+
+> Para más detalles, consulta la documentación y diagramas en `/docs/` o los archivos de contexto de cada módulo.

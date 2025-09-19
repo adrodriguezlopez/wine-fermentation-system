@@ -3,7 +3,7 @@ Interface definition for the Fermentation Repository.
 Defines the contract that any repository implementation must follow.
 """
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
 
 
@@ -198,5 +198,23 @@ class IFermentationRepository(ABC):
 
         Raises:
             NotFoundError: If winery_id doesn't exist
+        """
+        pass
+
+    
+    @abstractmethod
+    async def get_fermentation_temperature_range(self, fermentation_id: int) -> Tuple[float, float]:
+        """
+        Retrieves the acceptable temperature range for a specific fermentation.
+        Used by ValidationService to validate temperature samples.
+
+        Args:
+            fermentation_id: ID of the fermentation
+
+        Returns:
+            (float, float): Tuple of (min_temperature, max_temperature)
+
+        Raises:
+            NotFoundError: If fermentation_id doesn't exist
         """
         pass

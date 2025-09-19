@@ -26,6 +26,7 @@ def test_fermentation_repository_interface_methods() -> None:
         "get_latest_sample",
         "get_by_status",
         "get_by_winery",
+        "get_fermentation_temperature_range"
     }
 
     # Get all abstract methods defined in the interface

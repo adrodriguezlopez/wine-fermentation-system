@@ -1,33 +1,18 @@
-# Use multi-stage build for smaller final image
-FROM python:3.9-slim as builder
-
-# Install poetry
-RUN pip install poetry
-
-# Copy only requirements to cache them in docker layer
-WORKDIR /app
-COPY poetry.lock pyproject.toml ./
-
-# Export requirements to requirements.txt
-RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
-
-# Build final image
 FROM python:3.9-slim
 
+RUN pip install --upgrade pip && pip install poetry==1.6.1
+
 WORKDIR /app
 
-# Copy requirements from builder
-COPY --from=builder /app/requirements.txt .
+# Desactiva virtualenvs de Poetry
+RUN poetry config virtualenvs.create false
 
-# Install production dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+COPY poetry.lock pyproject.toml ./
+RUN poetry install --no-root --no-interaction
 
-# Copy source code
 COPY src/ ./src/
 
-# Run as non-root user
 RUN useradd -m appuser
 USER appuser
 
-# Run the application
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["poetry", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

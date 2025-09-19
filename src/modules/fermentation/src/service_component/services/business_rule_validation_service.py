@@ -1,13 +1,15 @@
 from domain.enums.sample_type import SampleType
 from domain.repositories.sample_repository_interface import ISampleRepository
+from domain.repositories.fermentation_repository_interface import IFermentationRepository
 from service_component.interfaces.business_rule_validation_service_interface import IBusinessRuleValidationService
 from service_component.models.schemas.validations.validation_error import ValidationError
 from service_component.models.schemas.validations.validation_result import ValidationResult
 
 
 class BusinessRuleValidationService(IBusinessRuleValidationService):
-    def __init__(self, sample_repository: ISampleRepository):
+    def __init__(self, sample_repository: ISampleRepository, fermentation_repository: IFermentationRepository):
         self.sample_repository = sample_repository
+        self.fermentation_repository = fermentation_repository
 
     async def validate_sugar_trend(
             self,
@@ -61,13 +63,13 @@ class BusinessRuleValidationService(IBusinessRuleValidationService):
         Returns:
             ValidationResult: Success or failure of the validation with specific error details.
         """
-        if not self.sample_repository:
+        if not self.fermentation_repository:
             return ValidationResult.failure(errors=[ValidationError(
                 field="repository",
-                message="Sample repository is not available for business rule validation",
+                message="Fermentation repository is not available for business rule validation",
                 current_value=None
             )])
-        fermentation_range = await self.sample_repository.get_fermentation_temperature_range(fermentation_id)
+        fermentation_range = await self.fermentation_repository.get_fermentation_temperature_range(fermentation_id)
         if not fermentation_range:
             return ValidationResult.success()
         min_temp, max_temp = fermentation_range

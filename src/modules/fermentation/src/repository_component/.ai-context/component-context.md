@@ -13,9 +13,8 @@
 
 **Design approach**: Abstract data access through interfaces with PostgreSQL-specific implementations optimized for time-series fermentation data patterns.
 
-## Arquitectura específica del componente
-- **Repository Interfaces**: IFermentationRepository, ISampleRepository --> this is in the domain folder
-- **Concrete Repositories**: FermentationRepository, SampleRepository with SQLAlchemy implementations
+- **Repository Interfaces**: Not defined here. IFermentationRepository, ISampleRepository, and any other repository contracts are defined in the domain component and shared across Service and Repository components.
+- **Concrete Repositories**: FermentationRepository, SampleRepository (SQLAlchemy implementations, implement domain interfaces only in this component)
 - **Entity Models**: Fermentation, BaseSample with polymorphic inheritance for sample types
 - **Data flow**: Service → Repository Interface → Concrete Repository → SQLAlchemy → PostgreSQL
 - **Extension points**: Additional repository interfaces, query optimization, caching integration

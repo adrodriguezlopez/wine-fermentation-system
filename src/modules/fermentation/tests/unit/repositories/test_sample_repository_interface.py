@@ -24,7 +24,9 @@ def test_sample_repository_interface_methods() -> None:
         "get_latest_sample",
         "get_fermentation_start_date",
         "get_latest_sample_by_type",
-        "get_fermentation_temperature_range",
+        "soft_delete_sample",
+        "check_duplicate_timestamp",
+        "bulk_upsert_samples"
     }
 
     # Get all abstract methods defined in the interface

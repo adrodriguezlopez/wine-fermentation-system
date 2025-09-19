@@ -38,3 +38,11 @@ class ValidationResult(BaseModel):
         self.warnings.append(
             ValidationError(field=field, message=message, current_value=current_value)
         )
+
+    def merge(self, other: "ValidationResult") -> "ValidationResult":
+        """Merge this ValidationResult with another, combining errors and warnings."""
+        return ValidationResult(
+            is_valid=self.is_valid and other.is_valid,
+            errors=self.errors + other.errors,
+            warnings=self.warnings + other.warnings
+        )

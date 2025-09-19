@@ -166,20 +166,70 @@ class ISampleRepository(ABC):
             NotFoundError: If fermentation_id doesn't exist
         """
         pass
-
+    
     @abstractmethod
-    async def get_fermentation_temperature_range(self, fermentation_id: int) -> Tuple[float, float]:
+    async def check_duplicate_timestamp(
+        self, 
+        fermentation_id: int, 
+        sample: BaseSample, 
+        exclude_sample_id: Optional[int] = None
+    ) -> bool:
         """
-        Retrieves the acceptable temperature range for a specific fermentation.
-        Used by ValidationService to validate temperature samples.
+        Checks if a sample with the same recorded_at timestamp and the same sample_type already exists for the fermentation.
+        Used by ValidationService to enforce unique timestamps per fermentation.
 
         Args:
             fermentation_id: ID of the fermentation
+            sample: The sample to check for duplicates
+            exclude_sample_id: Optional sample ID to exclude from the check (useful during updates)
 
         Returns:
-            (float, float): Tuple of (min_temperature, max_temperature)
+            bool: True if a duplicate timestamp exists, False otherwise
 
         Raises:
             NotFoundError: If fermentation_id doesn't exist
+            ValidationError: If recorded_at is invalid
+        """
+        pass
+
+
+    @abstractmethod
+    async def soft_delete_sample(self, sample_id: int) -> None:
+        """
+        Soft deletes a sample by marking it as deleted without removing it from the database.
+        Used to maintain historical data integrity while allowing logical deletion.
+
+        Args:
+            sample_id: ID of the sample to soft delete
+
+        Returns:
+            None
+
+        Raises:
+            NotFoundError: If sample_id doesn't exist
+            RepositoryError: If soft delete operation fails
+        """
+        pass
+
+    @abstractmethod
+    async def bulk_upsert_samples(self, samples: List[BaseSample]) -> List[BaseSample]:
+        """
+        Performs bulk upsert (create or update) of multiple samples.
+        Used for batch operations to improve performance.
+
+        UPSERT LOGIC:
+        - If sample.id is None: INSERT new sample
+        - If sample.id exists: UPDATE existing sample
+        - Always returns the list of persisted BaseSample entities with IDs populated
+
+        Args:
+            samples: List[BaseSample] entities to create or update
+        Returns:
+            List[BaseSample]: List of persisted samples with IDs and timestamps
+        Raises:
+            RepositoryError: If bulk upsert operation fails
+            IntegrityError: If any sample conflicts with existing data
+            NotFoundError: If updating non-existent samples
+            ValidationError: If any sample data is invalid
         """
         pass

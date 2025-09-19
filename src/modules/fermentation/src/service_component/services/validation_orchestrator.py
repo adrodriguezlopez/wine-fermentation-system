@@ -37,43 +37,43 @@ class ValidationOrchestrator(IValidationOrchestrator):
         overall_result = ValidationResult.success()
 
         # Chronology Validation
-        chronology_result = await self.chronology_validator.validate_chronology(
+        chronology_result = await self.chronology_validator.validate_sample_chronology(
             fermentation_id=fermentation_id,
             new_sample=sample
         )
         overall_result = overall_result.merge(chronology_result)
-        if not chronology_result.is_success:
+        if not chronology_result.is_valid:
             return overall_result
         # Value Validation
-        value_result = self.value_validator.validate_values(
-            sample=sample
+        value_result = self.value_validator.validate_sample_value(
+            sample_type=sample.sample_type,
+            value=sample.value
         )
         overall_result = overall_result.merge(value_result)
-        if not value_result.is_success:
-            return overall_result
+        if not value_result.is_valid:
+                return overall_result
         # Business Rules Validation
-        match sample.sample_type:
-            case SampleType.SUGAR:
-                if sample.value is not None:
-                    business_rules_result = self.business_rules_validator.validate_sugar_trend(
-                        current=sample.value,
-                        fermentation_id=fermentation_id,
-                        tolerance=0.1
-                    )
-                    overall_result = overall_result.merge(business_rules_result)
-                    if not business_rules_result.is_success:
-                        return overall_result
-                    
-            case SampleType.TEMPERATURE:
-                if sample.value is not None and sample.fermentation_type is not None:
-                    business_rules_result = self.business_rules_validator.validate_temperature_range(
-                        temperature=sample.value,
-                        fermentation_id=fermentation_id
-                    )
-                    overall_result = overall_result.merge(business_rules_result)
-                    if not business_rules_result.is_success:
-                        return overall_result        
-                    
+        if sample.sample_type == SampleType.SUGAR:
+            if sample.value is not None:
+                business_rules_result = self.business_rules_validator.validate_sugar_trend(
+                    current=sample.value,
+                    fermentation_id=fermentation_id,
+                    tolerance=0.1
+                )
+                overall_result = overall_result.merge(business_rules_result)
+                if not business_rules_result.is_valid:
+                    return overall_result
+
+        elif sample.sample_type == SampleType.TEMPERATURE:
+            if sample.value is not None and sample.fermentation_type is not None:
+                business_rules_result = self.business_rules_validator.validate_temperature_range(
+                    temperature=sample.value,
+                    fermentation_id=fermentation_id
+                )
+                overall_result = overall_result.merge(business_rules_result)
+                if not business_rules_result.is_valid:
+                    return overall_result        
+
         return overall_result
     
     async def validate_sample_batch(

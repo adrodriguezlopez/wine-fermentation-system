@@ -24,6 +24,9 @@ class BaseSample(BaseEntity):
     recorded_by_user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), nullable=False
     )
+    is_deleted: Mapped[bool] = mapped_column(
+        default=False, nullable=False
+    )  # Soft delete flag
 
     # Measurement data
     value: Mapped[float] = mapped_column(nullable=False)
