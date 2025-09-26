@@ -1,4 +1,4 @@
-from domain.entities.base_entity import BaseEntity
+from shared.infra.orm.base_entity import BaseEntity
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
