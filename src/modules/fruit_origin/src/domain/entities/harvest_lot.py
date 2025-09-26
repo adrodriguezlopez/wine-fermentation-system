@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, BigInteger, ForeignKey, Date, Numeric, Integer, Boolean, DECIMAL, TIMESTAMP
+from sqlalchemy import String, BigInteger, ForeignKey, Numeric, Date, Integer, TIMESTAMP, UniqueConstraint
 from typing import Optional
-from domain.entities.base_entity import BaseEntity
+from shared.infra.orm.base_entity import BaseEntity
 
 class HarvestLot(BaseEntity):
     __tablename__ = "harvest_lots"
     __table_args__ = (
-        # Unique code per winery
-        # Add UniqueConstraint('code', 'winery_id', name='uq_harvest_lots__code__winery_id') in migration/model
+        # Unique code per winery (ADR-001 constraint)
+        UniqueConstraint('code', 'winery_id', name='uq_harvest_lots__code__winery_id'),
         {"sqlite_autoincrement": True},
     )
 
@@ -30,3 +30,6 @@ class HarvestLot(BaseEntity):
     notes: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     block: Mapped["VineyardBlock"] = relationship("VineyardBlock", back_populates="harvest_lots")
+
+    def __repr__(self) -> str:
+        return f"<HarvestLot(id={self.id}, code='{self.code}', winery_id={self.winery_id}, harvest_date={self.harvest_date})>"

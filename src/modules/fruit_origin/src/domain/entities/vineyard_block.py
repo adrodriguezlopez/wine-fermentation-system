@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, BigInteger, ForeignKey, Numeric, Boolean, DECIMAL
+from sqlalchemy import String, BigInteger, ForeignKey, Numeric, DECIMAL, Boolean, UniqueConstraint
 from typing import List, Optional
-from domain.entities.base_entity import BaseEntity
+from shared.infra.orm.base_entity import BaseEntity
 
 class VineyardBlock(BaseEntity):
     __tablename__ = "vineyard_blocks"
     __table_args__ = (
-        # Unique code per vineyard
-        # Add UniqueConstraint('code', 'vineyard_id', name='uq_vineyard_blocks__code__vineyard_id') in migration/model
+        # Unique code per vineyard (ADR-001 constraint)
+        UniqueConstraint('code', 'vineyard_id', name='uq_vineyard_blocks__code__vineyard_id'),
         {"sqlite_autoincrement": True},
     )
 
@@ -26,3 +26,6 @@ class VineyardBlock(BaseEntity):
 
     vineyard: Mapped["Vineyard"] = relationship("Vineyard", back_populates="blocks")
     harvest_lots: Mapped[List["HarvestLot"]] = relationship("HarvestLot", back_populates="block", cascade="all, delete-orphan")
+
+    def __repr__(self) -> str:
+        return f"<VineyardBlock(id={self.id}, code='{self.code}', vineyard_id={self.vineyard_id})>"

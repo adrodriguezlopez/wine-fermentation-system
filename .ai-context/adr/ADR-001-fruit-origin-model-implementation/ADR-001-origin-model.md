@@ -1,6 +1,6 @@
 # ADR-001: Modelo de Origen de Fruta (Winery → Vineyard → Block → HarvestLot)
 
-**Status:** Accepted  
+**Status:** Accepted (Implementación en pausa - esperando domain services)  
 **Date:** 2025-09-25  
 **Authors:** Arquitectura de Fermentación (VintArch)  
 
@@ -84,7 +84,11 @@ HarvestLot
 
 Fermentation
 - id (PK), winery_id (FK → Winery.id)
-- start_date, input_mass_kg, ...
+- fermented_by_user_id (FK → User.id)
+- vintage_year, yeast_strain
+- input_mass_kg, initial_sugar_brix, initial_density
+- vessel_code (UNIQUE por winery, opcional)
+- status, start_date
 
 FermentationLotSource
 - id (PK)
@@ -94,7 +98,61 @@ FermentationLotSource
 ```
 ---
 
-## Consequences
+## Decisiones de Refactoring
+
+### Campos Eliminados de Fermentation
+- **`winery` (String)** → **ELIMINADO**. Usar `fermentation.winery_id` (FK → Winery.id).
+- **`vineyard` (String)** → **ELIMINADO**. El viñedo se deriva de los HarvestLot asociados.
+- **`grape_variety` (String)** → **ELIMINADO** del core. La(s) variedad(es) se derivan de los HarvestLot.
+
+### Campos Agregados
+- **`vessel_code: str | None`** → Campo opcional para identificar el recipiente de fermentación.
+- **Constraint**: UNIQUE (winery_id, vessel_code) para evitar colisiones por bodega.
+
+### Trade-offs y Consecuencias Críticas
+
+**✅ Beneficios:**
+- **Eliminación de duplicación**: No hay inconsistencias entre `Fermentation.grape_variety` y `HarvestLot.grape_variety`.
+- **Soporte natural para blends**: Una fermentación puede tener múltiples variedades via múltiples HarvestLots.
+- **Trazabilidad completa**: Toda información de origen viene de la cadena HarvestLot → VineyardBlock → Vineyard.
+- **Asociación implementada**: `FermentationLotSource` permite rastrear masa específica de cada lot en fermentación.
+
+**⚠️ Trade-offs:**
+- **Queries más complejas**: Para mostrar grape_variety se requieren JOINs con HarvestLot.
+- **UI temprano**: Si el UI necesita mostrar variedad antes de asignar lots, usar campo calculado/no persistido.
+- **winery_id redundante en MVP**: En mono-bodega puede parecer innecesario, pero simplifica invariantes y prepara multi-tenant.
+- **Gestión de blends**: La lógica para mantener balance de masas requiere validación de servicio de dominio.
+
+## Implementación FermentationLotSource
+
+### Diseño Técnico Implementado
+- **Ubicación DDD**: Entidad en módulo `fermentation/src/domain/entities/` siguiendo principio de agregado raíz.
+- **Campos mínimos**: `fermentation_id`, `harvest_lot_id`, `mass_used_kg` (obligatorios).
+- **Campos opcionales**: `notes` (texto contextual), `created_at`/`updated_at` (auditoría).
+- **Constraints DB**: `UNIQUE(fermentation_id, harvest_lot_id)`, `CHECK(mass_used_kg > 0)`.
+- **Índices**: `idx_fermentation_lot_source_fermentation`, `idx_fermentation_lot_source_harvest_lot`.
+
+### Razonamiento de Ubicación
+- **Agregado raíz**: `Fermentation` es el root, `FermentationLotSource` existe para expresar su composición.
+- **Ciclo de vida**: Depende de la fermentación (crear/actualizar/borrar en la misma UoW).
+- **Consistencia transaccional**: Gobierna dentro del agregado de Fermentation.
+- **Evita cruce de límites**: No rompe el subdominio `fruit_origin` que posee `HarvestLot`.
+
+### Invariantes de Negocio (⚠️ PENDIENTE: Requiere Domain Services)
+- **Balance de masas**: Σ mass_used_kg = fermentation.input_mass_kg
+- **Misma bodega**: Todos los HarvestLot.winery_id = Fermentation.winery_id  
+- **Fechas coherentes**: HarvestLot.harvest_date ≤ Fermentation.start_date
+- **No duplicados**: UNIQUE constraint previene mismo lot en misma fermentación
+
+**🚫 BLOQUEADOR**: Sin domain services implementados, estas reglas solo existen a nivel de constraints DB básicos. La lógica de negocio compleja requiere servicios de dominio para validación y aplicación de invariantes.
+
+### Implementación Status 🔄
+- ✅ **Entidades**: `FermentationLotSource` creada con constraints SQLAlchemy 2.0
+- ✅ **Constraints DB**: Todos los UNIQUE, CHECK, FK e INDEX implementados
+- ✅ **Tests**: Metadatos y lógica de blend implementados (63 tests pasando)
+- ✅ **Relationships**: Bidireccionales entre Fermentation ↔ FermentationLotSource activadas
+- 🔄 **Cross-module**: Preparada para relación con `HarvestLot` del módulo `fruit_origin`
+- ⚠️ **BLOQUEADO**: Faltan domain services y repositories para validar invariantes de negocio
 
 **Positivas**  
 - ✅ Trazabilidad completa de la fruta usada en cada vino.  
