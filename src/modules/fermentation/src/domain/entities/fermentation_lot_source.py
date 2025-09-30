@@ -1,7 +1,7 @@
 from typing import Optional, TYPE_CHECKING
 from sqlalchemy import String, Float, ForeignKey, CheckConstraint, UniqueConstraint, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from shared.infra.orm.base_entity import BaseEntity
+from src.shared.infra.orm.base_entity import BaseEntity
 
 if TYPE_CHECKING:
     from domain.entities.fermentation import Fermentation

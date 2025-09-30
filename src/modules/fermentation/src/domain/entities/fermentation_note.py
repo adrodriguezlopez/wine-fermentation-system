@@ -1,6 +1,7 @@
-from shared.infra.orm.base_entity import BaseEntity
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
+
+from src.shared.infra.orm.base_entity import BaseEntity
 
 
 class FermentationNote(BaseEntity):

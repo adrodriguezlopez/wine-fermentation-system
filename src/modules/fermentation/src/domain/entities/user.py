@@ -3,7 +3,7 @@ from sqlalchemy import ForeignKey, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List, TYPE_CHECKING
 
-from shared.infra.orm.base_entity import BaseEntity
+from src.shared.infra.orm.base_entity import BaseEntity
 
 if TYPE_CHECKING:
     from domain.entities.fermentation import Fermentation
@@ -18,7 +18,7 @@ class User(BaseEntity):
     __tablename__ = "users"
 
     # User identification and authentication
-    usernmame: Mapped[str] =  mapped_column(String(50), unique=True, nullable=False, index=True)       
+    usernmame: Mapped[str] =  mapped_column(String(50), unique=True, nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
 
     # Password hash for secure authentication
@@ -37,19 +37,19 @@ class User(BaseEntity):
 
 
     # Relationships - data ownership for multi tenant isolation
-    fermentations: Mapped[List["Fermentation"]] = relationship("Fermentation",
-                                                               back_populates="fermented_by_user",     
-                                                               cascade="all, delete-orphan",
-                                                               foreign_keys='Fermentation.fermented_by_user_id')                                                                                                  
-    samples: Mapped[List["BaseSample"]] = relationship("BaseSample",
-                                                       back_populates="recorded_by_user",
-                                                       cascade="all, delete-orphan",
-                                                       foreign_keys='BaseSample.recorded_by_user_id')  
-
-    winery: Mapped["Winery"] = relationship("Winery", back_populates="users", foreign_keys='User.winery_id')                                                                                                  
+    fermentations: Mapped[List["Fermentation"]] = relationship("Fermentation", 
+                                                               back_populates="fermented_by_user", 
+                                                               cascade="all, delete-orphan", 
+                                                               foreign_keys='Fermentation.fermented_by_user_id')
+    samples: Mapped[List["BaseSample"]] = relationship("BaseSample", 
+                                                       back_populates="recorded_by_user", 
+                                                       cascade="all, delete-orphan", 
+                                                       foreign_keys='BaseSample.recorded_by_user_id')
     
+    winery: Mapped["Winery"] = relationship("Winery", back_populates="users", foreign_keys='User.winery_id')
+
     def __repr__(self) -> str:
-        return f"<User(id={self.id}, username={self.usernmame}, email={self.email}, full_name={self.full_name})>"                                                                                             
+        return f"<User(id={self.id}, username={self.usernmame}, email={self.email}, full_name={self.full_name})>"
     
     @property
     def is_authenticated(self) -> bool:

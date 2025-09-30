@@ -43,3 +43,22 @@ def chronological_timestamps():
         base_time + timedelta(hours=i * 6) 
         for i in range(10)
     ]
+
+
+@pytest.fixture
+def database_config():
+    """Fixture providing database configuration for tests."""
+    import os
+    from unittest.mock import patch
+    
+    # Use test database URL for development (port 5433)
+    test_env = {
+        'DATABASE_URL': 'postgresql://postgres:postgres@localhost:5433/wine_fermentation_test',
+        'DB_ECHO': 'false',
+        'DB_POOL_SIZE': '5',
+        'DB_MAX_OVERFLOW': '10'
+    }
+    
+    with patch.dict(os.environ, test_env):
+        from src.shared.infra.database import DatabaseConfig
+        yield DatabaseConfig()

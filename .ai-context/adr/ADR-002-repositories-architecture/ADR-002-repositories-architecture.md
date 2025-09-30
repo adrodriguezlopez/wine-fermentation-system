@@ -23,7 +23,7 @@ Necesitamos decidir: ¿habrá BaseRepository?, ¿cómo organizar transacciones y
 7. **Error Mapping** → centralizado en BaseRepository, errores de DB → catálogo repositorio.  
 8. **Soft-delete** → samples con is_deleted; siempre filtrar.  
 9. **Boundaries fruit_origin** → HarvestLot vía repo read-only.  
-10. **Return types** → Samples = entidades; Fermentations = dicts (MVP). Plan migrar a entidades.
+10. **Return types** → Both Samples and Fermentations return entities (domain objects).
 
 ---
 
@@ -42,17 +42,17 @@ fermentation_queries.py
 
 
 - **BaseRepository** → sesión, transacciones, error mapping, soft-delete.  
-- **FermentationRepository** → ciclo de vida, optimistic lock.  
-- **SampleRepository** → upsert, rangos, latest, soft-delete, bulk.  
-- **ReadModels** → reporting.  
+- **FermentationRepository** → ciclo de vida, optimistic lock, returns Fermentation entities.  
+- **SampleRepository** → upsert, rangos, latest, soft-delete, bulk, returns BaseSample entities.  
+- **ReadModels** → reporting, returns DTOs/dicts for optimized queries.  
 
 ---
 
 ## Consequences
 - ✅ Claridad de límites, reuso técnico sin contaminar dominio.  
 - ✅ Transacciones correctas, testabilidad alta, multi-tenant listo.  
+- ✅ Consistent entity return types across all repositories.  
 - ⚠️ Más clases y boilerplate.  
-- ⚠️ Contrato inconsistente temporal (dict vs entidad).  
 - ⚠️ Consultas complejas → ReadModels.  
 
 ---
@@ -70,7 +70,7 @@ fermentation_queries.py
 - Sí BaseRepository → helpers técnicos.  
 - UoW async → blends y bulk.  
 - winery_id obligatorio en queries.  
-- FermentationRepo dicts (MVP) → migrar a entidades.  
+- Both repositories return domain entities consistently.  
 - Samples siempre ordenados, soft-delete aplicado.  
 - HarvestLot = repo read-only.  
 
