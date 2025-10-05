@@ -4,6 +4,8 @@
 **Date:** YYYY-MM-DD  
 **Authors:** <Nombre/es>
 
+> **📋 Context:** [Architectural Guidelines](../ARCHITECTURAL_GUIDELINES.md)
+
 ---
 
 ## Context
@@ -18,6 +20,12 @@ Cada punto = 1–2 frases, claras.
 Ejemplo:  
 1. Usar X approach para resolver Y problema.  
 2. No implementar Z porque limita flexibilidad futura.
+
+---
+
+## Architectural Notes (opcional)
+> Seguimos [Architectural Guidelines](../ARCHITECTURAL_GUIDELINES.md) por defecto  
+> Solo documentar desviaciones o trade-offs específicos
 
 ---
 

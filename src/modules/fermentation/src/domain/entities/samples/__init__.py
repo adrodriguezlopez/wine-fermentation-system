@@ -2,12 +2,11 @@
 Sample Entities
 -------------
 Different types of measurements that can be taken during fermentation.
-"""
 
-from .base_sample import BaseSample
-from .sugar_sample import SugarSample
-from .density_sample import DensitySample
-from .celcius_temperature_sample import CelsiusTemperatureSample
+NOTE: This __init__.py intentionally does NOT import entities to avoid
+SQLAlchemy registry conflicts during pytest discovery.
+Import sample entities directly from their modules.
+"""
 
 __all__ = [
     'BaseSample',

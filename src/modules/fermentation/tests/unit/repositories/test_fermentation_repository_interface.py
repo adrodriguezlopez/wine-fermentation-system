@@ -20,14 +20,19 @@ def test_fermentation_repository_interface_methods() -> None:
         "create",
         "get_by_id",
         "update_status",
-        "add_sample",
-        "get_samples",
-        "get_samples_in_range",
-        "get_latest_sample",
         "get_by_status",
         "get_by_winery",
-        "get_fermentation_temperature_range"
     }
+    
+    # NOTE: Sample operations removed (ADR-003: Separation of Concerns)
+    # Sample methods now live exclusively in ISampleRepository:
+    # - add_sample() → ISampleRepository.upsert_sample()
+    # - get_latest_sample() → ISampleRepository.get_latest_sample()
+    # This follows Single Responsibility Principle - one repository per aggregate
+    
+    # NOTE: Sample query methods (get_samples_by_fermentation_id, get_samples_in_timerange)
+    # are defined in ISampleRepository, not IFermentationRepository
+    # This follows single responsibility principle
 
     # Get all abstract methods defined in the interface
     interface_methods = {

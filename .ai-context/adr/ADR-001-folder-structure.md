@@ -75,3 +75,28 @@ wine-fermentation-system/
 ---
 
 > **Note:** All table and file names use snake_case and plural nouns for consistency. Adjust as needed for your team's conventions.
+
+---
+
+## ⚠️ IMPORTANT UPDATE (2025-10-05)
+
+**This ADR is now OUTDATED.** The folder structure described above shows `fruit_origin` as a **subdomain within fermentation** module. 
+
+**Current structure (post ADR-004):**
+- `fruit_origin` is now a **separate top-level module** under `src/modules/fruit_origin/`
+- `winery` is also a **separate top-level module** under `src/modules/winery/`
+- `harvest/` module was **eliminated** (was duplicate of fruit_origin)
+
+**See:**
+- **ADR-004:** Harvest Module Consolidation & SQLAlchemy Registry Fix - Documents the module consolidation decision
+- **PROJECT_STRUCTURE_MAP.md:** Current folder structure with all 7 modules
+- **.ai-context/fruit_origin/module-context.md:** fruit_origin as bounded context
+- **.ai-context/winery/module-context.md:** winery as bounded context
+
+**Rationale for change:**
+- `fruit_origin` and `winery` represent separate **bounded contexts** in DDD
+- Dependency direction: `fermentation` → `fruit_origin` → `winery`
+- Allows independent evolution of each bounded context
+- Cleaner module boundaries and multi-tenancy enforcement
+
+This ADR remains as **historical reference** for initial folder structure thinking. For current structure, refer to PROJECT_STRUCTURE_MAP.md and ADR-004.

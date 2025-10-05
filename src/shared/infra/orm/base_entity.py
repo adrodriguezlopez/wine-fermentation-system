@@ -6,11 +6,23 @@ from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
     mapped_column,
+    registry,
 )
+
+# Create a single global registry for all entities
+# This prevents "Multiple classes found" errors when entities are imported multiple times
+mapper_registry = registry()
 
 
 class Base(DeclarativeBase):
-    """Base class for all SQLAlchemy models."""
+    """
+    Base class for all SQLAlchemy models.
+    
+    Uses a single global registry to ensure all entities are registered
+    in the same namespace, preventing duplicate registration errors.
+    """
+    registry = mapper_registry
+    __abstract__ = True
 
 
 BaseType = TypeVar("BaseType", bound="BaseEntity")

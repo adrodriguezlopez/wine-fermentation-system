@@ -2,12 +2,34 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 from sqlalchemy.engine import URL
 
+
 class DatabaseConfig:
+    """
+    Database configuration management implementing IDatabaseConfig interface.
+    
+    Provides async engine creation and configuration for repository infrastructure.
+    """
     def __init__(self):
         self.url = self._build_database_url()
         self.echo = os.getenv("DB_ECHO", "False").lower() == "true"
         self.pool_size = int(os.getenv("DB_POOL_SIZE", "10"))
         self.max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "20"))
+        self._engine = None
+
+    @property
+    def async_engine(self) -> AsyncEngine:
+        """
+        Get the async SQLAlchemy engine.
+        
+        Returns:
+            AsyncEngine: The configured async database engine
+            
+        Raises:
+            DatabaseConfigError: If engine is not properly configured
+        """
+        if self._engine is None:
+            self._engine = self.create_engine()
+        return self._engine
 
     def _is_running_in_docker(self) -> bool:
         """Detect if we're running inside a Docker container."""

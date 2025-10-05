@@ -5,13 +5,21 @@ Core business entities that represent the fundamental data structures
 of the fermentation domain.
 
 Path configuration is handled at module level.
+
+NOTE: This __init__.py intentionally does NOT import entities to avoid
+SQLAlchemy registry conflicts during pytest discovery.
+Import entities directly from their modules instead:
+    from src.modules.fermentation.src.domain.entities.user import User
 """
 
-from src.shared.infra.orm.base_entity import BaseEntity
-from .fermentation import Fermentation
-from .fermentation_note import FermentationNote
-from .fermentation_lot_source import FermentationLotSource
-from .user import User
-from .samples import *
-
-__all__ = ['BaseEntity', 'Fermentation', 'FermentationNote', 'FermentationLotSource', 'User', 'BaseSample', 'SugarSample', 'DensitySample', 'CelsiusTemperatureSample']
+__all__ = [
+    'BaseEntity',
+    'Fermentation', 
+    'FermentationNote', 
+    'FermentationLotSource', 
+    'User', 
+    'BaseSample', 
+    'SugarSample', 
+    'DensitySample', 
+    'CelsiusTemperatureSample'
+]

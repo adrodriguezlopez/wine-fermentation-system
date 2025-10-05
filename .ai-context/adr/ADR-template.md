@@ -4,6 +4,10 @@
 **Date:** YYYY-MM-DD  
 **Authors:** <Nombre/es>
 
+> **📋 Context Files:** Para decisiones arquitectónicas, revisar:
+> - [Architectural Guidelines](../ARCHITECTURAL_GUIDELINES.md) - Principios de diseño
+> <!-- Agregar otros archivos específicos según el ADR -->
+
 ---
 
 ## Context
@@ -29,6 +33,17 @@ Ejemplo:
 
 Responsabilidades de cada componente (bullets).  
 Opcional: diagrama ASCII si ayuda.
+
+---
+
+## Architectural Considerations (opcional - solo si hay desviaciones)
+> **Default:** Este proyecto sigue [Architectural Guidelines](../ARCHITECTURAL_GUIDELINES.md)  
+> **Solo documentar aquí:** Desviaciones, trade-offs, o decisiones específicas de arquitectura
+
+- **Deviations from SOLID:** <justificación si no se sigue algún principio>
+- **Alternative patterns considered:** <por qué se rechazaron otras opciones>
+- **Performance vs Clean Code trade-offs:** <decisiones específicas>
+- **Technology constraints:** <limitaciones que afectan arquitectura>
 
 ---
 

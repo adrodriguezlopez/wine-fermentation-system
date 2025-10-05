@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.shared.infra.orm.base_entity import BaseEntity
 
 if TYPE_CHECKING:
-    from domain.entities.fermentation import Fermentation
+    from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
     # NOTE: HarvestLot will be imported from fruit_origin module when needed
 
 
@@ -33,6 +33,7 @@ class FermentationLotSource(BaseEntity):
         Index('idx_fermentation_lot_source_fermentation', 'fermentation_id'),
         # Optional index for HarvestLot usage history queries
         Index('idx_fermentation_lot_source_harvest_lot', 'harvest_lot_id'),
+        {"extend_existing": True},  # Allow re-registration for testing
     )
 
     # Core foreign keys (minimal required fields per ADR-001)
@@ -53,8 +54,8 @@ class FermentationLotSource(BaseEntity):
     # Optional contextual notes for this lot usage in this fermentation
     notes: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
-    # Relationships
-    fermentation: Mapped["Fermentation"] = relationship("Fermentation", back_populates="lot_sources")
+    # Relationships - using fully qualified paths to avoid ambiguity
+    fermentation: Mapped["Fermentation"] = relationship("src.modules.fermentation.src.domain.entities.fermentation.Fermentation", back_populates="lot_sources")
     # harvest_lot: Mapped["HarvestLot"] = relationship("HarvestLot")  # Cross-module relationship, activate when ready
 
     def __repr__(self) -> str:

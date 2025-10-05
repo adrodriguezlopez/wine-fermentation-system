@@ -1,5 +1,5 @@
 from typing import Any
-from domain.entities.samples.base_sample import BaseSample
+from .base_sample import BaseSample
 
 
 class CelsiusTemperatureSample(BaseSample):

@@ -5,10 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.shared.infra.orm.base_entity import BaseEntity
 
 if TYPE_CHECKING:
-    from domain.entities.user import User
-    from domain.entities.fermentation_note import FermentationNote
-    from domain.entities.fermentation_lot_source import FermentationLotSource
-    from domain.entities.samples.base_sample import BaseSample
+    from src.modules.fermentation.src.domain.entities.user import User
+    from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
+    from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
+    from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
 
 
 class Fermentation(BaseEntity):
@@ -16,7 +16,10 @@ class Fermentation(BaseEntity):
     __table_args__ = (
         # Unique vessel code per winery (ADR-001 constraint)
         UniqueConstraint('winery_id', 'vessel_code', name='uq_fermentations__winery_id__vessel_code'),
-        {"sqlite_autoincrement": True},
+        {
+            "sqlite_autoincrement": True,
+            "extend_existing": True  # Allow re-registration for testing
+        },
     )
 
     # Core foreign keys
@@ -39,13 +42,33 @@ class Fermentation(BaseEntity):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-    # Relationships
-    fermented_by_user: Mapped["User"] = relationship("User", back_populates="fermentations", foreign_keys=[fermented_by_user_id])
-    samples: Mapped[List["BaseSample"]] = relationship("BaseSample", back_populates="fermentation", cascade="all, delete-orphan")
-    notes: Mapped[List["FermentationNote"]] = relationship("FermentationNote", back_populates="fermentation", cascade="all, delete-orphan")
+    # Relationships - using fully qualified paths to avoid ambiguity
+    fermented_by_user: Mapped["User"] = relationship(
+        "src.modules.fermentation.src.domain.entities.user.User", 
+        back_populates="fermentations",
+        lazy="select"
+    )
+    
+    samples: Mapped[List["BaseSample"]] = relationship(
+        "src.modules.fermentation.src.domain.entities.samples.base_sample.BaseSample",
+        cascade="all, delete-orphan",
+        lazy="select"
+    )
+    
+    notes: Mapped[List["FermentationNote"]] = relationship(
+        "src.modules.fermentation.src.domain.entities.fermentation_note.FermentationNote", 
+        back_populates="fermentation", 
+        cascade="all, delete-orphan",
+        lazy="select"
+    )
     
     # Fruit origin traceability - association with HarvestLots via FermentationLotSource
-    lot_sources: Mapped[List["FermentationLotSource"]] = relationship("FermentationLotSource", back_populates="fermentation", cascade="all, delete-orphan")
+    lot_sources: Mapped[List["FermentationLotSource"]] = relationship(
+        "src.modules.fermentation.src.domain.entities.fermentation_lot_source.FermentationLotSource", 
+        back_populates="fermentation", 
+        cascade="all, delete-orphan",
+        lazy="select"
+    )
     
     # TODO: Add when Winery entity is implemented
     # winery: Mapped["Winery"] = relationship("Winery", back_populates="fermentations", foreign_keys=[winery_id])

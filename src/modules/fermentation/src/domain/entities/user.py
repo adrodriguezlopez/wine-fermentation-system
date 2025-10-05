@@ -6,8 +6,8 @@ from typing import List, TYPE_CHECKING
 from src.shared.infra.orm.base_entity import BaseEntity
 
 if TYPE_CHECKING:
-    from domain.entities.fermentation import Fermentation
-    from domain.entities.samples.base_sample import BaseSample
+    from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
+    from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
 
 
 class User(BaseEntity):
@@ -16,9 +16,10 @@ class User(BaseEntity):
     Handles authentication and data ownership for multi-tenant isolation.
     """
     __tablename__ = "users"
+    __table_args__ = {"extend_existing": True}  # Allow re-registration for testing
 
     # User identification and authentication
-    usernmame: Mapped[str] =  mapped_column(String(50), unique=True, nullable=False, index=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
 
     # Password hash for secure authentication
@@ -36,17 +37,22 @@ class User(BaseEntity):
     last_login: Mapped[datetime] = mapped_column(nullable=True)
 
 
-    # Relationships - data ownership for multi tenant isolation
-    fermentations: Mapped[List["Fermentation"]] = relationship("Fermentation", 
-                                                               back_populates="fermented_by_user", 
-                                                               cascade="all, delete-orphan", 
-                                                               foreign_keys='Fermentation.fermented_by_user_id')
-    samples: Mapped[List["BaseSample"]] = relationship("BaseSample", 
-                                                       back_populates="recorded_by_user", 
-                                                       cascade="all, delete-orphan", 
-                                                       foreign_keys='BaseSample.recorded_by_user_id')
+    # Relationships - using fully qualified paths to avoid ambiguity
+    fermentations: Mapped[List["Fermentation"]] = relationship(
+        "src.modules.fermentation.src.domain.entities.fermentation.Fermentation", 
+        back_populates="fermented_by_user", 
+        cascade="all, delete-orphan",
+        lazy="select"
+    )
     
-    winery: Mapped["Winery"] = relationship("Winery", back_populates="users", foreign_keys='User.winery_id')
+    samples: Mapped[List["BaseSample"]] = relationship(
+        "src.modules.fermentation.src.domain.entities.samples.base_sample.BaseSample",
+        cascade="all, delete-orphan",
+        lazy="select"
+    )
+    
+    # Note: Winery relationship commented out - Winery is in a separate module
+    # winery: Mapped["Winery"] = relationship("Winery", back_populates="users", foreign_keys='User.winery_id')
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, username={self.usernmame}, email={self.email}, full_name={self.full_name})>"

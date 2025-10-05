@@ -1,14 +1,14 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, BigInteger, ForeignKey, Numeric, Date, Integer, TIMESTAMP, UniqueConstraint
 from typing import Optional
-from shared.infra.orm.base_entity import BaseEntity
+from src.shared.infra.orm.base_entity import BaseEntity
 
 class HarvestLot(BaseEntity):
     __tablename__ = "harvest_lots"
     __table_args__ = (
         # Unique code per winery (ADR-001 constraint)
         UniqueConstraint('code', 'winery_id', name='uq_harvest_lots__code__winery_id'),
-        {"sqlite_autoincrement": True},
+        {"sqlite_autoincrement": True, "extend_existing": True},
     )
 
     winery_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("wineries.id"), nullable=False, index=True)

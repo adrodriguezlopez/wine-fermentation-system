@@ -4,12 +4,18 @@
 **Date:** 2025-09-25  
 **Authors:** Arquitectura de Fermentación (VintArch)
 
+> **📋 Context Files:** Para revisión completa, leer también:
+> - [Implementation Summary](./ADR-002-repositories-architecture-implementation-summary.md) - Estado actual
+> - [Architectural Guidelines](../ARCHITECTURAL_GUIDELINES.md) - Principios de diseño
+> - [Project Structure Map](../PROJECT_STRUCTURE_MAP.md) - Navegación del proyecto
+
 ---
 
 ## Context
 Ya existen interfaces `IFermentationRepository` y `ISampleRepository`.  
 ADR-001 introdujo `winery_id` (multi-tenant) y blends multi-lot, que requieren consistencia transaccional.  
-Necesitamos decidir: ¿habrá BaseRepository?, ¿cómo organizar transacciones y errores?, ¿cómo mantener boundaries del dominio?
+Necesitamos decidir: ¿habrá BaseRepository?, ¿cómo organizar transacciones y errores?, ¿cómo mantener boundaries del dominio?  
+**Arquitectura base debe seguir principios SOLID y Clean Architecture** para asegurar mantenibilidad y testabilidad.
 
 ---
 
@@ -23,11 +29,14 @@ Necesitamos decidir: ¿habrá BaseRepository?, ¿cómo organizar transacciones y
 7. **Error Mapping** → centralizado en BaseRepository, errores de DB → catálogo repositorio.  
 8. **Soft-delete** → samples con is_deleted; siempre filtrar.  
 9. **Boundaries fruit_origin** → HarvestLot vía repo read-only.  
-10. **Return types** → Both Samples and Fermentations return entities (domain objects).
+10. **Return types** → Both Samples and Fermentations return entities (domain objects).  
+11. **Interface-Based Design** → Dependency Inversion via protocols (IDatabaseConfig, ISessionManager, IBaseRepository).  
+12. **SOLID Compliance** → SRP (single responsibility), OCP (open/closed), LSP (Liskov substitution), ISP (interface segregation), DIP (dependency inversion).
 
 ---
 
 ## Implementation Notes (rápido acceso)
+```
 src/modules/fermentation/
 domain/repositories/
 IFermentationRepository.py
@@ -39,7 +48,19 @@ sample_repository.py
 unit_of_work.py
 infrastructure/readmodels/
 fermentation_queries.py
+```
 
+**SOLID Principles Applied:**
+- **S**RP: BaseRepository (technical helpers), FermentationRepository (domain logic), SampleRepository (time-series)
+- **O**CP: Extensible via interfaces without modifying existing implementations  
+- **L**SP: All repository implementations substitutable via their interfaces
+- **I**SP: Specific interfaces (IFermentationRepository ≠ ISampleRepository ≠ IBaseRepository)
+- **D**IP: Dependencies on abstractions (ISessionManager, IDatabaseConfig) not concretions
+
+**Clean Architecture Layers:**
+- **Domain Layer**: Repository interfaces (IFermentationRepository, ISampleRepository)
+- **Infrastructure Layer**: Concrete implementations + database specifics  
+- **Shared Infrastructure**: Session management, error mapping, database config
 
 - **BaseRepository** → sesión, transacciones, error mapping, soft-delete.  
 - **FermentationRepository** → ciclo de vida, optimistic lock, returns Fermentation entities.  
@@ -52,8 +73,12 @@ fermentation_queries.py
 - ✅ Claridad de límites, reuso técnico sin contaminar dominio.  
 - ✅ Transacciones correctas, testabilidad alta, multi-tenant listo.  
 - ✅ Consistent entity return types across all repositories.  
+- ✅ SOLID compliance ensures maintainability and extensibility.
+- ✅ Clean Architecture enables independent testing and deployment.
+- ✅ Dependency Inversion facilitates mocking and unit testing.
 - ⚠️ Más clases y boilerplate.  
 - ⚠️ Consultas complejas → ReadModels.  
+- ⚠️ Interface overhead in simple scenarios.  
 
 ---
 
@@ -73,6 +98,8 @@ fermentation_queries.py
 - Both repositories return domain entities consistently.  
 - Samples siempre ordenados, soft-delete aplicado.  
 - HarvestLot = repo read-only.  
+- **SOLID + Clean Architecture** → interfaces mandatory, dependency inversion enforced.
+- **TDD approach** → tests first, implementation second.  
 
 ---
 
@@ -110,4 +137,26 @@ except ConcurrentModificationError as e:
 - [ ] Batch operations idempotent under retry
 
 ## Status
-Proposed
+In Progress
+
+---
+
+## Updates & Related ADRs
+
+**ADR-003 (2025-10-04):** Repository Interface Refactoring
+- Fixed circular import issues in entities
+- Synchronized repository interface with actual SQLAlchemy model
+- Improved TYPE_CHECKING usage
+
+**ADR-004 (2025-10-05):** Harvest Module Consolidation & SQLAlchemy Registry Fix
+- **SQLAlchemy Patterns:** Fully-qualified paths in relationships required to avoid registry conflicts
+- **Import Consistency:** All entities must import BaseEntity from `src.shared.infra.orm.base_entity`
+- **Test Fixtures:** Use `flush()` instead of `commit()` to maintain transaction context
+- **Single-Table Inheritance:** Use `viewonly=True` for unidirectional relationships
+- See ARCHITECTURAL_GUIDELINES.md for complete SQLAlchemy best practices
+
+**Cross-References:**
+- `.ai-context/ARCHITECTURAL_GUIDELINES.md` - Section: "🗄️ SQLAlchemy Import Best Practices"
+- `.ai-context/PROJECT_STRUCTURE_MAP.md` - Current module structure with 7 modules
+- `.ai-context/fermentation/module-context.md` - Fermentation bounded context details
+- `.ai-context/fruit_origin/module-context.md` - HarvestLot now in separate module
