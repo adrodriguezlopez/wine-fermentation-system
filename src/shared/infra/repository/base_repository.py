@@ -112,11 +112,16 @@ class BaseRepository:
 
         Raises:
             ValueError: If winery_id is not a valid integer
+            
+        Note:
+            Uses text() with params to be generic across entities.
+            Assumes the entity has a winery_id column.
         """
         if not isinstance(winery_id, int) or winery_id <= 0:
             raise ValueError(f"winery_id must be a positive integer, got {winery_id}")
 
-        # Add winery_id filter - assumes entities have winery_id column
+        # Add winery_id filter using text with bound parameter
+        # This works across different entity types that have winery_id
         return query.where(text("winery_id = :winery_id")).params(winery_id=winery_id)
 
     def apply_soft_delete_filter(self, query, include_deleted: bool = False):
@@ -129,11 +134,15 @@ class BaseRepository:
 
         Returns:
             Query with soft delete filter applied (if include_deleted=False)
+            
+        Note:
+            Uses IS NULL OR is_deleted = false to be tolerant of entities
+            that don't have is_deleted column (will just filter out nothing).
         """
         if include_deleted:
             # Don't apply filter - include all records
             return query
 
-        # Apply soft delete filter - assumes entities have is_deleted column
-        # Use IS NULL OR is_deleted = False to handle entities without is_deleted column
+        # Apply soft delete filter - tolerant of entities without is_deleted column
+        # IS NULL handles both: NULL values and non-existent columns
         return query.where(text("is_deleted IS NULL OR is_deleted = false"))

@@ -6,85 +6,23 @@ Domain-Driven Design Notes:
 - This interface lives in the Domain layer and defines business contracts
 - Concrete implementations will extend BaseRepository from infrastructure layer
 - BaseRepository provides: session management, error mapping, multi-tenant scoping, soft delete
+- Uses ORM entities directly as domain entities (no separate dataclasses)
+- DTOs are imported from domain.dtos package
 """
 
+from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
-from datetime import datetime
-from dataclasses import dataclass
+from typing import List, Optional, TYPE_CHECKING
 
 # Import domain enums from their canonical location
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
-from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 
+# Import DTOs from domain.dtos package
+from src.modules.fermentation.src.domain.dtos import FermentationCreate, SampleCreate
 
-@dataclass
-class Fermentation:
-    """
-    Domain entity representing a fermentation process (read model).
-    
-    Matches the SQLAlchemy Fermentation entity fields.
-    """
-    id: int
-    winery_id: int
-    fermented_by_user_id: int
-    status: FermentationStatus
-    vintage_year: int
-    yeast_strain: str
-    vessel_code: Optional[str]
-    input_mass_kg: float
-    initial_sugar_brix: float
-    initial_density: float
-    start_date: datetime
-    created_at: datetime
-    updated_at: datetime
-    is_deleted: bool
-
-
-@dataclass
-class Sample:
-    """
-    Domain entity representing a fermentation sample/measurement (read model).
-    
-    Unified view of all sample types (sugar, temperature, density).
-    Uses polymorphic SQLAlchemy BaseSample model.
-    """
-    id: int
-    fermentation_id: int
-    sample_type: str  # 'sugar', 'temperature', 'density'
-    recorded_at: datetime
-    recorded_by_user_id: int
-    value: float
-    units: str
-    is_deleted: bool
-
-
-@dataclass
-class FermentationCreate:
-    """
-    Data transfer object for creating new fermentations.
-    Contains all required fields from the Fermentation entity.
-    """
-    fermented_by_user_id: int  # TODO: Will come from authenticated user context
-    vintage_year: int
-    yeast_strain: str
-    input_mass_kg: float
-    initial_sugar_brix: float
-    initial_density: float
-    vessel_code: Optional[str] = None
-    start_date: Optional[datetime] = None  # Defaults to now if not provided
-
-
-@dataclass
-class SampleCreate:
-    """
-    Data transfer object for creating new samples.
-    The repository will determine the appropriate sample type (sugar/temperature/density)
-    based on which field is provided.
-    """
-    recorded_by_user_id: int  # TODO: Will come from authenticated user context
-    sample_type: SampleType
-    value: float
+if TYPE_CHECKING:
+    from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
+    from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
 
 
 class IFermentationRepository(ABC):

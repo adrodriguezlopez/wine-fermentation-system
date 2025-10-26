@@ -182,7 +182,6 @@ async def test_winery(db_session):
     """
     Winery = TEST_MODELS['Winery']
     winery = Winery(
-        id=1,
         name="Test Winery",
         region="Napa Valley"
     )
@@ -244,7 +243,6 @@ async def test_user(db_session, test_winery):
     User = TEST_MODELS['User']
     
     user = User(
-        id=1,
         username="testuser",
         email="test@winery.com",
         full_name="Test User",

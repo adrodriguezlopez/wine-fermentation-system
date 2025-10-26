@@ -45,89 +45,94 @@
 
 ## Implementation status
 
-**Status:** ✅ **Repository Layer Complete** - Service layer integration pending  
-**Last Updated:** 2025-10-04  
-**Reference:** ADR-003 Phase 2 completion
+**Status:** ✅ **Service & Domain Complete** | ⚠️ **Repository Tests Need Fix**  
+**Last Updated:** 2025-10-26  
+**Reference:** ADR-005 (Service Layer), ADR-003 (Repository Layer)
 
 ### Completed Components
 
-**✅ Repository Infrastructure (ADR-002 & ADR-003)**
-- **BaseRepository:** Common repository functionality (session management, error mapping, multi-tenant scoping)
-- **Error Infrastructure:** Complete error hierarchy with PostgreSQL SQLSTATE mapping
-- **Database Infrastructure:** Connection management, session handling, lazy loading
-- **Domain Interfaces:** Type-safe repository contracts (IFermentationRepository, ISampleRepository)
+**✅ Domain Layer**
+- Entities: Fermentation, BaseSample (+ 3 subtypes: Sugar, Density, Temperature), User, FermentationLotSource
+- DTOs: FermentationCreate, SampleCreate
+- Enums: FermentationStatus, SampleType
+- Interfaces: IFermentationRepository, ISampleRepository
 
-**✅ FermentationRepository (ADR-003 Phase 2)**
-- **Methods:** 5 (fermentation lifecycle only - samples removed per ADR-003)
-- **Tests:** 8 passing (100% interface coverage)
-- **Status:** Fully implemented with SQLAlchemy integration
-- **Separation:** Zero sample operations (moved to SampleRepository)
+**✅ Service Layer (115 tests passing)**
+- FermentationService: 7 methods, 33 tests
+- SampleService: 6 methods, 27 tests
+- Validation Services: 5 services, 55 tests
+  - ValidationOrchestrator (4 tests)
+  - ValueValidationService (9 tests)
+  - ChronologyValidationService (14 tests)
+  - BusinessRuleValidationService (9 tests)
+  - ValidationService (19 tests)
 
-**✅ SampleRepository (ADR-003 Phase 2)**
-- **Methods:** 11 (1 implemented: `create()`, 10 stubs)
-- **Tests:** 12 passing (interface validation via TDD pragmatic approach)
-- **Status:** Structure complete, implementation 9% complete
-- **Architecture:** All sample operations centralized (no mixing with fermentation)
+**✅ Domain Tests (5 tests passing)**
+- FermentationLotSource entity tests
 
-### Test Metrics
-- **Total:** 102 tests passing (95 → 102, +7.4% growth)
-- **Repository tests:** 20 (8 fermentation + 12 sample)
-- **Other components:** 82 tests
-- **Integration tests:** 0 (pending Phase 3)
-- **Coverage:** Interface contracts 100% validated
+**✅ Repository Interfaces (14 tests passing)**
+- IFermentationRepository: Interface validation
+- ISampleRepository: Interface validation
 
-### Next Steps (Phase 3)
-1. **Integration tests** for SampleRepository methods
-2. **Implement remaining 10 SampleRepository methods** (TDD cycle)
-3. **Update FermentationService** to inject SampleRepository
-4. **Service layer migration** (sample operations → SampleRepository)
+**⚠️ Repository Layer (2 test files blocked)**
+- FermentationRepository: 5 methods implemented
+- SampleRepository: 11 methods implemented
+- **Known Issue**: SQLAlchemy mapper error with SugarSample prevents test collection
+- **Impact**: Repository integration tests cannot run (test_fermentation_repository.py, test_sample_repository.py)
+
+**Total: 134 unit tests passing** (excluding 2 blocked repository test files)
+
+### Pending Components
+
+**🔄 API Layer** (Next phase)
+- FastAPI endpoints for services
+- Request/response DTOs
+- HTTP error mapping
+- Authentication integration
+
+## Quick Reference
+
+**Need to work on this module?**
+1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`
+2. Review component contexts in `src/*/. ai-context/component-context.md`
+3. Run tests: `poetry run pytest src/modules/fermentation/tests/`
+
+**Architecture:**
+- Domain → Repository → Service → API (future)
+- All dependencies point toward Domain
+- Type-safe (DTOs → Entities)
+- SOLID principles enforced
 
 ## Domain entities
 **Core Entities:**
-- **Fermentation**: Process tracking with status lifecycle (ACTIVE → SLOW → STUCK → COMPLETED)
-- **Sample**: Time-series measurements (temperature, glucose, ethanol, pH)
-- **FermentationStatus**: Enum for status values
-- **FermentationCreate/SampleCreate**: DTOs for creation operations
+- **Fermentation**: Process tracking with status lifecycle
+- **BaseSample**: Time-series measurements (polymorphic)
+- **User**: User authentication and tracking
+- **FermentationLotSource**: Links fermentation to harvest lots
 
-**Type Safety:** All repository operations use strongly-typed entities instead of Dict[str, Any]
+**DTOs:**
+- **FermentationCreate**: Input for creating fermentations
+- **SampleCreate**: Input for creating samples
 
-## DDD Implementation Notes
+**Enums:**
+- **FermentationStatus**: ACTIVE, SLOW, STUCK, COMPLETED
+- **SampleType**: SUGAR, TEMPERATURE, DENSITY, etc.
 
-**Domain Layer (Pure Business Logic):**
-- `IFermentationRepository`: Domain interface with type-safe entities
-- Entities: `Fermentation`, `Sample`, `FermentationStatus` enum
-- DTOs: `FermentationCreate`, `SampleCreate` for input operations
-
-**Infrastructure Layer (Technical Implementation):**
-- `BaseRepository`: Common functionality (session, errors, multi-tenant, soft delete)
-- `FermentationRepository`: Concrete implementation extending BaseRepository
-- SQLAlchemy models mapped to domain entities
+## DDD Implementation
 
 **Dependency Direction:**
 ```
-FermentationRepository (infrastructure)
-    ↑ extends
-BaseRepository (infrastructure)
-    ↑ implements
-IFermentationRepository (domain)
+repository_component ─┐
+service_component     │──► domain (entities, DTOs, interfaces)
 ```
 
-**Multi-tenant Security:** All operations require `winery_id` parameter for data isolation
+**Multi-tenancy:** All operations scoped by `winery_id`
 
 ## How to work on this module
-For specific implementation details, read NIVEL 3 contexts for:
-- **API Component**: For REST interface implementation
-- **Service Component**: For business logic and validation rules
-- **Repository Component**: For database access patterns and entities
-
----
-
-## Domain-Driven Design (DDD) Context
-
-Este módulo sigue los principios de Domain-Driven Design (DDD):
-
-- **El dominio es el núcleo:** Define entidades, enums y contratos (interfaces) independientes de infraestructura.
-- **Interfaces de repositorio:** (ej: `IFermentationRepository`, `ISampleRepository`) viven en `domain` y son compartidas por Service y Repository components.
+Read component-level contexts:
+- `src/domain/.ai-context/component-context.md`
+- `src/repository_component/.ai-context/component-context.md`
+- `src/service_component/.ai-context/component-context.md`
 - **Service Component:** Implementa lógica de negocio y orquestación, dependiendo solo de contratos del dominio.
 - **Repository Component:** Implementa las interfaces de repositorio del dominio, conectando con la infraestructura (ej: SQLAlchemy).
 - **Dirección de dependencias:** Siempre apunta hacia el dominio.

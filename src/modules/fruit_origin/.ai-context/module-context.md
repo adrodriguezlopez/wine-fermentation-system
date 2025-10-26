@@ -73,21 +73,27 @@ FermentationLotSource (fermentation module)
 
 ## Implementation status
 
-**Status:** ✅ **Entities Complete** - Repository layer pending  
-**Last Updated:** 2025-10-05  
+**Status:** ✅ **Domain Entities Complete** | ⏳ **Repository Layer Pending**  
+**Last Updated:** 2025-10-26  
 **Reference:** ADR-004 (Harvest Module Consolidation)
 
 ### Completed
 - ✅ Entity models with SQLAlchemy mappings
-- ✅ Relationships (vineyard ↔ blocks ↔ harvest_lots)
-- ✅ Integration test fixtures (test_vineyard, test_vineyard_block, test_harvest_lot)
-- ✅ Database tables created (9 tables total in system)
+  - Vineyard: 4 fields (winery_id, code, name, notes)
+  - VineyardBlock: 11 fields (block details, technical specs)
+  - HarvestLot: 19 fields (complete harvest traceability)
+- ✅ Relationships: vineyard ↔ blocks ↔ harvest_lots
+- ✅ Component structure: domain/, repository_component/, service_component/, api_component/ (folders exist, awaiting implementation)
+- ✅ Database tables created (verified in system schema)
 
 ### Pending
+- ⏭️ Test infrastructure (tests/ folder empty)
 - ⏭️ Repository interfaces (IVineyardRepository, IHarvestLotRepository)
 - ⏭️ Repository implementations
 - ⏭️ Service layer (vineyard management, harvest recording)
 - ⏭️ API endpoints
+
+**Note:** Test fixtures (test_vineyard, test_harvest_lot) are available in fermentation module's conftest.py for cross-module integration testing.
 
 ## Cross-module dependencies
 

@@ -5,230 +5,116 @@
 **Deciders:** Development Team  
 **Related ADRs:** ADR-001 (Folder Structure), ADR-003 (Repository Refactoring)
 
+> **📋 Context Files:**
+> - [Architectural Guidelines](../ARCHITECTURAL_GUIDELINES.md)
+
 ---
 
 ## Context
 
-Durante la implementación de los tests de integración del módulo `fermentation`, se descubrieron dos problemas arquitectónicos críticos:
+Durante tests de integración se descubrieron dos problemas:
 
-### Problema 1: Duplicación del módulo HarvestLot
-- **Síntoma:** Existían dos módulos separados con la misma entidad `HarvestLot`:
-  - `src/modules/harvest/` (5 campos básicos)
-  - `src/modules/fruit_origin/` (19 campos completos con trazabilidad)
-- **Impacto:** Confusión arquitectónica, duplicación de código, decisiones inconsistentes sobre dónde implementar funcionalidades
-
-### Problema 2: SQLAlchemy Registry Conflicts
-- **Síntoma:** Error "Multiple classes found for path 'X'" en tests de integración
-- **Causa raíz:** Combinación de varios factores:
-  1. Uso de paths cortos en relationships (`"BaseSample"` en lugar de paths completos)
-  2. Single-table inheritance con relationships bidireccionales
-  3. Inconsistencias en imports (algunos con `from .x import`, otros sin)
+1. **Duplicación de HarvestLot**: Existían dos módulos (`harvest/` y `fruit_origin/`) con la misma entidad
+2. **SQLAlchemy Registry Conflicts**: Error "Multiple classes found" por paths ambiguos en relationships
 
 ---
 
 ## Decision
 
-### 1. Consolidación de Módulos (Harvest → fruit_origin)
+### 1. Consolidación de módulos
 
-**Decisión:** Eliminar `src/modules/harvest/` y usar exclusivamente `src/modules/fruit_origin/`
+**Acción:** Eliminar `src/modules/harvest/` y usar exclusivamente `src/modules/fruit_origin/`
 
-**Razones:**
-- **Bounded Context correcto:** `fruit_origin` representa el contexto completo del "origen del fruto":
-  - `Vineyard` (viñedo)
-  - `VineyardBlock` (parcela del viñedo)  
-  - `HarvestLot` (lote cosechado de una parcela)
-- **Trazabilidad completa:** `fruit_origin/HarvestLot` tiene 19 campos vs 5 campos de `harvest/HarvestLot`
-- **Relaciones correctas:** `HarvestLot` → `VineyardBlock` → `Vineyard` → `Winery`
-- **Constraints adecuados:** `UniqueConstraint('code', 'winery_id')` para multi-tenancy
+**Razón:**
+- `fruit_origin` es el bounded context correcto (Vineyard → VineyardBlock → HarvestLot)
+- HarvestLot de fruit_origin tiene trazabilidad completa (19 campos vs 5)
+- Relaciones y constraints adecuados para multi-tenancy
 
-### 2. SQLAlchemy Registry Fix
+### 2. Fix de SQLAlchemy Registry
 
-**Decisión:** Implementar 3 estrategias para evitar conflictos de registro:
+**Estrategias implementadas:**
 
-#### 2.1 Fully-Qualified Paths en Relationships
+**2.1 Fully-qualified paths en relationships:**
 ```python
-# ❌ ANTES (ambiguo)
-samples: Mapped[List["BaseSample"]] = relationship(
-    "BaseSample",
-    back_populates="fermentation"
-)
-
-# ✅ DESPUÉS (explícito)
-samples: Mapped[List["BaseSample"]] = relationship(
-    "src.modules.fermentation.src.domain.entities.samples.base_sample.BaseSample",
-    back_populates="fermentation"
-)
+# ✅ Paths completos
+relationship("src.modules.fermentation.src.domain.entities.samples.base_sample.BaseSample")
 ```
 
-#### 2.2 Unidirectional Relationships para Herencia Polimórfica
+**2.2 Relationships unidireccionales con herencia:**
 ```python
-# En BaseSample (single-table inheritance)
-fermentation: Mapped["Fermentation"] = relationship(
-    "src.modules.fermentation.src.domain.entities.fermentation.Fermentation",
-    viewonly=True  # ← Unidireccional
-)
+# BaseSample (single-table inheritance)
+fermentation: Mapped["Fermentation"] = relationship(..., viewonly=True)
 
-# En Fermentation (sin back_populates)
-samples: Mapped[List["BaseSample"]] = relationship(
-    "src.modules.fermentation.src.domain.entities.samples.base_sample.BaseSample",
-    cascade="all, delete-orphan"
-    # NO back_populates para evitar conflictos con herencia
-)
+# Fermentation (sin back_populates para evitar conflictos)
+samples: Mapped[List["BaseSample"]] = relationship(...)
 ```
 
-#### 2.3 Transacciones en Fixtures (flush vs commit)
+**2.3 Usar flush() en vez de commit() en tests:**
 ```python
-# ❌ ANTES (cierra transacciones)
-await db_session.commit()
-await db_session.refresh(obj)
-
-# ✅ DESPUÉS (mantiene transacción abierta)
-await db_session.flush()  # Asigna IDs sin commit
-# El context manager hace rollback automático
+await db_session.flush()  # Asigna IDs sin cerrar transacción
+# Context manager hace rollback automático
 ```
+
+---
+
+## Implementation Notes
+
+**Módulos consolidados:**
+```
+src/modules/fruit_origin/
+├── domain/
+│   └── entities/
+│       ├── vineyard.py
+│       ├── vineyard_block.py
+│       └── harvest_lot.py          # Único HarvestLot
+└── repository_component/
+    └── harvest_lot_repository.py
+
+❌ ELIMINADO: src/modules/harvest/
+```
+
+**Cambios en SQLAlchemy:**
+- Todos los relationships usan fully-qualified paths
+- Single-table inheritance usa relationships unidireccionales
+- Tests usan flush() para mantener transacciones abiertas
 
 ---
 
 ## Consequences
 
-### Positivas ✅
+### ✅ Benefits
+- Arquitectura limpia: Un bounded context para origen del fruto
+- No más duplicación de HarvestLot
+- Registry conflicts resueltos
+- Tests de integración funcionando
 
-1. **Arquitectura limpia:**
-   - Un solo bounded context para origen del fruto
-   - Eliminada duplicación de código
-   - Relaciones entre entidades claras y correctas
+### ⚠️ Trade-offs
+- Paths más largos en relationship declarations
+- Algunos relationships son unidireccionales (design constraint)
 
-2. **Tests estables:**
-   - 102/102 unit tests passing
-   - 1/1 integration test passing
-   - No más "Multiple classes found" errors
-
-3. **Trazabilidad completa:**
-   - HarvestLot con 19 campos (vs 5 anteriores)
-   - Datos de calidad: `brix_at_harvest`, `brix_method`
-   - Detalles de cosecha: `pick_method`, `pick_start_time`, `bins_count`
-   - Datos técnicos: `clone`, `rootstock`, `field_temp_c`
-
-4. **Base de datos actualizada:**
-   ```sql
-   wineries
-   vineyards              ← NUEVO
-   vineyard_blocks        ← NUEVO
-   harvest_lots           ← ACTUALIZADO (19 campos)
-   fermentations
-   fermentation_lot_sources
-   samples
-   users
-   fermentation_notes
-   ```
-
-### Negativas ⚠️
-
-1. **Relationships verbosos:** Los fully-qualified paths son largos
-   - **Mitigación:** Beneficio de claridad supera la verbosidad
-   - **Alternativa considerada:** Aliases (descartada por opacar origen)
-
-2. **Relationships unidireccionales:** No se puede navegar `sample.fermentation` en algunos casos
-   - **Mitigación:** Usar queries explícitas cuando se necesite navegación inversa
-   - **Impacto:** Bajo - la mayoría de navegaciones van de Fermentation → Samples
+### ❌ Limitations
+- Breaking changes para código que usaba `src/modules/harvest/`
+- Requiere actualizar imports en todo el proyecto
 
 ---
 
-## Implementation Details
+## Quick Reference
 
-### Archivos Modificados (8):
+**Bounded Context:**
+- `fruit_origin`: Vineyard → VineyardBlock → HarvestLot ✅
+- ~~`harvest`~~: Eliminado ❌
 
-1. **Imports actualizados:**
-   - `tests/integration/conftest.py`
-   - `recreate_test_tables.py`
-   - `debug_sqlalchemy_registry.py`
-   - `debug_registry_simple.py`
-   - `debug_conftest_simulation.py`
+**SQLAlchemy Best Practices:**
+- Fully-qualified paths en relationships
+- Unidirectional relationships con herencia polimórfica
+- flush() en tests, no commit()
 
-2. **Entities corregidas (fruit_origin):**
-   - `harvest_lot.py` - Fixed import + `extend_existing`
-   - `vineyard.py` - Fixed import + `extend_existing`
-   - `vineyard_block.py` - Fixed import + `extend_existing`
-
-3. **Entities corregidas (fermentation):**
-   - `user.py` - Fully-qualified paths + typo fix (`usernmame` → `username`)
-   - `fermentation.py` - Fully-qualified paths
-   - `base_sample.py` - Fully-qualified paths + viewonly
-   - `fermentation_note.py` - Fully-qualified paths + Mapped types
-
-4. **Repository actualizado:**
-   - `sample_repository.py` - Added `recorded_by_user_id` en creación de samples
-
-### Nuevos Fixtures (3):
-
-```python
-@pytest_asyncio.fixture
-async def test_vineyard(db_session, test_winery): ...
-
-@pytest_asyncio.fixture
-async def test_vineyard_block(db_session, test_vineyard): ...
-
-@pytest_asyncio.fixture
-async def test_harvest_lot(db_session, test_winery, test_vineyard_block): ...
-```
-
-### Módulo Eliminado:
-
-```
-❌ src/modules/harvest/  (DELETED)
-```
+**Multi-tenancy:**
+- `UniqueConstraint('code', 'winery_id')` en HarvestLot
+- Winery scoping en todas las queries
 
 ---
 
-## Lessons Learned
+## Status
 
-### SQLAlchemy Best Practices
-
-1. **Fully-Qualified Paths:** Siempre usar rutas completas en `relationship()` para evitar ambigüedad
-2. **Single-Table Inheritance:** Con polimorfismo, considerar relationships unidireccionales
-3. **Transaction Management:** En tests, usar `flush()` en lugar de `commit()` para mantener contexto transaccional
-4. **`extend_existing=True`:** Necesario en `__table_args__` para permitir re-registro en tests
-
-### Architectural Patterns
-
-1. **Bounded Contexts:** Agrupar entidades relacionadas en un solo módulo conceptual
-2. **Dependency Direction:** Cross-module dependencies deben ir de específico → general (fermentation → fruit_origin, NO al revés)
-3. **Unique Constraints:** Multi-tenancy requiere constraints compuestos: `(code, winery_id)`
-
----
-
-## Related Changes
-
-- **ADR-001:** Updated folder structure (eliminated harvest/, consolidated fruit_origin/)
-- **ADR-003:** Builds on import best practices from circular import resolution
-- **ARCHITECTURAL_GUIDELINES.md:** Added section on SQLAlchemy imports
-- **PROJECT_STRUCTURE_MAP.md:** Updated module structure
-
----
-
-## Verification
-
-### Tests Passing:
-```bash
-✅ poetry run pytest tests/unit/ -v      # 102/102 passing
-✅ poetry run pytest tests/integration/ -v  # 1/1 passing
-```
-
-### Database Tables:
-```bash
-✅ poetry run python recreate_test_tables.py
-Created tables: ['users', 'fermentations', 'fermentation_notes', 
-                'fermentation_lot_sources', 'samples', 'wineries', 
-                'vineyards', 'vineyard_blocks', 'harvest_lots']
-```
-
-### No Broken References:
-```bash
-✅ grep -r "from.*modules\.harvest" src/  # No matches
-```
-
----
-
-**Decision Date:** 2025-10-05  
-**Implementation Date:** 2025-10-05  
-**Status:** ✅ Implemented and Verified
+✅ **Accepted** - Implementado, tests de integración passing

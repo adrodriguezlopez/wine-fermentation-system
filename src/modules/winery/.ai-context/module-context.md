@@ -54,19 +54,25 @@ Winery (root)
 
 ## Implementation status
 
-**Status:** ✅ **Entity Complete** - Repository layer pending  
-**Last Updated:** 2025-10-05
+**Status:** ✅ **Domain Entity Complete** | ⏳ **Repository Layer Pending**  
+**Last Updated:** 2025-10-26
 
 ### Completed
 - ✅ Entity model with SQLAlchemy mapping
-- ✅ Integration test fixture (test_winery)
-- ✅ Database table created
+  - Winery: 4 fields (code, name, location, notes)
+  - Unique constraints: code (globally unique)
+  - Indexed: code
+- ✅ Database table created (wineries)
+- ✅ Component structure: domain/ (only folder present, as expected for root module)
 
 ### Pending
+- ⏭️ Test infrastructure (no tests/ folder yet)
 - ⏭️ Repository interface (IWineryRepository)
 - ⏭️ Repository implementation
 - ⏭️ Service layer (winery CRUD operations)
 - ⏭️ API endpoints
+
+**Note:** Test fixture (test_winery) is available in fermentation module's conftest.py for cross-module integration testing.
 
 ## Cross-module dependencies
 

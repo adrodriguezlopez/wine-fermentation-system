@@ -41,6 +41,9 @@ class Fermentation(BaseEntity):
     # Fermentation management
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    
+    # Soft delete support
+    is_deleted: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false")
 
     # Relationships - using fully qualified paths to avoid ambiguity
     fermented_by_user: Mapped["User"] = relationship(

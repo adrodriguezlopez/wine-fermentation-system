@@ -1,77 +1,106 @@
-
 # Component Context: Service Component (Fermentation Management Module)
 
-> **Parent Context**: See `../module-context.md` for module-level decisions
+> **Parent Context**: See `../../.ai-context/module-context.md` for module-level decisions
 > **Collaboration Guidelines**: See `/.ai-context/collaboration-principles.md`
 
 ## Component responsibility
-Business logic and validation for fermentation workflows. Orchestrates business rules, coordinates between API and Repository components, and enforces data validation and fermentation lifecycle management.
+**Business logic orchestration and validation** for fermentation and sample management operations within the Fermentation Management Module.
+
+**Position in module**: Application layer coordinating between domain models and repository persistence, enforcing business rules and validation before data operations.
+
+**Architectural Decision:** Following ADR-005, this component implements strict separation between domain services (FermentationService, SampleService) and validation services (5 specialized validators) with dependency injection for repository abstractions.
+
 
 ## Architecture pattern
-Service Layer Pattern with dependency injection and clear separation of concerns.
+**Service Layer Pattern** with dependency injection and validation orchestration.
 
+**Design approach**: Orchestrate business operations using domain entities and repository abstractions, with specialized validation services for different concerns (value validation, chronology, business rules).
 
-## Arquitectura específica del componente
-- **Services**: ValidationOrchestrator, ValidationService, ValueValidationService, BusinessRuleValidationService, ChronologyValidationService (en el futuro: FermentationService, SampleService, etc.)
-- **Interfaces**: IFermentationService, ISampleService, IValidationService, IValidationOrchestrator, IValueValidationService, IBusinessRuleValidationService, IChronologyValidationService, IAnalysisEngineClient
-- **Data flow**: Request → Validation → DomainService → (Repository via domain interfaces) → Response
-- **Extension points**: Nuevas reglas de validación, servicios de dominio adicionales, lógica de negocio personalizada
-- **Integration strategy**: Coordinación async con otros módulos vía interfaces de servicio
+- **Service Interfaces**: IFermentationService (7 methods), ISampleService (6 methods), 5 validation service interfaces
+- **Concrete Services**: FermentationService, SampleService (implement domain business logic)
+- **Validation Layer**: ValidationOrchestrator, ValueValidationService, ChronologyValidationService, BusinessRuleValidationService, ValidationService
+- **Error Hierarchy**: ServiceError → ValidationError, NotFoundError, DuplicateError, BusinessRuleViolation
+- **Data flow**: API Layer → Service Interface → Service Implementation → Repository → Database
+- **Extension points**: Additional validation services, business rule engines, event handlers
+- **Integration strategy**: Dependency injection provides repository implementations from Repository Component
 
 ## Component interfaces
 
-### **Receives from (API Component)**
-- CreateFermentationRequest: New fermentation data
-- AddSampleRequest: New measurement data
-- GetFermentationRequest: Status/history retrieval
+### **Receives from (API Layer - Future)**
+- Command DTOs: Create/update requests with validated input data
+- Query parameters: Filtering, pagination, sorting for list operations
+- User context: winery_id, user_id for multi-tenancy and authorization
 
-### **Provides to (API Component)**
-- FermentationResult: Processed fermentation data
-- SampleAdditionResult: Confirmation and validation results
-- ValidationError: Error details when business rules fail
-
+### **Provides to (API Layer - Future)**
+- Domain entities: Fermentation and Sample objects with complete data
+- Operation results: Success/failure status with validation errors
+- Business rule violations: Detailed error information for user feedback
 
 ### **Uses (Repository Component)**
-- Acceso a persistencia a través de interfaces ubicadas en `domain` (ej: IFermentationRepository, ISampleRepository), compartidas entre componentes para desacoplar la lógica de negocio de la infraestructura.
-- Coordinación de transacciones multi-entidad mediante estas interfaces.
+- IFermentationRepository: Fermentation persistence operations (5 methods)
+- ISampleRepository: Sample persistence operations (11 methods)
+- Transaction coordination: Multi-repository operations for consistency
 
 ## Key patterns implemented
-- Domain Service Pattern: Business logic in domain-specific services
-- Dependency Injection: Services receive repository interfaces
-- Transaction Coordination: Ensures data consistency
-- Event Coordination: Triggers analysis workflows after data updates
-
-
-## Interfaces resumen (nombre: uso - métodos/campos clave)
-- IValidationOrchestrator: Orquesta validaciones - validate_sample_complete(fermentation_id, sample), validate_sample_batch(fermentation_id, samples)
-- IValidationService: Validación de muestras y reglas - validate_samples, validate_chronology, validate_sample_value, validate_sugar_trend
-- IValueValidationService: Validación de valores - validate_sample_value(sample_type, value), validate_numeric_value
-- IBusinessRuleValidationService: Reglas de negocio - validate_sugar_trend, validate_temperature_range
-- IChronologyValidationService: Cronología de muestras - validate_sample_chronology(fermentation_id, new_sample)
-- IFermentationService: Gestión de fermentaciones - create_fermentation, get_fermentation, add_sample
-- ISampleService: Gestión de muestras - validate_sample, get_sample, get_samples_in_range, get_latest_sample
-- IAnalysisEngineClient: Motor de análisis externo - analyze_sample, get_trend_analysis, predict_completion, detect_anomalies, get_recommendations
-
-> **Nota:** Las interfaces de repositorio (ej: IFermentationRepository, ISampleRepository) residen en la carpeta `domain` para permitir acceso desacoplado y compartido entre Service y Repository Component, facilitando mantenibilidad y escalabilidad.
+- **Service Layer Pattern**: Business logic orchestration separate from persistence
+- **Dependency Injection**: Repository abstractions injected via constructors
+- **Validation Chain**: Orchestrated validation with multiple specialized validators
+- **Result Pattern**: ValidationResult objects with success/failure/warnings
+- **Command-Query Separation**: Clear separation between read and write operations
 
 ## Business rules enforced
-- Sample chronology: Enforce time-ordered sample addition
-- Data trends: Validate glucose/ethanol progression
-- User isolation: Ensure operations respect user boundaries
-- Status transitions: Manage ACTIVE → SLOW → STUCK → COMPLETED
-- Measurement validation: Enforce realistic ranges and detect anomalies
+- **Multi-tenancy isolation**: All operations scoped to winery_id
+- **Fermentation lifecycle**: Status transitions with validation (draft→active→completed)
+- **Sample validation**: Value ranges, chronological ordering, business rules
+- **Soft deletes**: Logical deletion maintaining audit trail
+- **Completion rules**: Duration minimums, residual sugar checks for fermentation completion
 
 ## Connection with other components
-API Component: Receives business requests, returns processed results
-Repository Component: Uses interfaces for persistence, manages transactions
-Analysis Engine Module: Calls external analysis after sample addition
+**Repository Component**: Receives IFermentationRepository, ISampleRepository via dependency injection  
+**Domain Component**: Uses domain entities (Fermentation, BaseSample) and enums (FermentationStatus)
 
 ## Implementation status
-- **Implemented**: Core service classes and interfaces present
-- **Next steps**: Extender lógica de negocio y validaciones según necesidades
+
+**Status:** ✅ **COMPLETE** - 115 tests passing (100% coverage)  
+**Reference:** ADR-005-service-layer-interfaces.md
+
+### Implemented Components
+
+**FermentationService** ✅ COMPLETE
+- **Methods:** 7 (create, get_by_id, get_by_winery, update_status, complete, soft_delete, validate)
+- **Tests:** 33 passing (lifecycle, validation, error handling)
+- **Status:** Fully implemented with repository integration
+- **Compliance:** ADR-005 compliant (zero direct repository access)
+
+**SampleService** ✅ COMPLETE
+- **Methods:** 6 (add_sample, get_sample, get_by_fermentation, get_latest_sample, get_in_timerange, validate_sample_data)
+- **Tests:** 27 passing (CRUD operations, queries, validation)
+- **Status:** Fully implemented with validation orchestration
+- **Compliance:** ADR-005 compliant (uses validation services)
+
+**Validation Services** ✅ COMPLETE (55 tests total)
+- **ValidationOrchestrator:** 4 tests (complete validation workflow)
+- **ValueValidationService:** 9 tests (range validation, type checking)
+- **ChronologyValidationService:** 14 tests (timeline validation, ordering)
+- **BusinessRuleValidationService:** 9 tests (sugar trends, temperature ranges)
+- **ValidationService:** 19 tests (result patterns, error aggregation)
+
+### Test Coverage
+- **Total:** 115 tests passing (100% coverage of service layer)
+- **FermentationService:** 33 tests (lifecycle operations)
+- **SampleService:** 27 tests (sample management)
+- **Validation Services:** 55 tests (all validation logic)
+- **Integration:** Mocked repositories, no database dependency
+
+### Next Steps (API Layer - Future Phase)
+1. **FastAPI endpoints** for fermentation and sample management
+2. **DTO models** for API request/response serialization
+3. **Authentication/Authorization** integration with winery context
+4. **API documentation** with OpenAPI/Swagger specifications
 
 ## Key implementation considerations
-- Async operations: All service methods are async
-- Error handling: Business rule violations return detailed messages
-- Testing: Service classes are unit testable with mocked repositories
-- Performance: Batch operations supported for multiple samples
+- **Async operations**: All service methods async for FastAPI compatibility
+- **Error handling**: Specific exception types for different failure scenarios
+- **Validation orchestration**: Composable validation services for extensibility
+- **Multi-tenancy**: All operations filtered by winery_id for data isolation
+- **Type safety**: Strict typing with domain entities and DTOs
