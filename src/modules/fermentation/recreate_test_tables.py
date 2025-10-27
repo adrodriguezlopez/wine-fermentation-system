@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from src.shared.infra.orm.base_entity import Base
 
 # Import all entities to ensure they're registered with Base.metadata
-from src.modules.fermentation.src.domain.entities.user import User
+from src.shared.auth.domain.entities.user import User
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
 from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource

@@ -1,0 +1,1 @@
+"""Shared auth domain layer."""

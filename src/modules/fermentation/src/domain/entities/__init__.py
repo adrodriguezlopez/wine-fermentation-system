@@ -9,7 +9,7 @@ Path configuration is handled at module level.
 NOTE: This __init__.py intentionally does NOT import entities to avoid
 SQLAlchemy registry conflicts during pytest discovery.
 Import entities directly from their modules instead:
-    from src.modules.fermentation.src.domain.entities.user import User
+    from src.shared.auth.domain.entities.user import User
 """
 
 __all__ = [

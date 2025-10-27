@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.shared.infra.orm.base_entity import BaseEntity
 
 if TYPE_CHECKING:
-    from src.modules.fermentation.src.domain.entities.user import User
+    from src.shared.auth.domain.entities.user import User
     from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
     from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
     from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample

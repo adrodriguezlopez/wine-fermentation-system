@@ -7,7 +7,7 @@ from src.shared.infra.orm.base_entity import BaseEntity
 
 if TYPE_CHECKING:
     from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
-    from src.modules.fermentation.src.domain.entities.user import User
+    from src.shared.auth.domain.entities.user import User
 
 
 class BaseSample(BaseEntity):

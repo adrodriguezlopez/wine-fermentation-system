@@ -91,7 +91,7 @@ async def db_engine():
     from src.modules.fruit_origin.src.domain.entities.vineyard import Vineyard
     from src.modules.fruit_origin.src.domain.entities.vineyard_block import VineyardBlock
     from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot
-    from src.modules.fermentation.src.domain.entities.user import User
+    from src.shared.auth.domain.entities.user import User
     from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
     from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
     from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
