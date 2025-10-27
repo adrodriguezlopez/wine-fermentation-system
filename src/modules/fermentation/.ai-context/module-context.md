@@ -45,7 +45,7 @@
 
 ## Implementation status
 
-**Status:** ✅ **COMPLETE - All Layers Implemented & Tested**  
+**Status:** ✅ **Domain, Repository & Service Complete** | ⏳ **API Layer Pending**  
 **Last Updated:** 2025-10-26  
 **Reference:** ADR-005 (Service Layer), ADR-003 (Repository Layer), ADR-002 (Repository Architecture)
 
@@ -80,15 +80,21 @@
 - Error handling: 19 tests passing (error class hierarchy)
 - **Previous Issue RESOLVED**: SQLAlchemy mapper error fixed by removing duplicate imports
 
-**Total: 173 unit tests passing (100% success rate)**
+**Total: 173 unit tests passing (100% success rate for implemented layers)**
 
 ### Pending Components
 
-**🔄 API Layer** (Next phase)
-- FastAPI endpoints for services
-- Request/response DTOs
-- HTTP error mapping
-- Authentication integration
+**⏳ API Layer** (Not yet implemented)
+- **FastAPI Routers**: Fermentation and Sample endpoints
+- **Request DTOs**: Pydantic models for API input validation
+- **Response DTOs**: Pydantic models for API output serialization
+- **HTTP Error Mapping**: Convert service exceptions to HTTP status codes
+- **Authentication/Authorization**: JWT integration, winery context injection
+- **API Documentation**: OpenAPI/Swagger specs
+- **Integration**: Wire services with dependency injection
+- **API Tests**: Endpoint testing with TestClient
+
+**Completion Estimate**: ~30-40 endpoints, ~40-50 API tests needed
 
 ## Quick Reference
 

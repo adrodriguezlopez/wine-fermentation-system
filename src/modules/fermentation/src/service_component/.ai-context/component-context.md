@@ -61,8 +61,10 @@
 
 ## Implementation status
 
-**Status:** ✅ **COMPLETE** - 115 tests passing (100% coverage)  
+**Status:** ✅ **Service Layer Complete** (Ready for API integration)  
 **Reference:** ADR-005-service-layer-interfaces.md
+
+**Note:** All business logic and validation implemented. Waiting for API layer to expose via HTTP endpoints.
 
 ### Implemented Components
 
