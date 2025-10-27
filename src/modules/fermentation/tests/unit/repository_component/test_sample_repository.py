@@ -22,11 +22,13 @@ from decimal import Decimal
 
 # Import domain entities
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
-from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 
 # Import repository implementation (will fail initially - TDD RED phase)
 from src.modules.fermentation.src.repository_component.repositories.sample_repository import SampleRepository
+
+# NOTE: SugarSample and other specific sample types are NOT imported here
+# to avoid SQLAlchemy mapper conflicts. Unit tests mock all database interactions.
 
 
 class TestSampleRepository:

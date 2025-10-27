@@ -21,15 +21,13 @@ from decimal import Decimal
 # Import domain definitions
 from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
-from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
-from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
-from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 
 from src.shared.infra.repository.base_repository import BaseRepository
 
-# NOTE: SQLAlchemy entities are imported INSIDE methods to avoid
-# table registration conflicts when running unit tests
+# NOTE: Sample entity classes (SugarSample, DensitySample, CelsiusTemperatureSample)
+# are imported INSIDE methods to avoid SQLAlchemy table registration conflicts
+# when running unit tests. This is CRITICAL to prevent mapper errors.
 
 
 class SampleRepository(BaseRepository, ISampleRepository):
@@ -121,6 +119,11 @@ class SampleRepository(BaseRepository, ISampleRepository):
         
         Helper method to convert database entity to domain entity.
         """
+        # Import sample entity classes inside method to avoid mapper conflicts
+        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+        
         sample_type = SampleType(sql_sample.sample_type)
         
         if sample_type == SampleType.SUGAR:
