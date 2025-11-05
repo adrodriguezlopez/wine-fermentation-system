@@ -57,8 +57,8 @@
 
 ## Implementation status
 
-**Status:** ✅ **Repository Layer Complete** (Domain → Repository → Service chain verified)  
-**Last Updated:** 2025-10-26  
+**Status:** ✅ **Repository Layer Complete with Integration Tests**  
+**Last Updated:** 2025-11-04  
 **Reference:** ADR-003 (Repository Separation), ADR-002 (Repository Architecture)
 
 **Note:** This component is production-ready for service layer usage. API layer integration is pending at module level.
@@ -67,8 +67,9 @@
 
 **FermentationRepository** ✅ COMPLETE
 - **Methods:** 5 (create, get_by_id, update_status, get_by_status, get_by_winery)
-- **Tests:** 8 passing (100% coverage of interface)
-- **Status:** Fully implemented with SQLAlchemy integration
+- **Unit Tests:** 8 passing (100% coverage of interface)
+- **Integration Tests:** 8 passing (real PostgreSQL operations)
+- **Status:** Fully implemented with SQLAlchemy integration, multi-tenancy verified
 - **Compliance:** ADR-003 compliant (zero sample operations)
 
 **SampleRepository** ✅ COMPLETE
@@ -84,7 +85,8 @@
   - ✅ `check_duplicate_timestamp()` - Duplicate detection
   - ✅ `soft_delete_sample()` - Logical deletion
   - ✅ `bulk_upsert_samples()` - Batch operations
-- **Tests:** 12 passing (interface validation)
+- **Unit Tests:** 12 passing (interface validation)
+- **Integration Tests:** 1 passing (real database persistence)
 - **Status:** Fully implemented with polymorphic support and helper method `_map_to_domain()`
 - **Compliance:** ADR-003 compliant (all sample operations centralized)
 
@@ -94,10 +96,14 @@
 - **Status:** Complete error mapping infrastructure
 
 ### Test Coverage
-- **Total:** 39 tests passing (100% repository layer coverage)
-- **FermentationRepository:** 8 tests (lifecycle operations)
-- **SampleRepository:** 12 tests (all methods validated)
-- **Error Classes:** 19 tests (error hierarchy and handling)
+- **Unit Tests:** 39 passing (repository layer coverage)
+  - FermentationRepository: 8 tests (lifecycle operations)
+  - SampleRepository: 12 tests (all methods validated)
+  - Error Classes: 19 tests (error hierarchy and handling)
+- **Integration Tests:** 9 passing (real PostgreSQL operations)
+  - FermentationRepository: 8 tests (CRUD, multi-tenancy, queries)
+  - SampleRepository: 1 test (polymorphic sample persistence)
+- **Total:** 48 tests (39 unit + 9 integration)
 
 ### Critical Fix Applied (2025-10-26)
 **SQLAlchemy Mapper Error Resolution:**

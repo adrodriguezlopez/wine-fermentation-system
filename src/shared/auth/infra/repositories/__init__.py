@@ -1,0 +1,7 @@
+"""
+Infrastructure layer - Repository implementations.
+"""
+
+from .user_repository import UserRepository
+
+__all__ = ["UserRepository"]

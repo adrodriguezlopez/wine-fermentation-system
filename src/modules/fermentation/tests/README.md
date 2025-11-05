@@ -75,3 +75,38 @@ tests/
 ✅ All tests moved to functional organization
 ✅ Import paths updated for new structure
 ✅ Shared fixtures available in `tests/unit/conftest.py`
+
+## ⚠️ Important: Running All Tests
+
+**Current Status**: The module has **182 tests total** (173 unit + 9 integration).
+
+### ✅ Recommended: Run Separately
+
+Due to SQLAlchemy mapper registry conflicts, unit and integration tests **must** be run in separate pytest sessions:
+
+```powershell
+# Run unit tests (173 tests)
+poetry run pytest tests/unit/
+
+# Run integration tests (9 tests)
+poetry run pytest tests/integration/
+
+# Run both sequentially (recommended)
+poetry run pytest tests/unit/ --tb=no -q; poetry run pytest tests/integration/ --tb=no -q
+```
+
+### ❌ Will Fail: Running Together
+
+```powershell
+# This will fail with SQLAlchemy mapper errors
+poetry run pytest tests/
+```
+
+**Why**: When pytest collects both suites, the global SQLAlchemy `mapper_registry` gets configured twice. The `extend_existing=True` allows table re-registration, but causes mapper conflicts with inherited entities (`SugarSample`, `DensitySample`, etc inherit from `BaseSample`).
+
+**Error**: `"Mapper[SugarSample(samples)] could not assemble any primary key columns for mapped table 'samples'"`
+
+### Solution
+
+Keep test execution separate. Integration tests are isolated in `tests/integration/` and work perfectly when run alone or after unit tests in a separate process.
+

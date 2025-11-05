@@ -45,7 +45,7 @@ class BaseSample(BaseEntity):
         viewonly=True
     )
     recorded_by_user: Mapped["User"] = relationship(
-        "src.modules.fermentation.src.domain.entities.user.User",
+        "src.shared.auth.domain.entities.user.User",
         viewonly=True
     )
 

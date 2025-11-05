@@ -37,6 +37,9 @@ from sqlalchemy import select
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
 from src.modules.fermentation.src.domain.dtos import FermentationCreate
 
+# Mark all tests in this module as integration tests
+pytestmark = pytest.mark.integration
+
 
 class TestFermentationRepositoryCRUD:
     """Integration tests for basic create and get operations."""

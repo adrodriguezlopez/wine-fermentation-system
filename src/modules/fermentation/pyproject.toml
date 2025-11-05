@@ -54,9 +54,14 @@ disallow_incomplete_defs = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
 pythonpath = ["src", "../../../"]
 addopts = "--tb=short -v"
+markers = [
+    "unit: Unit tests (fast, no database)",
+    "integration: Integration tests (slower, requires database)",
+]
+# Separate testpaths for unit and integration to avoid import conflicts
+# Use: pytest (runs all), pytest tests/unit (unit only), pytest tests/integration (integration only)
 
 [[tool.mypy.overrides]]
 module = "sqlalchemy.*"

@@ -45,8 +45,8 @@
 
 ## Implementation status
 
-**Status:** ✅ **Domain, Repository & Service Complete** | ⏳ **API Layer Pending**  
-**Last Updated:** 2025-10-26  
+**Status:** ✅ **Domain, Repository & Service Complete + Integration Tests** | ⏳ **API Layer Pending**  
+**Last Updated:** 2025-11-04  
 **Reference:** ADR-005 (Service Layer), ADR-003 (Repository Layer), ADR-002 (Repository Architecture)
 
 ### Completed Components
@@ -78,9 +78,33 @@
 - FermentationRepository: 8 tests passing (5 methods implemented)
 - SampleRepository: 12 tests passing (11 methods implemented)
 - Error handling: 19 tests passing (error class hierarchy)
-- **Previous Issue RESOLVED**: SQLAlchemy mapper error fixed by removing duplicate imports
 
-**Total: 173 unit tests passing (100% success rate for implemented layers)**
+**✅ Integration Tests (9 tests passing)**
+- FermentationRepository integration: 8 tests with real PostgreSQL
+- SampleRepository integration: 1 test with real PostgreSQL
+- Multi-tenancy isolation verified
+- Database transactions and rollbacks tested
+
+**Total: 182 tests passing (173 unit + 9 integration)**
+
+### Test Execution Notes
+
+⚠️ **Important**: Due to SQLAlchemy mapper registry conflicts, unit and integration tests must be run separately:
+
+```powershell
+# Run unit tests (173 tests)
+poetry run pytest tests/unit/
+
+# Run integration tests (9 tests) 
+poetry run pytest tests/integration/
+
+# Run both sequentially
+poetry run pytest tests/unit/ --tb=no -q; poetry run pytest tests/integration/ --tb=no -q
+```
+
+**Why separate?** The global SQLAlchemy mapper registry gets configured during pytest collection. When both test suites are collected together, entity re-imports cause mapper conflicts with polymorphic inheritance (`SugarSample` inheriting from `BaseSample`). Running separately avoids this issue.
+
+**See**: `tests/README.md` for detailed explanation.
 
 ### Pending Components
 
@@ -100,14 +124,18 @@
 
 **Need to work on this module?**
 1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`
-2. Review component contexts in `src/*/. ai-context/component-context.md`
-3. Run tests: `poetry run pytest src/modules/fermentation/tests/`
+2. Review component contexts in `src/*/.ai-context/component-context.md`
+3. Run tests: 
+   - Unit: `poetry run pytest tests/unit/` (173 tests)
+   - Integration: `poetry run pytest tests/integration/` (9 tests)
+   - **Note**: Must run separately due to SQLAlchemy mapper conflicts (see tests/README.md)
 
 **Architecture:**
 - Domain → Repository → Service → API (future)
 - All dependencies point toward Domain
 - Type-safe (DTOs → Entities)
 - SOLID principles enforced
+- Integration tests verify real PostgreSQL operations
 
 ## Domain entities
 **Core Entities:**

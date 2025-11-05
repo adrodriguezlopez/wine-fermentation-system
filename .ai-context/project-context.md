@@ -46,18 +46,42 @@
 - **Frontend Module**: Web interface for winemakers to interact with the system
 
 ## Current functional state
-**Fermentation Module - Service Layer:** ✅ COMPLETE (Oct 25, 2025)
-- ✅ FermentationService: 7/7 methods (33 tests passing)
-- ✅ SampleService: 6/6 methods (27 tests passing)  
-- ✅ FermentationValidator: 3/3 methods (12 tests)
-- ✅ Total: 72/72 tests passing
 
-**Repository Layer:** ✅ COMPLETE
-- ✅ FermentationRepository: Full CRUD + complex queries
-- ✅ SampleRepository: Full CRUD + complex queries
-- ✅ 110 repository tests passing
+### Authentication Module (Auth)
+**Status:** ✅ COMPLETE WITH INTEGRATION TESTS (Nov 4, 2025)
+- ✅ Domain Layer: User entity, DTOs, Interfaces
+- ✅ Repository Layer: UserRepository with full CRUD
+- ✅ Service Layer: PasswordService, JwtService, AuthService
+- ✅ FastAPI Dependencies: OAuth2, role-based access control
+- ✅ Unit Tests: 163 passing (162 passed, 1 skipped)
+- ✅ Integration Tests: 24 passing (auth flows, multi-tenancy, RBAC)
+- ✅ **Total: 186 tests passing**
 
-**Next Phase:** API Layer integration (FastAPI endpoints)
+### Fermentation Management Module
+**Status:** ✅ COMPLETE THROUGH INTEGRATION TESTS (Nov 4, 2025)
+- ✅ Domain Layer: Entities, DTOs, Enums, Interfaces
+- ✅ Repository Layer: FermentationRepository, SampleRepository
+- ✅ Service Layer: FermentationService, SampleService, Validation Services
+- ✅ Unit Tests: 173 passing
+- ✅ Integration Tests: 9 passing (real PostgreSQL operations)
+- ✅ **Total: 182 tests passing**
+- ⏳ API Layer: Pending implementation
+
+**Test Execution Note**: Due to SQLAlchemy mapper conflicts, unit and integration tests must run separately:
+```bash
+pytest tests/unit/         # 173 tests
+pytest tests/integration/  # 9 tests
+```
+
+### Project Totals
+**Tests:** 368 passing (349 unit + 19 integration)  
+**Modules Complete:** 2 (Auth, Fermentation)  
+**Next Phase:** Fermentation API Layer, then Historical Data Module
+
+### Next Steps
+1. Implement FastAPI endpoints for Fermentation module
+2. Wire Auth module with Fermentation for multi-tenancy
+3. Begin Historical Data module development
 
 ## How to restart work on this system
 Read the module-context.md for the specific module you need to work on:

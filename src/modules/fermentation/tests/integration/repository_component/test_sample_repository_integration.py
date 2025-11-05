@@ -18,6 +18,9 @@ from sqlalchemy import select
 
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 
+# Mark all tests in this module as integration tests
+pytestmark = pytest.mark.integration
+
 
 class TestSampleRepositoryIntegration:
     """Integration tests for SampleRepository with real database."""

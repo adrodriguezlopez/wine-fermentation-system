@@ -47,7 +47,7 @@ class Fermentation(BaseEntity):
 
     # Relationships - using fully qualified paths to avoid ambiguity
     fermented_by_user: Mapped["User"] = relationship(
-        "src.modules.fermentation.src.domain.entities.user.User", 
+        "src.shared.auth.domain.entities.user.User", 
         back_populates="fermentations",
         lazy="select"
     )
