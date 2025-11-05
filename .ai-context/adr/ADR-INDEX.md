@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADRs) - Index
 
 **Wine Fermentation System**  
-**Last Update:** October 26, 2025
+**Last Update:** November 4, 2025
 
 ---
 
@@ -14,11 +14,12 @@
 | **[ADR-003](./ADR-003-repository-interface-refactoring.md)** | Repository Separation of Concerns | ✅ Implemented | 2025-10-04 | Medium |
 | **[ADR-004](./ADR-004-harvest-module-consolidation.md)** | Harvest Module Consolidation | ✅ Implemented | 2025-10-05 | High |
 | **[ADR-005](./ADR-005-service-layer-interfaces.md)** | Service Layer Interfaces & Type Safety | ✅ Implemented | 2025-10-11 | High |
-| **[ADR-006](./ADR-006-api-layer-design.md)** | API Layer Design & FastAPI Integration | 🔄 Pending Auth | 2025-10-26 | High |
-| **[ADR-007](./ADR-007-auth-module-design.md)** | Authentication Module (Shared Infrastructure) | ✅ Accepted | 2025-10-26 | Critical |
+| **[ADR-006](./ADR-006-api-layer-design.md)** | API Layer Design & FastAPI Integration | � Ready to Implement | 2025-10-26 | High |
+| **[ADR-007](./ADR-007-auth-module-design.md)** | Authentication Module (Shared Infrastructure) | ✅ Implemented | 2025-11-04 | Critical |
 
 **Legend:**
 - ✅ **Implemented** - Fully implemented with tests passing
+- 🚀 **Ready** - Prerequisites met, ready for implementation
 - 🔄 **In Progress** - Implementation ongoing
 - ⚠️ **Superseded** - Replaced by newer decision
 
@@ -78,26 +79,30 @@
 
 ### ADR-006: API Layer Design & FastAPI Integration
 **Decision:** REST API with FastAPI, JWT auth, Pydantic DTOs  
-**Status:** 🔄 Pending Auth Module (ADR-007 prerequisite)  
+**Status:** � **Ready to Implement** (Auth prerequisite complete)  
 **Impact:** Exposes fermentation functionality via HTTP  
 **Key Points:**
 - 18 endpoints (10 fermentation + 8 sample)
 - Pydantic v2 for request/response DTOs
-- JWT authentication with multi-tenancy
+- JWT authentication with multi-tenancy (✅ ADR-007 COMPLETE)
 - OpenAPI documentation (Swagger UI)
 - ~45 API tests, ~2100 lines of code
 - Estimated: 3-4 days development
-- **BLOCKER**: Requires ADR-007 implemented first
+- **READY**: ADR-007 authentication infrastructure complete
 
 ### ADR-007: Authentication Module (Shared Infrastructure)
 **Decision:** JWT-based auth in src/shared/auth/ with User entity, role-based authorization  
-**Status:** ✅ Accepted (Next implementation phase)  
+**Status:** ✅ **Implemented** (Nov 4, 2025)  
 **Impact:** Unblocks all API layers, enforces multi-tenancy  
 **Key Points:**
 - User entity with winery_id (multi-tenancy)
 - JWT tokens (15min access + 7 days refresh)
 - 4 roles: Admin, Winemaker, Operator, Viewer
 - FastAPI dependencies (get_current_user, require_role)
+- **Test Coverage**: 186 tests passing (163 unit + 24 integration)
+- PasswordService (bcrypt), JwtService (PyJWT), AuthService
+- Migration completed: User moved from fermentation to shared/auth
+- **UNBLOCKED**: API layers can now be implemented
 - Password hashing (bcrypt/argon2)
 - ~40 tests, ~1250 lines of code
 - Estimated: 3 days (2 dev + 1 test)

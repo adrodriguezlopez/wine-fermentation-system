@@ -1,40 +1,44 @@
 # ADR-006: API Layer Design & FastAPI Integration
 
-**Status:** ✅ Accepted (Oct 26, 2025)  
-**Date:** 2025-10-26  
+**Status:** 🚀 Ready to Implement (Nov 4, 2025)  
+**Date Created:** 2025-10-26  
+**Date Ready:** 2025-11-04  
 **Deciders:** Development Team  
-**Related ADRs:** ADR-005 (Service Layer Interfaces), ADR-003 (Repository Architecture)
+**Related ADRs:** 
+- ADR-005 (Service Layer Interfaces - ✅ Implemented)
+- ADR-007 (Authentication Module - ✅ Implemented, prerequisite complete)
 
 > **📋 Context Files:**
 > - [Architectural Guidelines](../ARCHITECTURAL_GUIDELINES.md) - Principios de diseño
 > - [Service Layer Interfaces](./ADR-005-service-layer-interfaces.md) - Contratos de servicio
+> - [Authentication Module](./ADR-007-auth-module-design.md) - Auth infrastructure
 
 ---
 
 ## Context
 
-El módulo de fermentación tiene implementadas las capas Domain, Repository y Service (173 tests passing). Sin embargo, **no tiene API Layer**, lo que significa:
+El módulo de fermentación tiene implementadas las capas Domain, Repository y Service (182 tests passing). El **Authentication Module (ADR-007) está completamente implementado** (186 tests passing). Sin embargo, **no tiene API Layer**, lo que significa:
 
 1. **No hay endpoints HTTP** para exponer la funcionalidad
 2. **No hay DTOs de API** (request/response Pydantic models)
-3. **No hay autenticación/autorización** HTTP
+3. **No hay integración de autenticación/autorización** en endpoints HTTP
 4. **No hay documentación OpenAPI** automática
 5. **No hay manejo de errores HTTP** (status codes)
 6. **No hay dependency injection** para FastAPI
 7. **No hay tests de API** (integration tests con TestClient)
 
-**BLOCKER IDENTIFICADO**: El sistema NO tiene implementado el **Authentication Module** (shared/auth), que es requerido para:
-- JWT token generation y validation
-- User authentication (login/logout)
-- Multi-tenancy enforcement (winery_id extraction)
-- Role-based authorization
-- `get_current_user()` dependency
-
-**Decisión**: Implementar Auth Module (ADR-007) ANTES de API Layer para evitar deuda técnica y garantizar arquitectura limpia.
+**✅ PREREQUISITO COMPLETADO**: El **Authentication Module (ADR-007)** está implementado y provee:
+- ✅ JWT token generation y validation (JwtService)
+- ✅ User authentication (AuthService con login/refresh)
+- ✅ Multi-tenancy enforcement (winery_id en UserContext)
+- ✅ Role-based authorization (UserRole enum con permisos)
+- ✅ `get_current_user()` dependency para FastAPI
+- ✅ `require_role()` factory para RBAC
+- ✅ 186 tests passing (163 unit + 24 integration)
 
 El sistema requiere una API REST bien diseñada que:
 - Exponga las operaciones de fermentación y samples
-- Integre autenticación JWT
+- Integre autenticación JWT (usando auth module)
 - Maneje multi-tenancy (winery_id en contexto)
 - Provea documentación interactiva (Swagger/ReDoc)
 - Siga convenciones REST estándar
