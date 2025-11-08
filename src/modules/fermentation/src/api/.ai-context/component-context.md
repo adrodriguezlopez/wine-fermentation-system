@@ -64,16 +64,27 @@
 
 ## Implementation status
 
-### Phase 0: Setup ✅
+### Phase 0: Setup ✅ (Completed Nov 8, 2025)
 - [x] Branch created: `feature/fermentation-api-layer`
 - [x] Directory structure: routers/, schemas/requests/, schemas/responses/
 - [x] Component context documentation
-- [x] Test infrastructure setup (in progress)
+- [x] Test infrastructure setup: conftest.py with 3 fixtures
+  - [x] `client`: FastAPI TestClient fixture
+  - [x] `mock_user_context`: Mock UserContext for auth bypass
+  - [x] `test_db_session`: SQLite in-memory async session
+  - [x] aiosqlite dependency added
+  - [x] 3/3 fixture tests passing
 
-### Phase 1: Schemas (Not Started)
-- [ ] Response schemas (FermentationResponse, SampleResponse)
+### Phase 1: Schemas (In Progress - Nov 8, 2025)
+- [x] Response schemas (FermentationResponse, SampleResponse) ✅
+  - [x] `FermentationResponse` with Pydantic v2 validation
+  - [x] `SampleResponse` with Pydantic v2 validation
+  - [x] `from_entity()` class method for entity conversion
+  - [x] JSON serialization support (model_dump, model_dump_json)
+  - [x] Field constraints and optional field handling
+  - [x] 6/6 tests passing (test_response_schemas.py)
 - [ ] Request schemas (FermentationCreateRequest, UpdateRequest, etc.)
-- [ ] Schema validation tests (~20 tests)
+- [ ] Schema validation tests for requests (~15 tests)
 
 ### Phase 2: Fermentation Endpoints (Not Started)
 - [ ] POST /api/v1/fermentations (create)
@@ -99,26 +110,45 @@
 ## Testing strategy
 **Test-Driven Development (TDD)** with Red-Green-Refactor cycle.
 
-### Test Infrastructure
-- **TestClient**: FastAPI TestClient for HTTP testing
-- **Mock Authentication**: Override auth dependencies for isolated testing
-- **Test Database**: SQLite in-memory for integration tests
-- **Mock Services**: Service layer mocks for unit testing endpoints
+### Test Infrastructure ✅ (Completed)
+- **TestClient**: FastAPI TestClient for HTTP testing ✅
+- **Mock Authentication**: Override auth dependencies for isolated testing ✅
+- **Test Database**: SQLite in-memory for integration tests ✅
+- **Mock Services**: Service layer mocks for unit testing endpoints (pending)
+
+### Test Progress
+**Completed:**
+- ✅ `tests/api/conftest.py` - 3 fixture tests passing
+  - test_client_fixture_exists
+  - test_mock_user_context_fixture
+  - test_test_db_fixture
+- ✅ `tests/api/test_response_schemas.py` - 6 schema tests passing
+  - test_fermentation_response_from_entity
+  - test_fermentation_response_json_serialization
+  - test_fermentation_response_optional_vessel_code
+  - test_sample_response_from_entity
+  - test_sample_response_json_serialization
+  - test_fermentation_response_validation_error
+
+**Total: 9/9 tests passing (100%)**
 
 ### Test Categories
-1. **Schema Tests** (~20 tests):
-   - Request validation (required fields, data types, ranges)
-   - Response serialization (entity to DTO conversion)
-   - Edge cases (empty values, null fields)
+1. **Schema Tests** (6/~20 completed):
+   - ✅ Response serialization (entity to DTO conversion)
+   - ✅ JSON serialization (model_dump, model_dump_json)
+   - ✅ Optional field handling
+   - ✅ Pydantic validation errors
+   - ⏳ Request validation (required fields, data types, ranges)
+   - ⏳ Edge cases (empty values, null fields)
 
-2. **Endpoint Tests** (~45 tests):
+2. **Endpoint Tests** (0/~45):
    - Authentication: Valid token, invalid token, missing token
    - Authorization: Role-based access (ADMIN, WINEMAKER, OPERATOR, VIEWER)
    - Multi-tenancy: Cross-winery access prevention
    - Validation: Request body validation errors
    - Business logic: Success cases with service integration
 
-3. **Integration Tests** (~15 tests):
+3. **Integration Tests** (0/~15):
    - End-to-end flows: Create → Read → Update → Delete
    - Cross-endpoint interactions
    - Database transactions
@@ -129,8 +159,8 @@
 # All API tests
 poetry run pytest tests/api/ -v
 
-# Specific endpoint tests
-poetry run pytest tests/api/test_fermentation_endpoints.py -v
+# Specific test files
+poetry run pytest tests/api/test_response_schemas.py -v
 
 # With coverage
 poetry run pytest tests/api/ --cov=src/modules/fermentation/src/api --cov-report=html
