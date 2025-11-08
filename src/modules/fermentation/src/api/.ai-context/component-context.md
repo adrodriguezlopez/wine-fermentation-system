@@ -83,8 +83,13 @@
   - [x] JSON serialization support (model_dump, model_dump_json)
   - [x] Field constraints and optional field handling
   - [x] 6/6 tests passing (test_response_schemas.py)
-- [ ] Request schemas (FermentationCreateRequest, UpdateRequest, etc.)
-- [ ] Schema validation tests for requests (~15 tests)
+- [x] Request schemas (FermentationCreateRequest, UpdateRequest, etc.) ✅ **Completed Nov 8, 2025**
+  - [x] `FermentationCreateRequest` with required field validation
+  - [x] `FermentationUpdateRequest` with all optional fields (partial updates)
+  - [x] `SampleCreateRequest` with required field validation
+  - [x] `SampleUpdateRequest` with optional fields
+  - [x] Field constraints: ranges (ge, le, gt), string lengths (min/max_length)
+  - [x] 10/10 tests passing (test_request_schemas.py)
 
 ### Phase 2: Fermentation Endpoints (Not Started)
 - [ ] POST /api/v1/fermentations (create)
@@ -129,17 +134,30 @@
   - test_sample_response_from_entity
   - test_sample_response_json_serialization
   - test_fermentation_response_validation_error
+- ✅ `tests/api/test_request_schemas.py` - 10 schema tests passing ✅ **NEW**
+  - test_fermentation_create_request_valid_data
+  - test_fermentation_create_request_missing_required_fields
+  - test_fermentation_create_request_invalid_ranges
+  - test_fermentation_create_request_optional_vessel_code
+  - test_fermentation_update_request_partial_updates
+  - test_fermentation_update_request_all_optional
+  - test_sample_create_request_valid_data
+  - test_sample_create_request_missing_fields
+  - test_sample_create_request_string_length
+  - test_sample_update_request_partial
 
-**Total: 9/9 tests passing (100%)**
+**Total: 19/19 tests passing (100%)**
 
 ### Test Categories
-1. **Schema Tests** (6/~20 completed):
+1. **Schema Tests** (16/16 completed) ✅:
    - ✅ Response serialization (entity to DTO conversion)
    - ✅ JSON serialization (model_dump, model_dump_json)
    - ✅ Optional field handling
    - ✅ Pydantic validation errors
-   - ⏳ Request validation (required fields, data types, ranges)
-   - ⏳ Edge cases (empty values, null fields)
+   - ✅ Request validation (required fields, data types, ranges)
+   - ✅ Partial updates (all fields optional)
+   - ✅ String length validation (min_length, max_length)
+   - ✅ Numeric range validation (ge, le, gt)
 
 2. **Endpoint Tests** (0/~45):
    - Authentication: Valid token, invalid token, missing token
