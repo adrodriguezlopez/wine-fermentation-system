@@ -72,6 +72,40 @@ async def test_test_db_fixture(test_db_session: AsyncSession):
 # FIXTURES (implemented to make tests pass - TDD GREEN phase)
 # =============================================================================
 
+def create_test_app(user_override: UserContext = None):
+    """
+    Helper function to create FastAPI test app with optional user override
+    
+    Args:
+        user_override: Optional UserContext to override auth dependency
+    
+    Returns:
+        FastAPI app configured for testing
+    """
+    from fastapi import FastAPI, Depends
+    from src.shared.auth.domain.dtos import UserContext as UC
+    from src.shared.auth.infra.api.dependencies import get_current_user, require_winemaker
+    from src.modules.fermentation.src.api.routers.fermentation_router import router as fermentation_router
+    
+    # Create minimal FastAPI app for testing
+    app = FastAPI(title="Fermentation API - Test")
+    
+    # Include fermentation router
+    app.include_router(fermentation_router)
+    
+    # Test endpoint to verify client works
+    @app.get("/test")
+    def test_endpoint(user: UC = Depends(get_current_user)):
+        return {"status": "ok", "user_id": user.user_id}
+    
+    # Override auth if user provided
+    if user_override:
+        app.dependency_overrides[get_current_user] = lambda: user_override
+        app.dependency_overrides[require_winemaker] = lambda: user_override
+    
+    return app
+
+
 @pytest.fixture
 def mock_user_context():
     """
@@ -124,24 +158,9 @@ async def test_db_session() -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 def client(mock_user_context):
     """
-    Fixture: FastAPI TestClient
+    Fixture: FastAPI TestClient with default mock user (WINEMAKER)
     
-    RED → GREEN: This will pass once we create the FastAPI app
-    For now, we create a minimal app to make the test pass
+    Uses create_test_app helper with mock_user_context override
     """
-    from fastapi import FastAPI, Depends
-    from src.shared.auth.domain.dtos import UserContext as UC
-    
-    # Create minimal FastAPI app for testing
-    app = FastAPI(title="Fermentation API - Test")
-    
-    # Override auth dependency to return mock user
-    def override_get_current_user() -> UC:
-        return mock_user_context
-    
-    # Test endpoint to verify client works
-    @app.get("/test")
-    def test_endpoint(user: UC = Depends(override_get_current_user)):
-        return {"status": "ok", "user_id": user.user_id}
-    
+    app = create_test_app(user_override=mock_user_context)
     return TestClient(app)
