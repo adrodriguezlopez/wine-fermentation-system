@@ -31,6 +31,7 @@ from src.modules.fermentation.src.service_component.errors import (
     DuplicateError,
     BusinessRuleViolation
 )
+from src.modules.fermentation.src.api.dependencies import get_fermentation_service
 
 
 # Router instance
@@ -50,7 +51,7 @@ router = APIRouter(
 async def create_fermentation(
     request: FermentationCreateRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    # TODO: Inject FermentationService via dependency
+    service: Annotated[IFermentationService, Depends(get_fermentation_service)]
 ) -> FermentationResponse:
     """
     Create a new fermentation
@@ -58,14 +59,15 @@ async def create_fermentation(
     Args:
         request: Fermentation creation data (validated by Pydantic)
         current_user: Authenticated user context (provides winery_id)
+        service: Fermentation service (injected via dependency)
     
     Returns:
         FermentationResponse: Created fermentation with ID and timestamps
     
     Raises:
         HTTP 403: Insufficient permissions (not WINEMAKER or ADMIN)
-        HTTP 422: Invalid request data
-        HTTP 400: Business validation error (e.g., vessel in use)
+        HTTP 422: Invalid request data (Pydantic validation)
+        HTTP 400: Business validation error (e.g., vessel in use, invalid ranges)
         HTTP 401: Not authenticated
     """
     try:
@@ -81,38 +83,30 @@ async def create_fermentation(
             start_date=request.start_date
         )
         
-        # TODO: Call service layer
-        # For now, create a mock response to pass initial tests
-        # This will be replaced with actual service call in next iteration
+        # Call service layer (REFACTOR: replaced mock with real service)
+        created_fermentation = await service.create_fermentation(
+            winery_id=current_user.winery_id,  # Multi-tenancy from auth context
+            user_id=current_user.user_id,      # Audit trail
+            data=create_dto
+        )
         
-        from datetime import datetime
-        from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
-        
-        # Mock entity for testing (TDD GREEN phase - minimal implementation)
-        class MockFermentation:
-            id = 1
-            winery_id = current_user.winery_id
-            vintage_year = request.vintage_year
-            yeast_strain = request.yeast_strain
-            vessel_code = request.vessel_code
-            input_mass_kg = request.input_mass_kg
-            initial_sugar_brix = request.initial_sugar_brix
-            initial_density = request.initial_density
-            status = FermentationStatus.ACTIVE
-            start_date = request.start_date
-            created_at = datetime.utcnow()
-            updated_at = datetime.utcnow()
-        
-        mock_entity = MockFermentation()
-        
-        return FermentationResponse.from_entity(mock_entity)
+        # Convert entity to response DTO
+        return FermentationResponse.from_entity(created_fermentation)
         
     except ValidationError as e:
+        # Service validation failed (business rules)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except ValueError as e:
+        # Validation errors from service (includes validator errors)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
     except (DuplicateError, BusinessRuleViolation) as e:
+        # Business logic violations (e.g., vessel in use)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
@@ -121,5 +115,5 @@ async def create_fermentation(
         # Log unexpected errors in production
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred"
+            detail=f"An unexpected error occurred: {str(e)}"
         )
