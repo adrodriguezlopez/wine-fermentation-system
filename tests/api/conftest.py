@@ -164,3 +164,17 @@ def client(mock_user_context):
     """
     app = create_test_app(user_override=mock_user_context)
     return TestClient(app)
+
+
+@pytest.fixture
+def unauthenticated_client():
+    """
+    Fixture: FastAPI TestClient WITHOUT authentication override
+    
+    This client will trigger real auth dependencies, causing 401 errors
+    when endpoints require authentication.
+    
+    Used for testing authentication requirements.
+    """
+    app = create_test_app(user_override=None)  # No auth override
+    return TestClient(app)
