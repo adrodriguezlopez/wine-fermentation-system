@@ -33,10 +33,15 @@ class TestFermentationRepository:
         """Create a mock session manager that returns a mock session."""
         manager = Mock()
         mock_session = AsyncMock()
-        mock_context = AsyncMock()
+        
+        # Create a proper async context manager mock
+        from unittest.mock import MagicMock
+        mock_context = MagicMock()
         mock_context.__aenter__ = AsyncMock(return_value=mock_session)
         mock_context.__aexit__ = AsyncMock(return_value=None)
-        manager.get_session = AsyncMock(return_value=mock_context)
+        
+        # Make get_session return the context manager
+        manager.get_session = Mock(return_value=mock_context)
         manager.close = AsyncMock()
         return manager, mock_session
 

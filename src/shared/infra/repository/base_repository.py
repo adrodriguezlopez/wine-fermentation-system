@@ -70,7 +70,7 @@ class BaseRepository:
         Returns:
             AsyncContextManager[AsyncSession]: Database session context manager
         """
-        return await self.session_manager.get_session()
+        return self.session_manager.get_session()
 
     async def close(self) -> None:
         """

@@ -84,17 +84,20 @@ class DatabaseConfig:
         ).render_as_string(hide_password=False)
     
     def create_engine(self) -> AsyncEngine:
-        return create_async_engine(
-            self.url,
-            echo=self.echo,
-            pool_size=self.pool_size,
-            max_overflow=self.max_overflow,
-            # Add connection parameters for better Windows Docker compatibility
-            connect_args={
+        # Build engine kwargs based on database type
+        engine_kwargs = {"echo": self.echo}
+        
+        # SQLite doesn't support pool_size/max_overflow parameters
+        if not self.url.startswith("sqlite"):
+            engine_kwargs["pool_size"] = self.pool_size
+            engine_kwargs["max_overflow"] = self.max_overflow
+            # PostgreSQL-specific connection parameters
+            engine_kwargs["connect_args"] = {
                 "server_settings": {
                     "application_name": "wine_fermentation",
                 },
-                "timeout": 30,  # 30 second timeout
+                "timeout": 30,
                 "command_timeout": 30,
             }
-        )
+        
+        return create_async_engine(self.url, **engine_kwargs)

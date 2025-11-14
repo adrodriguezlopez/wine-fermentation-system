@@ -18,7 +18,7 @@ from typing import List, Optional, TYPE_CHECKING
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
 
 # Import DTOs from domain.dtos package
-from src.modules.fermentation.src.domain.dtos import FermentationCreate, SampleCreate
+from src.modules.fermentation.src.domain.dtos import FermentationCreate
 
 if TYPE_CHECKING:
     from src.modules.fermentation.src.domain.entities.fermentation import Fermentation

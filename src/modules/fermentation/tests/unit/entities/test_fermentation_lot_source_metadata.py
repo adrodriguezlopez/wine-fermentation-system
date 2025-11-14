@@ -5,7 +5,7 @@ Tests entity structure, constraints, and configuration without instantiation
 to avoid SQLAlchemy relationship configuration issues during development.
 """
 
-from domain.entities.fermentation_lot_source import FermentationLotSource
+from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
 
 
 class TestFermentationLotSourceMetadata:

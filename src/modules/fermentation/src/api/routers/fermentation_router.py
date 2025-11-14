@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from typing import Annotated
 
 from src.shared.auth.domain.dtos import UserContext
-from src.shared.auth.infra.api.dependencies import require_winemaker
+from src.shared.auth.infra.api.dependencies import require_winemaker, get_current_user
 
 from src.modules.fermentation.src.api.schemas.requests.fermentation_requests import (
     FermentationCreateRequest,
@@ -111,6 +111,59 @@ async def create_fermentation(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except Exception as e:
+        # Log unexpected errors in production
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+
+
+@router.get("/{fermentation_id}", response_model=FermentationResponse, status_code=200)
+async def get_fermentation(
+    fermentation_id: int,
+    current_user: Annotated[UserContext, Depends(get_current_user)],
+    service: Annotated[IFermentationService, Depends(get_fermentation_service)]
+) -> FermentationResponse:
+    """
+    Get a single fermentation by ID.
+    
+    TDD GREEN Phase: Minimal implementation to pass tests.
+    
+    Args:
+        fermentation_id: ID of the fermentation to retrieve
+        current_user: Authenticated user context (multi-tenancy)
+        service: Injected fermentation service
+    
+    Returns:
+        FermentationResponse: Fermentation data
+    
+    Raises:
+        HTTPException 404: Fermentation not found or access denied (multi-tenancy)
+        HTTPException 401/403: Authentication/authorization failure
+    
+    Business Rules:
+        - Multi-tenancy: Only returns fermentation from user's winery
+        - Service returns None for wrong winery (security - don't reveal existence)
+        - Soft-deleted records return 404
+    """
+    try:
+        fermentation = await service.get_fermentation(
+            fermentation_id=fermentation_id,
+            winery_id=current_user.winery_id
+        )
+        
+        if fermentation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Fermentation with ID {fermentation_id} not found"
+            )
+        
+        return FermentationResponse.from_entity(fermentation)
+    
+    except HTTPException:
+        # Re-raise HTTP exceptions (404, etc.)
+        raise
     except Exception as e:
         # Log unexpected errors in production
         raise HTTPException(

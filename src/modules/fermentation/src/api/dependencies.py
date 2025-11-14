@@ -1,16 +1,19 @@
 """
 FastAPI dependencies for Fermentation API Layer
 
-Provides dependency injection for services, repositories, and database sessions.
+Provides dependency injection for services, repositories, and real PostgreSQL database.
 Following Clean Architecture: API layer depends on service abstractions.
-
-TODO: Implement proper DB session management with connection pooling.
-For now, this uses a simplified approach suitable for testing/development.
 """
 
 from typing import Annotated
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.shared.infra.database.fastapi_session import get_db_session
+from src.shared.infra.repository.fastapi_session_manager import FastAPISessionManager
+
+from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import IFermentationRepository
+from src.modules.fermentation.src.repository_component.repositories.fermentation_repository import FermentationRepository
 from src.modules.fermentation.src.service_component.interfaces.fermentation_service_interface import IFermentationService
 from src.modules.fermentation.src.service_component.services.fermentation_service import FermentationService
 from src.modules.fermentation.src.service_component.interfaces.fermentation_validator_interface import IFermentationValidator
@@ -27,65 +30,42 @@ def get_fermentation_validator() -> IFermentationValidator:
     return FermentationValidator()
 
 
+async def get_fermentation_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)]
+) -> IFermentationRepository:
+    """
+    Dependency: Get fermentation repository with real PostgreSQL database session.
+    
+    Args:
+        session: AsyncSession from FastAPI dependency (auto-injected)
+    
+    Returns:
+        IFermentationRepository: Repository instance connected to PostgreSQL
+    
+    Lifecycle:
+        - Session managed by get_db_session (commit/rollback/close automatic)
+        - Repository wraps session with SessionManager for BaseRepository compatibility
+    """
+    session_manager = FastAPISessionManager(session)
+    return FermentationRepository(session_manager)
+
+
 async def get_fermentation_service(
+    repository: Annotated[IFermentationRepository, Depends(get_fermentation_repository)],
     validator: Annotated[IFermentationValidator, Depends(get_fermentation_validator)]
 ) -> IFermentationService:
     """
-    Dependency: Get fermentation service instance with injected dependencies
+    Dependency: Get fermentation service instance with injected dependencies.
     
     Args:
-        validator: Fermentation validator (from dependency)
+        repository: Fermentation repository (auto-injected with PostgreSQL session)
+        validator: Fermentation validator (auto-injected)
         
     Returns:
-        IFermentationService: Service instance ready for use
-        
-    Note: Repository injection uses a mock repository for API testing.
-    This allows testing API structure without full DB setup.
-    
-    TODO: Inject real repository once DB session dependency is configured.
-        
-    Example:
-        ```python
-        @router.post("/fermentations")
-        async def create(
-            data: FermentationCreateRequest,
-            service: Annotated[IFermentationService, Depends(get_fermentation_service)]
-        ):
-            result = await service.create_fermentation(...)
-        ```
+        IFermentationService: Service instance with REAL database persistence
     """
-    # Create a simple mock repository for testing API layer
-    from unittest.mock import MagicMock
-    from datetime import datetime
-    from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
-    
-    mock_repo = MagicMock()
-    
-    # Mock create method to return a simple object (not ORM entity to avoid mapping issues)
-    async def mock_create(winery_id: int, data):
-        # Create a simple object that mimics Fermentation entity
-        # Avoid using actual Fermentation class to prevent SQLAlchemy mapping issues
-        class MockFermentation:
-            def __init__(self):
-                self.id = 1
-                self.winery_id = winery_id
-                self.fermented_by_user_id = data.fermented_by_user_id
-                self.vintage_year = data.vintage_year
-                self.yeast_strain = data.yeast_strain
-                self.vessel_code = data.vessel_code
-                self.input_mass_kg = data.input_mass_kg
-                self.initial_sugar_brix = data.initial_sugar_brix
-                self.initial_density = data.initial_density
-                self.start_date = data.start_date or datetime.now()
-                self.status = FermentationStatus.ACTIVE
-                self.created_at = datetime.now()
-                self.updated_at = datetime.now()
-        
-        return MockFermentation()
-    
-    mock_repo.create = mock_create
-    
     return FermentationService(
-        fermentation_repo=mock_repo,
+        fermentation_repo=repository,
         validator=validator
     )
+

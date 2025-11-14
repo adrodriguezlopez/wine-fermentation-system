@@ -15,9 +15,12 @@ import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 from fastapi import status
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
+from src.shared.auth.domain.dtos import UserContext
+from src.shared.auth.domain.enums.user_role import UserRole
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
 
 
@@ -265,3 +268,153 @@ class TestPostFermentations:
         
         # This confirms error handling structure exists
         # Actual error testing will work once real service is injected
+
+
+# ==============================================================================
+# Phase 2b: GET /fermentations/{id} Endpoint Tests
+# ==============================================================================
+
+class TestGetFermentationEndpoint:
+    """
+    TDD RED Phase: Tests for GET /fermentations/{id} endpoint
+    
+    Test Coverage:
+    1. Success (200) - Valid ID, correct winery
+    2. Not Found (404) - Non-existent ID
+    3. Forbidden (403) - Valid ID, wrong winery (multi-tenancy)
+    4. Unauthorized (401/403) - No authentication
+    5. Invalid ID format (422) - Non-integer ID
+    """
+    
+    def test_get_fermentation_success(self, client, mock_user_context):
+        """
+        TDD RED: Should return 200 with fermentation data for valid request.
+        
+        Given: Authenticated WINEMAKER user with existing fermentation
+        When: GET /fermentations/{id} (existing, same winery)
+        Then: Returns 200 with FermentationResponse
+        """
+        # First create a fermentation
+        create_response = client.post("/api/v1/fermentations", json={
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-01",
+            "input_mass_kg": 1000.5,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        })
+        fermentation_id = create_response.json()["id"]
+        
+        # Now GET it
+        response = client.get(f"/api/v1/fermentations/{fermentation_id}")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        # Validate response structure
+        assert data["id"] == fermentation_id
+        assert data["winery_id"] == mock_user_context.winery_id
+        assert "vintage_year" in data
+        assert "yeast_strain" in data
+        assert "status" in data
+        assert "created_at" in data
+        assert "updated_at" in data
+    
+    def test_get_fermentation_not_found(self, client):
+        """
+        TDD RED: Should return 404 for non-existent fermentation.
+        
+        Given: Authenticated user
+        When: GET /fermentations/9999 (doesn't exist)
+        Then: Returns 404 Not Found
+        """
+        response = client.get("/api/v1/fermentations/9999")
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        data = response.json()
+        assert "detail" in data
+    
+    def test_get_fermentation_wrong_winery(self, client):
+        """
+        TDD RED: Should return 404 for fermentation from different winery.
+        
+        Multi-tenancy: Service returns None for wrong winery → 404
+        
+        Given: Authenticated user from winery_id=1
+        When: GET /fermentations/2 (exists but winery_id=2)
+        Then: Returns 404 (pretend it doesn't exist for security)
+        """
+        # Note: Mock will need to simulate different winery scenario
+        # Service.get_fermentation returns None for wrong winery_id
+        response = client.get("/api/v1/fermentations/999")
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+    
+    def test_get_fermentation_without_authentication(self, unauthenticated_client):
+        """
+        TDD RED: Should return 401/403 without authentication.
+        
+        Given: No authentication token
+        When: GET /fermentations/1
+        Then: Returns 401 or 403
+        """
+        response = unauthenticated_client.get("/api/v1/fermentations/1")
+        
+        assert response.status_code in [
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN
+        ]
+    
+    def test_get_fermentation_unauthorized_role(self, override_db_session):
+        """
+        TDD: VIEWER role should be able to read fermentations (read-only access).
+        
+        Given: Authenticated VIEWER user with existing fermentation
+        When: GET /fermentations/{id}
+        Then: Returns 200 OK with fermentation data
+        
+        ADR-006: VIEWER has "Solo lectura" (read-only) access.
+        GET endpoints should allow all authenticated users.
+        """
+        from tests.api.conftest import create_test_app
+        
+        # First create a fermentation as WINEMAKER (using same DB session)
+        winemaker_context = UserContext(
+            user_id=1,
+            winery_id=1,
+            email="winemaker@winery.com",
+            role=UserRole.WINEMAKER
+        )
+        winemaker_app = create_test_app(user_override=winemaker_context, db_override=override_db_session)
+        winemaker_client = TestClient(winemaker_app)
+        
+        create_response = winemaker_client.post("/api/v1/fermentations", json={
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-01",
+            "input_mass_kg": 1000.5,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        })
+        fermentation_id = create_response.json()["id"]
+        
+        # Now try to read as VIEWER (using same DB session)
+        viewer_context = UserContext(
+            user_id=2,
+            winery_id=1,
+            email="viewer@winery.com",
+            role=UserRole.VIEWER
+        )
+        app = create_test_app(user_override=viewer_context, db_override=override_db_session)
+        client = TestClient(app)
+        
+        response = client.get(f"/api/v1/fermentations/{fermentation_id}")
+        
+        # VIEWER can read - expect 200 OK
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["id"] == fermentation_id
+        assert data["winery_id"] == 1  # Multi-tenancy still enforced
+

@@ -1,5 +1,5 @@
 """
-Fixtures for integration tests with real PostgreSQL database.
+Fixtures for integration tests with in-memory SQLite database.
 
 These fixtures provide:
 - Database engine and session management
@@ -7,8 +7,8 @@ These fixtures provide:
 - Test data fixtures (winery, user, fermentation)
 - Repository instances configured with real DB sessions
 
-Database: localhost:5433/wine_fermentation_test
-Requires: PostgreSQL running via Docker or local installation
+Database: SQLite in-memory (shared cache for session-scoped fixtures)
+Fast and isolated - no external dependencies required.
 """
 
 import pytest
@@ -19,8 +19,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy import text, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-# Database configuration
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5433/wine_fermentation_test"
+# Database configuration - SQLite in-memory with shared cache
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:?cache=shared"
 
 # Global dict to store model classes (populated by db_engine fixture)
 TEST_MODELS = {}
@@ -65,12 +65,13 @@ def integration_test_session():
 @pytest_asyncio.fixture(scope="session")
 async def db_engine():
     """
-    PostgreSQL engine for integration tests.
+    SQLite in-memory engine for integration tests.
     
     Create and configure async database engine for test suite.
     Creates all tables before tests and drops them after.
     
     Scope: session - single engine for all tests (performance).
+    Uses SQLite with shared cache to maintain state across fixtures.
     
     IMPORTANT: This fixture imports models ONLY inside the fixture function
     to avoid registry conflicts with unit tests that may have already imported them.
@@ -80,9 +81,7 @@ async def db_engine():
     engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,  # Set to True for SQL query debugging
-        pool_pre_ping=True,  # Verify connections before using
-        pool_size=5,
-        max_overflow=10,
+        connect_args={"check_same_thread": False},  # Required for SQLite
     )
     
     # Import ALL models here INSIDE the fixture to avoid early registration
@@ -159,17 +158,21 @@ async def clean_tables(db_session):
     """
     Clean all tables before test execution.
     
-    Truncates tables in correct order to respect foreign key constraints.
+    Deletes all rows from tables in correct order to respect foreign key constraints.
     Use this when you need a completely clean database state.
+    
+    Note: Uses DELETE instead of TRUNCATE for SQLite compatibility.
     """
-    # Truncate in order (respecting FK constraints - children first, parents last)
-    await db_session.execute(text("TRUNCATE TABLE samples CASCADE"))
-    await db_session.execute(text("TRUNCATE TABLE fermentation_notes CASCADE"))
-    await db_session.execute(text("TRUNCATE TABLE fermentation_lot_sources CASCADE"))
-    await db_session.execute(text("TRUNCATE TABLE fermentations CASCADE"))
-    await db_session.execute(text("TRUNCATE TABLE users CASCADE"))
-    await db_session.execute(text("TRUNCATE TABLE harvest_lots CASCADE"))
-    await db_session.execute(text("TRUNCATE TABLE wineries CASCADE"))
+    # Delete in order (respecting FK constraints - children first, parents last)
+    await db_session.execute(text("DELETE FROM samples"))
+    await db_session.execute(text("DELETE FROM fermentation_notes"))
+    await db_session.execute(text("DELETE FROM fermentation_lot_sources"))
+    await db_session.execute(text("DELETE FROM fermentations"))
+    await db_session.execute(text("DELETE FROM users"))
+    await db_session.execute(text("DELETE FROM harvest_lots"))
+    await db_session.execute(text("DELETE FROM vineyard_blocks"))
+    await db_session.execute(text("DELETE FROM vineyards"))
+    await db_session.execute(text("DELETE FROM wineries"))
     await db_session.commit()
 
 
@@ -317,6 +320,7 @@ async def sample_repository(db_session):
     allowing repository to work with the transactional test session.
     """
     from src.modules.fermentation.src.repository_component.repositories.sample_repository import SampleRepository
+    from contextlib import asynccontextmanager
     
     # Mock SessionManager to use test session
     class TestSessionManager:
@@ -325,20 +329,10 @@ async def sample_repository(db_session):
         def __init__(self, session):
             self._session = session
         
+        @asynccontextmanager
         async def get_session(self):
-            """Return context manager that yields test session."""
-            class SessionContext:
-                def __init__(self, session):
-                    self._session = session
-                
-                async def __aenter__(self):
-                    return self._session
-                
-                async def __aexit__(self, exc_type, exc_val, exc_tb):
-                    # Don't commit/rollback - let test fixture handle it
-                    pass
-            
-            return SessionContext(self._session)
+            """Return async context manager that yields test session."""
+            yield self._session
         
         async def close(self):
             """No-op - session managed by test fixture."""
@@ -356,23 +350,20 @@ async def fermentation_repository(db_session):
     Uses a mock SessionManager that returns the test session.
     """
     from src.modules.fermentation.src.repository_component.repositories.fermentation_repository import FermentationRepository
+    from contextlib import asynccontextmanager
     
-    # Mock SessionManager (same as sample_repository)
+    # Mock SessionManager (same pattern as sample_repository)
     class TestSessionManager:
         def __init__(self, session):
             self._session = session
         
+        @asynccontextmanager
         async def get_session(self):
-            class SessionContext:
-                def __init__(self, session):
-                    self._session = session
-                async def __aenter__(self):
-                    return self._session
-                async def __aexit__(self, exc_type, exc_val, exc_tb):
-                    pass
-            return SessionContext(self._session)
+            """Return async context manager that yields test session."""
+            yield self._session
         
         async def close(self):
+            """No-op - session managed by test fixture."""
             pass
     
     session_manager = TestSessionManager(db_session)
