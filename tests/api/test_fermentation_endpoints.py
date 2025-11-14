@@ -418,3 +418,203 @@ class TestGetFermentationEndpoint:
         assert data["id"] == fermentation_id
         assert data["winery_id"] == 1  # Multi-tenancy still enforced
 
+
+# ==============================================================================
+# Phase 2c: GET /fermentations (List) Endpoint Tests
+# ==============================================================================
+
+class TestGetFermentationsListEndpoint:
+    """
+    TDD RED Phase: Tests for GET /fermentations endpoint (list with pagination)
+    
+    Test Coverage:
+    1. Success (200) - List fermentations for user's winery
+    2. Empty list (200) - No fermentations for winery
+    3. Pagination - page, size parameters work
+    4. Filter by status - ACTIVE, COMPLETED, etc.
+    5. Multi-tenancy - Only returns user's winery fermentations
+    6. Authentication required (401/403)
+    """
+    
+    def test_list_fermentations_success(self, client):
+        """
+        TDD RED: Should return 200 with list of fermentations.
+        
+        Given: Authenticated user with 3 fermentations in their winery
+        When: GET /fermentations
+        Then: Returns 200 with array of fermentations
+        """
+        # Create 3 fermentations
+        for i in range(3):
+            client.post("/api/v1/fermentations", json={
+                "vintage_year": 2024,
+                "yeast_strain": f"EC-111{i}",
+                "vessel_code": f"TANK-{i:02d}",
+                "input_mass_kg": 1000.0 + i * 100,
+                "initial_sugar_brix": 22.5,
+                "initial_density": 1.095,
+                "start_date": "2024-11-01T10:00:00"
+            })
+        
+        # List all
+        response = client.get("/api/v1/fermentations")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        # Validate response structure
+        assert "items" in data
+        assert "total" in data
+        assert "page" in data
+        assert "size" in data
+        
+        # Should have 3 fermentations
+        assert len(data["items"]) == 3
+        assert data["total"] == 3
+        
+        # All should be from same winery
+        for item in data["items"]:
+            assert item["winery_id"] == 1
+    
+    def test_list_fermentations_empty(self, client):
+        """
+        TDD RED: Should return 200 with empty list when no fermentations.
+        
+        Given: Authenticated user with no fermentations
+        When: GET /fermentations
+        Then: Returns 200 with empty items array
+        """
+        response = client.get("/api/v1/fermentations")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert data["items"] == []
+        assert data["total"] == 0
+    
+    def test_list_fermentations_pagination(self, client):
+        """
+        TDD RED: Should support pagination with page and size parameters.
+        
+        Given: 5 fermentations in winery
+        When: GET /fermentations?page=1&size=2
+        Then: Returns first 2 items with pagination metadata
+        """
+        # Create 5 fermentations
+        for i in range(5):
+            client.post("/api/v1/fermentations", json={
+                "vintage_year": 2024,
+                "yeast_strain": f"EC-111{i}",
+                "vessel_code": f"TANK-{i:02d}",
+                "input_mass_kg": 1000.0,
+                "initial_sugar_brix": 22.5,
+                "initial_density": 1.095,
+                "start_date": "2024-11-01T10:00:00"
+            })
+        
+        # Get page 1 with size 2
+        response = client.get("/api/v1/fermentations?page=1&size=2")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert len(data["items"]) == 2
+        assert data["total"] == 5
+        assert data["page"] == 1
+        assert data["size"] == 2
+        
+        # Get page 2
+        response = client.get("/api/v1/fermentations?page=2&size=2")
+        data = response.json()
+        
+        assert len(data["items"]) == 2
+        assert data["page"] == 2
+        
+        # Get page 3 (last page with 1 item)
+        response = client.get("/api/v1/fermentations?page=3&size=2")
+        data = response.json()
+        
+        assert len(data["items"]) == 1
+        assert data["page"] == 3
+    
+    def test_list_fermentations_multi_tenancy(self, override_db_session):
+        """
+        TDD RED: Should only return fermentations from user's winery.
+        
+        Given: Fermentations in winery 1 and winery 2
+        When: User from winery 1 lists fermentations
+        Then: Returns only winery 1 fermentations
+        """
+        from tests.api.conftest import create_test_app
+        
+        # Create fermentations in winery 1
+        winery1_context = UserContext(
+            user_id=1,
+            winery_id=1,
+            email="user1@winery1.com",
+            role=UserRole.WINEMAKER
+        )
+        app1 = create_test_app(user_override=winery1_context, db_override=override_db_session)
+        client1 = TestClient(app1)
+        
+        client1.post("/api/v1/fermentations", json={
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "W1-TANK-01",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        })
+        
+        # Create fermentations in winery 2
+        winery2_context = UserContext(
+            user_id=2,
+            winery_id=2,
+            email="user2@winery2.com",
+            role=UserRole.WINEMAKER
+        )
+        app2 = create_test_app(user_override=winery2_context, db_override=override_db_session)
+        client2 = TestClient(app2)
+        
+        client2.post("/api/v1/fermentations", json={
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "W2-TANK-01",
+            "input_mass_kg": 2000.0,
+            "initial_sugar_brix": 23.0,
+            "initial_density": 1.100,
+            "start_date": "2024-11-01T10:00:00"
+        })
+        
+        # User from winery 1 should see only their fermentation
+        response1 = client1.get("/api/v1/fermentations")
+        data1 = response1.json()
+        
+        assert len(data1["items"]) == 1
+        assert data1["items"][0]["winery_id"] == 1
+        assert data1["items"][0]["vessel_code"] == "W1-TANK-01"
+        
+        # User from winery 2 should see only their fermentation
+        response2 = client2.get("/api/v1/fermentations")
+        data2 = response2.json()
+        
+        assert len(data2["items"]) == 1
+        assert data2["items"][0]["winery_id"] == 2
+        assert data2["items"][0]["vessel_code"] == "W2-TANK-01"
+    
+    def test_list_fermentations_without_authentication(self, unauthenticated_client):
+        """
+        TDD RED: Should return 401/403 without authentication.
+        
+        Given: No authentication token
+        When: GET /fermentations
+        Then: Returns 401 or 403
+        """
+        response = unauthenticated_client.get("/api/v1/fermentations")
+        
+        assert response.status_code in [
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN
+        ]
+

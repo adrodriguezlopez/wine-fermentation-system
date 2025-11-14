@@ -6,8 +6,31 @@ They convert domain entities to JSON-serializable DTOs.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Generic, TypeVar
 from pydantic import BaseModel, ConfigDict, Field
+
+
+T = TypeVar('T')
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """
+    Generic paginated response wrapper
+    
+    Wraps a list of items with pagination metadata.
+    Used for any list endpoint that supports pagination.
+    """
+    items: List[T] = Field(..., description="List of items for current page")
+    total: int = Field(..., description="Total number of items across all pages", ge=0)
+    page: int = Field(..., description="Current page number (1-indexed)", ge=1)
+    size: int = Field(..., description="Number of items per page", ge=1, le=100)
+    
+    @property
+    def total_pages(self) -> int:
+        """Calculate total number of pages"""
+        if self.size == 0:
+            return 0
+        return (self.total + self.size - 1) // self.size
 
 
 class FermentationResponse(BaseModel):

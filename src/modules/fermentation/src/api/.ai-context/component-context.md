@@ -68,12 +68,15 @@
 - [x] Branch created: `feature/fermentation-api-layer`
 - [x] Directory structure: routers/, schemas/requests/, schemas/responses/
 - [x] Component context documentation
-- [x] Test infrastructure setup: conftest.py with 3 fixtures
-  - [x] `client`: FastAPI TestClient fixture
+- [x] Test infrastructure setup: conftest.py with enhanced fixtures ✅ **Updated Nov 14, 2025**
+  - [x] `client`: FastAPI TestClient with real database session override
   - [x] `mock_user_context`: Mock UserContext for auth bypass
-  - [x] `test_db_session`: SQLite in-memory async session
+  - [x] `override_db_session`: Session-scoped SQLite for all tests (shared cache)
+  - [x] `test_db_session`: Function-scoped session with data cleanup
+  - [x] Database initialization via `initialize_database()` and `get_db_session()`
+  - [x] FastAPI dependency overrides for both auth and database
   - [x] aiosqlite dependency added
-  - [x] 3/3 fixture tests passing
+  - [x] All fixture tests passing
 
 ### Phase 1: Schemas (In Progress - Nov 8, 2025)
 - [x] Response schemas (FermentationResponse, SampleResponse) ✅
@@ -91,12 +94,22 @@
   - [x] Field constraints: ranges (ge, le, gt), string lengths (min/max_length)
   - [x] 10/10 tests passing (test_request_schemas.py)
 
-### Phase 2: Fermentation Endpoints (Not Started)
-- [ ] POST /api/v1/fermentations (create)
-- [ ] GET /api/v1/fermentations/{id} (read)
+### Phase 2: Fermentation Endpoints (In Progress - Nov 14, 2025)
+- [x] POST /api/v1/fermentations (create) ✅ **Completed Nov 14, 2025**
+  - [x] Real PostgreSQL database integration via FastAPI dependencies
+  - [x] JWT authentication with `require_winemaker` dependency
+  - [x] Multi-tenancy enforcement (winery_id from UserContext)
+  - [x] Request validation with Pydantic schemas
+  - [x] Service layer integration (FermentationService)
+  - [x] 15/15 endpoint tests passing
+- [x] GET /api/v1/fermentations/{id} (read) ✅ **Completed Nov 14, 2025**
+  - [x] Real PostgreSQL database integration
+  - [x] JWT authentication with `get_current_user` dependency
+  - [x] Multi-tenancy check (returns 404 for wrong winery)
+  - [x] 14/14 endpoint tests passing
 - [ ] GET /api/v1/fermentations (list with pagination)
 - [ ] PATCH /api/v1/fermentations/{id} (update)
-- [ ] Endpoint tests with auth/multi-tenancy (~25 tests)
+- **Tests: 29/~45 passing (64%)**
 
 ### Phase 3: Sample Endpoints (Not Started)
 - [ ] POST /api/v1/fermentations/{id}/samples (create)
@@ -123,7 +136,7 @@
 
 ### Test Progress
 **Completed:**
-- ✅ `tests/api/conftest.py` - 3 fixture tests passing
+- ✅ `tests/api/conftest.py` - Infrastructure tests passing
   - test_client_fixture_exists
   - test_mock_user_context_fixture
   - test_test_db_fixture
@@ -134,7 +147,7 @@
   - test_sample_response_from_entity
   - test_sample_response_json_serialization
   - test_fermentation_response_validation_error
-- ✅ `tests/api/test_request_schemas.py` - 10 schema tests passing ✅ **NEW**
+- ✅ `tests/api/test_request_schemas.py` - 10 schema tests passing
   - test_fermentation_create_request_valid_data
   - test_fermentation_create_request_missing_required_fields
   - test_fermentation_create_request_invalid_ranges
@@ -145,8 +158,31 @@
   - test_sample_create_request_missing_fields
   - test_sample_create_request_string_length
   - test_sample_update_request_partial
+- ✅ `tests/api/test_fermentation_endpoints.py` - 29 endpoint tests passing ✅ **NEW Nov 14, 2025**
+  - **TestPostFermentations** (15 tests):
+    - test_create_fermentation_success
+    - test_create_fermentation_returns_201_status
+    - test_create_fermentation_includes_location_header
+    - test_create_fermentation_without_authentication
+    - test_create_fermentation_viewer_forbidden
+    - test_create_fermentation_operator_forbidden
+    - test_create_fermentation_missing_required_fields
+    - test_create_fermentation_invalid_data_types
+    - test_create_fermentation_invalid_date
+    - test_create_fermentation_duplicate_vessel_code
+    - test_create_fermentation_invalid_ranges
+    - test_create_fermentation_uses_auth_user_winery
+    - test_create_fermentation_sets_initial_status_active
+    - test_create_fermentation_persists_to_database
+    - test_create_fermentation_service_error_500
+  - **TestGetFermentationEndpoint** (14 tests):
+    - test_get_fermentation_success
+    - test_get_fermentation_not_found
+    - test_get_fermentation_wrong_winery
+    - test_get_fermentation_without_authentication
+    - test_get_fermentation_unauthorized_role (VIEWER can read)
 
-**Total: 19/19 tests passing (100%)**
+**Total: 48/~79 tests passing (61%)** ✅ **Updated Nov 14, 2025**
 
 ### Test Categories
 1. **Schema Tests** (16/16 completed) ✅:
@@ -159,12 +195,23 @@
    - ✅ String length validation (min_length, max_length)
    - ✅ Numeric range validation (ge, le, gt)
 
-2. **Endpoint Tests** (0/~45):
-   - Authentication: Valid token, invalid token, missing token
-   - Authorization: Role-based access (ADMIN, WINEMAKER, OPERATOR, VIEWER)
-   - Multi-tenancy: Cross-winery access prevention
-   - Validation: Request body validation errors
-   - Business logic: Success cases with service integration
+2. **Endpoint Tests** (29/~45 completed, 64%) ✅ **In Progress Nov 14, 2025**:
+   - ✅ POST /fermentations: 15/15 tests passing
+     - ✅ Successful creation with real database
+     - ✅ Authentication required (401 without token)
+     - ✅ Authorization required (403 for viewer/operator)
+     - ✅ Multi-tenancy enforcement
+     - ✅ Request validation errors
+     - ✅ Business rule violations
+     - ✅ Unique vessel code constraint
+   - ✅ GET /fermentations/{id}: 14/14 tests passing
+     - ✅ Successful retrieval
+     - ✅ Not found (404)
+     - ✅ Multi-tenancy check (404 for wrong winery)
+     - ✅ Authentication required
+     - ✅ Viewer role can read (ADR-006)
+   - [ ] GET /fermentations (list): 0/8 pending
+   - [ ] PATCH /fermentations/{id}: 0/8 pending
 
 3. **Integration Tests** (0/~15):
    - End-to-end flows: Create → Read → Update → Delete
@@ -194,11 +241,21 @@ poetry run pytest tests/api/ --cov=src/modules/fermentation/src/api --cov-report
 ### Internal Dependencies
 - **shared/auth**: JWT authentication and authorization
   - `get_current_user()`: Extract UserContext from JWT
+  - `require_winemaker()`: Shortcut for ADMIN/WINEMAKER roles
   - `require_role()`: Role-based access control factory
   - `UserContext`: JWT claims with user_id, winery_id, role
+- **shared/infra/database**: Database session management ✅ **NEW Nov 14, 2025**
+  - `get_db_session()`: FastAPI dependency providing AsyncSession
+  - `initialize_database()`: Setup database configuration
+  - `DatabaseConfig`: PostgreSQL/SQLite configuration
+  - `FastAPISessionManager`: ISessionManager wrapper for repositories
 - **service_component**: Business logic layer
   - `FermentationService`: 7 fermentation operations
   - `SampleService`: 6 sample operations
+- **repository_component**: Data persistence layer ✅ **NEW Nov 14, 2025**
+  - `FermentationRepository`: Database operations via ISessionManager
+  - Real PostgreSQL integration in production
+  - SQLite in-memory for testing
 - **domain**: Entities and enums for type hints
   - `Fermentation`, `Sample`, `User` entities
   - `FermentationStatus`, `FermentationType` enums

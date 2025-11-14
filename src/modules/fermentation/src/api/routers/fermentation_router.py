@@ -10,8 +10,8 @@ Implements CRUD operations with:
 Following ADR-006 API Layer Design
 """
 
-from fastapi import APIRouter, Depends, status, HTTPException
-from typing import Annotated
+from fastapi import APIRouter, Depends, status, HTTPException, Query
+from typing import Annotated, Optional
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.infra.api.dependencies import require_winemaker, get_current_user
@@ -21,7 +21,8 @@ from src.modules.fermentation.src.api.schemas.requests.fermentation_requests imp
     FermentationUpdateRequest
 )
 from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import (
-    FermentationResponse
+    FermentationResponse,
+    PaginatedResponse
 )
 from src.modules.fermentation.src.service_component.interfaces.fermentation_service_interface import IFermentationService
 from src.modules.fermentation.src.domain.dtos import FermentationCreate
@@ -164,6 +165,77 @@ async def get_fermentation(
     except HTTPException:
         # Re-raise HTTP exceptions (404, etc.)
         raise
+    except Exception as e:
+        # Log unexpected errors in production
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+
+
+@router.get(
+    "",
+    response_model=PaginatedResponse[FermentationResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List fermentations",
+    description="List all fermentations for the authenticated user's winery with pagination support."
+)
+async def list_fermentations(
+    current_user: Annotated[UserContext, Depends(get_current_user)],
+    service: Annotated[IFermentationService, Depends(get_fermentation_service)],
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    size: int = Query(20, ge=1, le=100, description="Items per page"),
+    status_filter: Optional[str] = Query(None, alias="status", description="Filter by fermentation status"),
+    include_completed: bool = Query(False, description="Include completed fermentations")
+) -> PaginatedResponse[FermentationResponse]:
+    """
+    List fermentations for user's winery with pagination.
+    
+    TDD GREEN Phase: Minimal implementation to pass tests.
+    
+    Args:
+        current_user: Authenticated user context (multi-tenancy)
+        service: Injected fermentation service
+        page: Page number (1-indexed, default: 1)
+        size: Items per page (default: 20, max: 100)
+        status_filter: Optional status filter (ACTIVE, COMPLETED, etc.)
+        include_completed: Include completed fermentations (default: False)
+    
+    Returns:
+        PaginatedResponse[FermentationResponse]: Paginated list of fermentations
+    
+    Business Rules:
+        - Multi-tenancy: Only returns fermentations from user's winery
+        - Pagination: Applied after filtering
+        - Status filtering: Client-side or service-side
+        - Completed fermentations excluded by default
+    """
+    try:
+        # Get all fermentations for winery (service applies multi-tenancy)
+        all_fermentations = await service.get_fermentations_by_winery(
+            winery_id=current_user.winery_id,
+            status=status_filter,
+            include_completed=include_completed
+        )
+        
+        # Calculate pagination
+        total = len(all_fermentations)
+        start_idx = (page - 1) * size
+        end_idx = start_idx + size
+        
+        # Slice for current page
+        page_items = all_fermentations[start_idx:end_idx]
+        
+        # Convert entities to response DTOs
+        items = [FermentationResponse.from_entity(f) for f in page_items]
+        
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            size=size
+        )
+    
     except Exception as e:
         # Log unexpected errors in production
         raise HTTPException(
