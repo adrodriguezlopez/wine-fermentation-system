@@ -111,6 +111,7 @@ async def create_sample(
     summary="List all samples for a fermentation",
     description="Retrieves all samples for the specified fermentation in chronological order."
 )
+@handle_service_errors
 async def list_samples(
     fermentation_id: int = Path(..., gt=0, description="ID of the fermentation"),
     current_user: Annotated[UserContext, Depends(get_current_user)] = None,
@@ -131,24 +132,12 @@ async def list_samples(
         HTTP 404: Fermentation not found
         HTTP 401: Not authenticated
     """
-    try:
-        samples = await sample_service.get_samples_by_fermentation(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id
-        )
-        
-        return [SampleResponse.from_entity(s) for s in samples]
-        
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    samples = await sample_service.get_samples_by_fermentation(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id
+    )
+    
+    return [SampleResponse.from_entity(s) for s in samples]
 
 
 # ======================================================================================
@@ -162,6 +151,7 @@ async def list_samples(
     summary="Get the latest sample",
     description="Retrieves the most recent sample for the fermentation, optionally filtered by type."
 )
+@handle_service_errors
 async def get_latest_sample(
     fermentation_id: int = Path(..., gt=0, description="ID of the fermentation"),
     sample_type: Optional[str] = Query(None, description="Filter by sample type (e.g., 'sugar', 'temperature')"),
@@ -184,45 +174,31 @@ async def get_latest_sample(
         HTTP 404: No samples found or fermentation not found
         HTTP 401: Not authenticated
     """
-    try:
-        # Convert string to SampleType enum if provided
-        from src.modules.fermentation.src.domain.enums.sample_type import SampleType
-        sample_type_enum = None
-        if sample_type:
-            try:
-                sample_type_enum = SampleType(sample_type.lower())
-            except ValueError:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Invalid sample type: {sample_type}"
-                )
-        
-        sample = await sample_service.get_latest_sample(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id,
-            sample_type=sample_type_enum
-        )
-        
-        if sample is None:
+    # Convert string to SampleType enum if provided
+    from src.modules.fermentation.src.domain.enums.sample_type import SampleType
+    sample_type_enum = None
+    if sample_type:
+        try:
+            sample_type_enum = SampleType(sample_type.lower())
+        except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No samples found"
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid sample type: {sample_type}"
             )
-        
-        return SampleResponse.from_entity(sample)
-        
-    except NotFoundError as e:
+    
+    sample = await sample_service.get_latest_sample(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id,
+        sample_type=sample_type_enum
+    )
+    
+    if sample is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
+            detail="No samples found"
         )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    
+    return SampleResponse.from_entity(sample)
 
 
 # ======================================================================================
@@ -236,6 +212,7 @@ async def get_latest_sample(
     summary="Get a specific sample",
     description="Retrieves a specific sample by ID."
 )
+@handle_service_errors
 async def get_sample(
     fermentation_id: int = Path(..., gt=0, description="ID of the fermentation"),
     sample_id: int = Path(..., gt=0, description="ID of the sample"),
@@ -258,33 +235,19 @@ async def get_sample(
         HTTP 404: Sample or fermentation not found
         HTTP 401: Not authenticated
     """
-    try:
-        sample = await sample_service.get_sample(
-            sample_id=sample_id,
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id
-        )
-        
-        if sample is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Sample with id {sample_id} not found"
-        )
-        
-        return SampleResponse.from_entity(sample)
-        
-    except NotFoundError as e:
+    sample = await sample_service.get_sample(
+        sample_id=sample_id,
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id
+    )
+    
+    if sample is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
+            detail=f"Sample with id {sample_id} not found"
         )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    
+    return SampleResponse.from_entity(sample)
 
 
 # ======================================================================================
@@ -325,6 +288,7 @@ async def get_sample_types() -> List[str]:
     summary="Get samples in time range",
     description="Retrieves all samples within a specific time range for a fermentation."
 )
+@handle_service_errors
 async def get_samples_by_timerange(
     fermentation_id: int = Query(..., gt=0, description="ID of the fermentation"),
     start_date: datetime = Query(..., description="Start of time range (ISO 8601 format)"),
@@ -356,31 +320,14 @@ async def get_samples_by_timerange(
     Example:
         GET /api/v1/samples/timerange?fermentation_id=1&start_date=2024-11-01T00:00:00&end_date=2024-11-10T23:59:59
     """
-    try:
-        samples = await sample_service.get_samples_in_timerange(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id,
-            start=start_date,
-            end=end_date
-        )
-        
-        return [SampleResponse.from_entity(s) for s in samples]
-        
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    samples = await sample_service.get_samples_in_timerange(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id,
+        start=start_date,
+        end=end_date
+    )
+    
+    return [SampleResponse.from_entity(s) for s in samples]
 
 
 # ======================================================================================
@@ -394,6 +341,7 @@ async def get_samples_by_timerange(
     summary="Validate sample data without creating",
     description="Performs dry-run validation of sample data. Useful for frontend validation before submission."
 )
+@handle_service_errors
 async def validate_sample(
     fermentation_id: int = Query(..., gt=0, description="ID of the fermentation"),
     request: SampleCreateRequest = ...,
@@ -427,35 +375,23 @@ async def validate_sample(
             "warnings": []
         }
     """
-    try:
-        # Convert API request to service DTO
-        sample_dto = SampleCreate(
-            sample_type=SampleType(request.sample_type),
-            value=request.value,
-            units=request.units,
-            recorded_at=request.recorded_at
-        )
-        
-        # Validate via service (does not create sample)
-        validation_result = await sample_service.validate_sample_data(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id,
-            data=sample_dto
-        )
-        
-        # Return as dict for JSON serialization
-        return validation_result.model_dump()
-        
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    # Convert API request to service DTO
+    sample_dto = SampleCreate(
+        sample_type=SampleType(request.sample_type),
+        value=request.value,
+        units=request.units,
+        recorded_at=request.recorded_at
+    )
+    
+    # Validate via service (does not create sample)
+    validation_result = await sample_service.validate_sample_data(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id,
+        data=sample_dto
+    )
+    
+    # Return as dict for JSON serialization
+    return validation_result.model_dump()
 
 
 # =============================================================================
@@ -474,6 +410,7 @@ async def validate_sample(
     },
     tags=["samples"]
 )
+@handle_service_errors
 async def delete_sample(
     sample_id: int = Path(..., description="Sample ID", gt=0),
     fermentation_id: int = Query(..., description="Fermentation ID", gt=0),
@@ -503,21 +440,9 @@ async def delete_sample(
     
     Status: ✅ Implemented (Phase 4 - 2025-11-15)
     """
-    try:
-        await sample_service.delete_sample(
-            sample_id=sample_id,
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id
-        )
-        # 204 No Content - no body returned
-        
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    await sample_service.delete_sample(
+        sample_id=sample_id,
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id
+    )
+    # 204 No Content - no body returned

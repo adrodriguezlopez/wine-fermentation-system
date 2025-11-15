@@ -615,7 +615,7 @@ class TestGetSamplesInTimerange:
             }
         )
         
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
         assert "detail" in response.json()
     
     def test_get_samples_in_timerange_fermentation_not_found(self, client):
