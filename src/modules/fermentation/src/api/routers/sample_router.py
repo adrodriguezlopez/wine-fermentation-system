@@ -282,8 +282,8 @@ async def get_sample(
         if sample is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Sample with id {sample_id} not found"
-            )
+            detail=f"Sample with id {sample_id} not found"
+        )
         
         return SampleResponse.from_entity(sample)
         
@@ -299,3 +299,30 @@ async def get_sample(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {str(e)}"
         )
+
+
+# ======================================================================================
+# GET /api/v1/samples/types - Get Available Sample Types
+# ======================================================================================
+
+# Create a separate router for non-nested sample endpoints
+samples_router = APIRouter(prefix="/api/v1/samples", tags=["samples"])
+
+@samples_router.get(
+    "/types",
+    response_model=List[str],
+    status_code=status.HTTP_200_OK,
+    summary="Get available sample types",
+    description="Returns a list of available sample types that can be recorded."
+)
+async def get_sample_types() -> List[str]:
+    """
+    Get available sample types.
+    
+    Returns a list of valid sample type values that can be used
+    when creating samples. No authentication required (public endpoint).
+    
+    Returns:
+        List[str]: List of sample type values (e.g., ["sugar", "temperature", "density"])
+    """
+    return [sample_type.value for sample_type in SampleType]

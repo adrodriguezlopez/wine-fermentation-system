@@ -417,3 +417,47 @@ class TestGetLatestSample:
         data = response.json()
         assert data["sample_type"] == "temperature"
         assert data["value"] == 22.0
+
+
+# ======================================================================================
+# PHASE 4: GET /api/v1/samples/types - Get Available Sample Types
+# ======================================================================================
+
+class TestGetSampleTypes:
+    """Tests for GET /api/v1/samples/types endpoint."""
+    
+    def test_get_sample_types_success(self, client):
+        """
+        Should return list of available sample types.
+        
+        Given: Sample types exist in the system
+        When: GET /api/v1/samples/types
+        Then: Returns 200 with list of sample type values
+        """
+        response = client.get("/api/v1/samples/types")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        # Verify response is a list
+        assert isinstance(data, list)
+        assert len(data) == 3  # sugar, temperature, density
+        
+        # Verify expected sample types are present
+        expected_types = ["sugar", "temperature", "density"]
+        assert set(data) == set(expected_types)
+    
+    def test_get_sample_types_no_auth_required(self, unauthenticated_client):
+        """
+        Should allow access without authentication (public endpoint).
+        
+        Given: No user authentication
+        When: GET /api/v1/samples/types
+        Then: Returns 200 with sample types
+        """
+        response = unauthenticated_client.get("/api/v1/samples/types")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) == 3

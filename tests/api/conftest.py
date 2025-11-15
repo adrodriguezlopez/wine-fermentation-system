@@ -199,13 +199,14 @@ def create_test_app(user_override: UserContext = None, db_override: AsyncSession
     from src.shared.auth.infra.api.dependencies import get_current_user, require_winemaker
     from src.shared.infra.database.fastapi_session import get_db_session as real_get_db_session
     from src.modules.fermentation.src.api.routers.fermentation_router import router as fermentation_router
-    from src.modules.fermentation.src.api.routers.sample_router import router as sample_router
+    from src.modules.fermentation.src.api.routers.sample_router import router as sample_router, samples_router
     
     # Create minimal FastAPI app for testing
     app = FastAPI(title="Fermentation API - Test")
     
     # Include routers (sample router first for route specificity)
     app.include_router(sample_router)
+    app.include_router(samples_router)  # New: non-nested sample endpoints
     app.include_router(fermentation_router)
     
     # Test endpoint to verify client works
