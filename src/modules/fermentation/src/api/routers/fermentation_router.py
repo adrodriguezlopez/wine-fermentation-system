@@ -240,6 +240,7 @@ async def list_fermentations(
         500: {"description": "Internal server error"}
     }
 )
+@handle_service_errors
 async def update_fermentation(
     fermentation_id: int = Path(..., gt=0, description="ID of the fermentation to update"),
     request: FermentationUpdateRequest = Body(...),
@@ -261,45 +262,27 @@ async def update_fermentation(
     Raises:
         HTTPException: If not authorized, not found, or validation fails
     """
-    try:
-        # Build FermentationUpdate DTO with only provided fields
-        update_dto = FermentationUpdate(
-            yeast_strain=request.yeast_strain,
-            vessel_code=request.vessel_code,
-            input_mass_kg=request.input_mass_kg,
-            initial_sugar_brix=request.initial_sugar_brix,
-            initial_density=request.initial_density,
-            vintage_year=request.vintage_year,
-            start_date=request.start_date
-        )
-        
-        # Call service to update
-        updated_fermentation = await fermentation_service.update_fermentation(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id,
-            user_id=current_user.user_id,
-            data=update_dto
-        )
-        
-        # Convert to response DTO
-        return FermentationResponse.from_entity(updated_fermentation)
-        
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
-        )
-    except Exception as e:
-        # Log unexpected errors in production
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    # Build FermentationUpdate DTO with only provided fields
+    update_dto = FermentationUpdate(
+        yeast_strain=request.yeast_strain,
+        vessel_code=request.vessel_code,
+        input_mass_kg=request.input_mass_kg,
+        initial_sugar_brix=request.initial_sugar_brix,
+        initial_density=request.initial_density,
+        vintage_year=request.vintage_year,
+        start_date=request.start_date
+    )
+    
+    # Call service to update
+    updated_fermentation = await fermentation_service.update_fermentation(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id,
+        user_id=current_user.user_id,
+        data=update_dto
+    )
+    
+    # Convert to response DTO
+    return FermentationResponse.from_entity(updated_fermentation)
 
 
 @router.patch(
@@ -334,6 +317,7 @@ async def update_fermentation(
         500: {"description": "Internal server error"}
     }
 )
+@handle_service_errors
 async def update_fermentation_status(
     fermentation_id: int = Path(..., gt=0, description="ID of the fermentation to update"),
     request: StatusUpdateRequest = Body(...),
@@ -352,34 +336,16 @@ async def update_fermentation_status(
     Raises:
         HTTPException: If not authorized, not found, or invalid transition
     """
-    try:
-        # Call service to update status (service will validate transition)
-        updated_fermentation = await fermentation_service.update_status(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id,
-            user_id=current_user.user_id,
-            new_status=request.status  # Pass as string, service converts to enum
-        )
-        
-        # Convert to response DTO
-        return FermentationResponse.from_entity(updated_fermentation)
-        
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
-        )
-    except Exception as e:
-        # Log unexpected errors in production
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    # Call service to update status (service will validate transition)
+    updated_fermentation = await fermentation_service.update_status(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id,
+        user_id=current_user.user_id,
+        new_status=request.status  # Pass as string, service converts to enum
+    )
+    
+    # Convert to response DTO
+    return FermentationResponse.from_entity(updated_fermentation)
 
 
 @router.patch(
@@ -415,6 +381,7 @@ async def update_fermentation_status(
         500: {"description": "Internal server error"}
     }
 )
+@handle_service_errors
 async def complete_fermentation(
     fermentation_id: int = Path(..., gt=0, description="ID of the fermentation to complete"),
     request: CompleteFermentationRequest = Body(...),
@@ -436,36 +403,18 @@ async def complete_fermentation(
     Raises:
         HTTPException: If not authorized, not found, or validation fails
     """
-    try:
-        # Call service to complete fermentation
-        completed_fermentation = await fermentation_service.complete_fermentation(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id,
-            user_id=current_user.user_id,
-            final_sugar_brix=request.final_sugar_brix,
-            final_mass_kg=request.final_mass_kg,
-            notes=request.notes
-        )
-        
-        # Convert to response DTO
-        return FermentationResponse.from_entity(completed_fermentation)
-        
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
-        )
-    except Exception as e:
-        # Log unexpected errors in production
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    # Call service to complete fermentation
+    completed_fermentation = await fermentation_service.complete_fermentation(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id,
+        user_id=current_user.user_id,
+        final_sugar_brix=request.final_sugar_brix,
+        final_mass_kg=request.final_mass_kg,
+        notes=request.notes
+    )
+    
+    # Convert to response DTO
+    return FermentationResponse.from_entity(completed_fermentation)
 
 
 @router.delete(
@@ -496,6 +445,7 @@ async def complete_fermentation(
         500: {"description": "Internal server error"}
     }
 )
+@handle_service_errors
 async def delete_fermentation(
     fermentation_id: int = Path(..., gt=0, description="ID of the fermentation to delete"),
     current_user: UserContext = Depends(require_winemaker),
@@ -512,30 +462,17 @@ async def delete_fermentation(
     Raises:
         HTTPException: If not authorized or not found
     """
-    try:
-        # Call service to soft delete
-        success = await fermentation_service.soft_delete(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id,
-            user_id=current_user.user_id
-        )
-        
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Fermentation with id {fermentation_id} not found"
-            )
-        
-    except NotFoundError as e:
+    # Call service to soft delete
+    success = await fermentation_service.soft_delete(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id,
+        user_id=current_user.user_id
+    )
+    
+    if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        # Log unexpected errors in production
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
+            detail=f"Fermentation with id {fermentation_id} not found"
         )
 
 
@@ -570,6 +507,7 @@ async def delete_fermentation(
         500: {"description": "Internal server error"}
     }
 )
+@handle_service_errors
 async def validate_fermentation_data(
     request: FermentationCreateRequest = Body(...),
     current_user: UserContext = Depends(require_winemaker),
@@ -589,46 +527,38 @@ async def validate_fermentation_data(
     Raises:
         HTTPException: If not authorized
     """
-    try:
-        # Build FermentationCreate DTO
-        fermentation_dto = FermentationCreate(
-            fermented_by_user_id=current_user.user_id,
-            vintage_year=request.vintage_year,
-            yeast_strain=request.yeast_strain,
-            vessel_code=request.vessel_code,
-            input_mass_kg=request.input_mass_kg,
-            initial_sugar_brix=request.initial_sugar_brix,
-            initial_density=request.initial_density,
-            start_date=request.start_date
+    # Build FermentationCreate DTO
+    fermentation_dto = FermentationCreate(
+        fermented_by_user_id=current_user.user_id,
+        vintage_year=request.vintage_year,
+        yeast_strain=request.yeast_strain,
+        vessel_code=request.vessel_code,
+        input_mass_kg=request.input_mass_kg,
+        initial_sugar_brix=request.initial_sugar_brix,
+        initial_density=request.initial_density,
+        start_date=request.start_date
+    )
+    
+    # Call service to validate (doesn't create anything - synchronous method)
+    validation_result = fermentation_service.validate_creation_data(
+        data=fermentation_dto
+    )
+    
+    # Build response
+    if validation_result.is_valid:
+        return ValidationResponse(valid=True, errors=[])
+    
+    # Convert validation errors to response DTOs
+    error_details = [
+        ValidationErrorDetail(
+            field=error.field,
+            message=error.message,
+            code=None  # ValidationError doesn't have code field
         )
-        
-        # Call service to validate (doesn't create anything - synchronous method)
-        validation_result = fermentation_service.validate_creation_data(
-            data=fermentation_dto
-        )
-        
-        # Build response
-        if validation_result.is_valid:
-            return ValidationResponse(valid=True, errors=[])
-        
-        # Convert validation errors to response DTOs
-        error_details = [
-            ValidationErrorDetail(
-                field=error.field,
-                message=error.message,
-                code=None  # ValidationError doesn't have code field
-            )
-            for error in validation_result.errors
-        ]
-        
-        return ValidationResponse(valid=False, errors=error_details)
-        
-    except Exception as e:
-        # Log unexpected errors in production
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+        for error in validation_result.errors
+    ]
+    
+    return ValidationResponse(valid=False, errors=error_details)
 
 
 # =============================================================================
@@ -648,6 +578,7 @@ async def validate_fermentation_data(
     },
     tags=["fermentations"]
 )
+@handle_service_errors
 async def get_fermentation_timeline(
     fermentation_id: int = Path(..., description="Fermentation ID", gt=0),
     current_user: Annotated[UserContext, Depends(get_current_user)] = None,
@@ -685,56 +616,42 @@ async def get_fermentation_timeline(
     
     Status: ✅ Implemented (Phase 4 - 2025-11-15)
     """
-    try:
-        # Step 1: Get fermentation
-        fermentation = await fermentation_service.get_fermentation(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id
-        )
-        
-        if fermentation is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Fermentation {fermentation_id} not found"
-            )
-        
-        # Step 2: Get all samples for fermentation (chronologically ordered)
-        samples = await sample_service.get_samples_by_fermentation(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id
-        )
-        
-        # Step 3: Build response
-        from src.modules.fermentation.src.api.schemas.responses.sample_responses import SampleResponse
-        
-        fermentation_response = FermentationResponse.from_entity(fermentation)
-        sample_responses = [SampleResponse.from_entity(s) for s in samples]
-        
-        # Calculate metadata
-        sample_count = len(samples)
-        first_sample_date = samples[0].recorded_at if samples else None
-        last_sample_date = samples[-1].recorded_at if samples else None
-        
-        return TimelineResponse(
-            fermentation=fermentation_response,
-            samples=sample_responses,
-            sample_count=sample_count,
-            first_sample_date=first_sample_date,
-            last_sample_date=last_sample_date
-        )
-        
-    except HTTPException:
-        raise
-    except NotFoundError as e:
+    # Step 1: Get fermentation
+    fermentation = await fermentation_service.get_fermentation(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id
+    )
+    
+    if fermentation is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
+            detail=f"Fermentation {fermentation_id} not found"
         )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    
+    # Step 2: Get all samples for fermentation (chronologically ordered)
+    samples = await sample_service.get_samples_by_fermentation(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id
+    )
+    
+    # Step 3: Build response
+    from src.modules.fermentation.src.api.schemas.responses.sample_responses import SampleResponse
+    
+    fermentation_response = FermentationResponse.from_entity(fermentation)
+    sample_responses = [SampleResponse.from_entity(s) for s in samples]
+    
+    # Calculate metadata
+    sample_count = len(samples)
+    first_sample_date = samples[0].recorded_at if samples else None
+    last_sample_date = samples[-1].recorded_at if samples else None
+    
+    return TimelineResponse(
+        fermentation=fermentation_response,
+        samples=sample_responses,
+        sample_count=sample_count,
+        first_sample_date=first_sample_date,
+        last_sample_date=last_sample_date
+    )
 
 
 # =============================================================================
@@ -754,6 +671,7 @@ async def get_fermentation_timeline(
     },
     tags=["fermentations"]
 )
+@handle_service_errors
 async def get_fermentation_statistics(
     fermentation_id: int = Path(..., description="Fermentation ID", gt=0),
     current_user: Annotated[UserContext, Depends(get_current_user)] = None,
@@ -801,86 +719,72 @@ async def get_fermentation_statistics(
     
     Status: ✅ Implemented (Phase 4 - 2025-11-15)
     """
-    try:
-        from src.modules.fermentation.src.domain.enums.sample_type import SampleType
-        from collections import Counter
-        
-        # Step 1: Get fermentation
-        fermentation = await fermentation_service.get_fermentation(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id
-        )
-        
-        if fermentation is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Fermentation {fermentation_id} not found"
-            )
-        
-        # Step 2: Get all samples
-        samples = await sample_service.get_samples_by_fermentation(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id
-        )
-        
-        # Step 3: Calculate statistics
-        total_samples = len(samples)
-        
-        # Count samples by type
-        sample_types = [s.sample_type for s in samples]
-        samples_by_type = dict(Counter(sample_types))
-        
-        # Duration calculation
-        duration_days = None
-        if samples:
-            last_sample_date = samples[-1].recorded_at
-            duration = last_sample_date - fermentation.start_date
-            duration_days = duration.total_seconds() / 86400  # Convert to days
-        
-        # Sugar statistics
-        sugar_samples = [s for s in samples if s.sample_type == SampleType.SUGAR.value]
-        initial_sugar = fermentation.initial_sugar_brix
-        latest_sugar = None
-        sugar_drop = None
-        
-        if sugar_samples:
-            latest_sugar = sugar_samples[-1].value
-            sugar_drop = initial_sugar - latest_sugar
-        
-        # Temperature statistics
-        temp_samples = [s for s in samples if s.sample_type == SampleType.TEMPERATURE.value]
-        avg_temperature = None
-        if temp_samples:
-            avg_temperature = sum(s.value for s in temp_samples) / len(temp_samples)
-        
-        # Sample frequency
-        avg_samples_per_day = None
-        if duration_days and duration_days > 0:
-            avg_samples_per_day = total_samples / duration_days
-        
-        return StatisticsResponse(
-            fermentation_id=fermentation.id,
-            status=fermentation.status,
-            start_date=fermentation.start_date,
-            duration_days=duration_days,
-            total_samples=total_samples,
-            samples_by_type=samples_by_type,
-            initial_sugar=initial_sugar,
-            latest_sugar=latest_sugar,
-            sugar_drop=sugar_drop,
-            avg_temperature=avg_temperature,
-            avg_samples_per_day=avg_samples_per_day
-        )
-        
-    except HTTPException:
-        raise
-    except NotFoundError as e:
+    from src.modules.fermentation.src.domain.enums.sample_type import SampleType
+    from collections import Counter
+    
+    # Step 1: Get fermentation
+    fermentation = await fermentation_service.get_fermentation(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id
+    )
+    
+    if fermentation is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
+            detail=f"Fermentation {fermentation_id} not found"
         )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    
+    # Step 2: Get all samples
+    samples = await sample_service.get_samples_by_fermentation(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id
+    )
+    
+    # Step 3: Calculate statistics
+    total_samples = len(samples)
+    
+    # Count samples by type
+    sample_types = [s.sample_type for s in samples]
+    samples_by_type = dict(Counter(sample_types))
+    
+    # Duration calculation
+    duration_days = None
+    if samples:
+        last_sample_date = samples[-1].recorded_at
+        duration = last_sample_date - fermentation.start_date
+        duration_days = duration.total_seconds() / 86400  # Convert to days
+    
+    # Sugar statistics
+    sugar_samples = [s for s in samples if s.sample_type == SampleType.SUGAR.value]
+    initial_sugar = fermentation.initial_sugar_brix
+    latest_sugar = None
+    sugar_drop = None
+    
+    if sugar_samples:
+        latest_sugar = sugar_samples[-1].value
+        sugar_drop = initial_sugar - latest_sugar
+    
+    # Temperature statistics
+    temp_samples = [s for s in samples if s.sample_type == SampleType.TEMPERATURE.value]
+    avg_temperature = None
+    if temp_samples:
+        avg_temperature = sum(s.value for s in temp_samples) / len(temp_samples)
+    
+    # Sample frequency
+    avg_samples_per_day = None
+    if duration_days and duration_days > 0:
+        avg_samples_per_day = total_samples / duration_days
+    
+    return StatisticsResponse(
+        fermentation_id=fermentation.id,
+        status=fermentation.status,
+        start_date=fermentation.start_date,
+        duration_days=duration_days,
+        total_samples=total_samples,
+        samples_by_type=samples_by_type,
+        initial_sugar=initial_sugar,
+        latest_sugar=latest_sugar,
+        sugar_drop=sugar_drop,
+        avg_temperature=avg_temperature,
+        avg_samples_per_day=avg_samples_per_day
+    )

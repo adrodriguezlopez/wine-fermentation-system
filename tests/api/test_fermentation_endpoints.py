@@ -232,42 +232,26 @@ class TestPostFermentations:
         
         GREEN: Will pass once exception handling is implemented in endpoint
         
-        Note: Since we're using mock entities instead of real service,
-        we test the error handling by mocking at a lower level.
+        Note: Error handling is now centralized via @handle_service_errors decorator.
+        This test verifies the decorator is applied to the endpoint.
         """
         # Arrange
-        from src.modules.fermentation.src.service_component.errors import DuplicateError
-        
-        # We'll mock the MockFermentation class creation to raise an error
-        def mock_init_raises(*args, **kwargs):
-            raise DuplicateError("Vessel TANK-01 is already in use for another active fermentation")
-        
-        # Patch at the point where MockFermentation is instantiated
-        # This simulates what would happen when real service raises error
         import src.modules.fermentation.src.api.routers.fermentation_router as router_mod
         
-        # Monkeypatch the datetime import to trigger our error
-        # Actually, let's just verify the try-except block exists by checking response
-        
-        # Since current implementation uses inline MockFermentation,
-        # we can't easily mock it. Instead, verify error handling exists:
-        # The endpoint has try-except for DuplicateError -> 400
-        
-        # For now, this test verifies the structure is in place
-        # When real service is injected, we'll properly test error handling
-        
-        # Let's verify the exception handling code exists in the router
+        # Verify the error handling decorator is applied to the endpoint
         import inspect
         source = inspect.getsource(router_mod.create_fermentation)
         
-        # Verify error handling is implemented
-        assert "try:" in source
-        assert "except" in source
-        assert "DuplicateError" in source or "ValidationError" in source
-        assert "HTTP_400_BAD_REQUEST" in source or "400" in source
+        # Verify @handle_service_errors decorator is applied
+        assert "@handle_service_errors" in source or "handle_service_errors" in str(router_mod.create_fermentation.__wrapped__ if hasattr(router_mod.create_fermentation, '__wrapped__') else '')
         
-        # This confirms error handling structure exists
-        # Actual error testing will work once real service is injected
+        # Verify the decorator module is imported
+        router_source = inspect.getsource(router_mod)
+        assert "from src.modules.fermentation.src.api.error_handlers import handle_service_errors" in router_source
+        
+        # This confirms error handling via decorator is in place
+        # The decorator automatically handles DuplicateError, ValidationError, etc.
+
 
 
 # ==============================================================================
