@@ -396,3 +396,78 @@ async def get_samples_by_timerange(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {str(e)}"
         )
+
+
+# ======================================================================================
+# POST /api/v1/samples/validate - Validate Sample Data (Dry-Run)
+# ======================================================================================
+
+@samples_router.post(
+    "/validate",
+    response_model=dict,  # ValidationResult serialized as dict
+    status_code=status.HTTP_200_OK,
+    summary="Validate sample data without creating",
+    description="Performs dry-run validation of sample data. Useful for frontend validation before submission."
+)
+async def validate_sample(
+    fermentation_id: int = Query(..., gt=0, description="ID of the fermentation"),
+    request: SampleCreateRequest = ...,
+    current_user: Annotated[UserContext, Depends(get_current_user)] = None,
+    sample_service: Annotated[ISampleService, Depends(get_sample_service)] = None
+) -> dict:
+    """
+    Validate sample data without creating the sample (dry-run).
+    
+    Performs all validation checks that would be applied during sample creation,
+    but does not actually create the sample. Useful for providing real-time
+    validation feedback in forms.
+    
+    Args:
+        fermentation_id: ID of the fermentation
+        request: Sample data to validate
+        current_user: Authenticated user context
+        sample_service: Sample service instance
+        
+    Returns:
+        ValidationResult: Contains is_valid, errors[], and warnings[]
+    
+    Raises:
+        HTTP 404: Fermentation not found
+        HTTP 401: Not authenticated
+    
+    Example Response:
+        {
+            "is_valid": true,
+            "errors": [],
+            "warnings": []
+        }
+    """
+    try:
+        # Convert API request to service DTO
+        sample_dto = SampleCreate(
+            sample_type=SampleType(request.sample_type),
+            value=request.value,
+            units=request.units,
+            recorded_at=request.recorded_at
+        )
+        
+        # Validate via service (does not create sample)
+        validation_result = await sample_service.validate_sample_data(
+            fermentation_id=fermentation_id,
+            winery_id=current_user.winery_id,
+            data=sample_dto
+        )
+        
+        # Return as dict for JSON serialization
+        return validation_result.model_dump()
+        
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )

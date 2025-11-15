@@ -391,6 +391,7 @@ class SampleService(ISampleService):
     async def validate_sample_data(
         self,
         fermentation_id: int,
+        winery_id: int,
         data: SampleCreate
     ) -> ValidationResult:
         """
@@ -399,12 +400,13 @@ class SampleService(ISampleService):
         Useful for frontend validation before submitting form.
 
         Business logic:
-        1. Verifies fermentation exists
+        1. Verifies fermentation exists and belongs to winery
         2. Delegates to ValidationOrchestrator.validate_sample_complete()
         3. Does NOT create sample, only validates
 
         Args:
             fermentation_id: ID of fermentation
+            winery_id: Winery ID for access control
             data: Sample data to validate
 
         Returns:
@@ -416,22 +418,22 @@ class SampleService(ISampleService):
         """
         from src.modules.fermentation.src.service_component.errors import NotFoundError
         
-        # Step 1: Verify fermentation exists
-        # Note: We don't need winery_id here since this is just validation
-        # The actual add_sample() will verify ownership
+        # Step 1: Verify fermentation exists and belongs to winery
         fermentation = await self._fermentation_repo.get_by_id(
             fermentation_id=fermentation_id,
-            winery_id=None  # Skip winery check for validation-only
+            winery_id=winery_id  # Enforce multi-tenancy
         )
         
         if fermentation is None:
             raise NotFoundError(
-                f"Fermentation {fermentation_id} not found"
+                f"Fermentation {fermentation_id} not found or access denied"
             )
         
         # Step 2: Create sample entity for validation (dry-run)
+        # Use user_id=0 as placeholder since we're only validating, not persisting
         sample = self._create_sample_entity(
             fermentation_id=fermentation_id,
+            user_id=0,  # Placeholder for validation-only
             data=data
         )
         

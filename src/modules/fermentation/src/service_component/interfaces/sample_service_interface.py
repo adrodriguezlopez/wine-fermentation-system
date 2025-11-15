@@ -211,6 +211,7 @@ class ISampleService(ABC):
     async def validate_sample_data(
         self,
         fermentation_id: int,
+        winery_id: int,
         data: SampleCreate
     ) -> ValidationResult:
         """
@@ -219,12 +220,13 @@ class ISampleService(ABC):
         Useful for frontend validation before submitting form.
 
         Business logic:
-        1. Verifies fermentation exists
+        1. Verifies fermentation exists and belongs to winery
         2. Delegates to ValidationOrchestrator.validate_sample_complete()
         3. Does NOT create sample, only validates
 
         Args:
             fermentation_id: ID of fermentation
+            winery_id: Winery ID for access control
             data: Sample data to validate
 
         Returns:

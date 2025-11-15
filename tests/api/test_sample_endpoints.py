@@ -655,3 +655,110 @@ class TestGetSamplesInTimerange:
         )
         
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+# ======================================================================================
+# PHASE 4: POST /api/v1/samples/validate - Validate Sample Data (Dry-Run)
+# ======================================================================================
+
+class TestValidateSample:
+    """Tests for POST /api/v1/samples/validate endpoint."""
+    
+    def test_validate_sample_success(self, client, mock_user_context):
+        """
+        Should return validation result without creating sample.
+        
+        Given: Valid fermentation and valid sample data
+        When: POST /api/v1/samples/validate
+        Then: Returns 200 with validation result (is_valid=true)
+        """
+        # Create fermentation
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Validate sample data (dry-run)
+        sample_data = {
+            "sample_type": "sugar",
+            "value": 20.5,
+            "units": "°Brix",
+            "recorded_at": "2024-11-02T10:00:00"
+        }
+        
+        response = client.post(
+            "/api/v1/samples/validate",
+            params={"fermentation_id": fermentation_id},
+            json=sample_data
+        )
+        
+        # Debug
+        if response.status_code != status.HTTP_200_OK:
+            print(f"\n❌ Status: {response.status_code}")
+            print(f"Response: {response.text}")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        # Verify validation result structure
+        assert "is_valid" in data
+        assert "errors" in data
+        assert "warnings" in data
+        assert data["is_valid"] is True
+        assert len(data["errors"]) == 0
+        
+        # Verify sample was NOT created
+        samples_response = client.get(f"/api/v1/fermentations/{fermentation_id}/samples")
+        assert len(samples_response.json()) == 0
+    
+    def test_validate_sample_fermentation_not_found(self, client):
+        """
+        Should return 404 for non-existent fermentation.
+        
+        Given: Non-existent fermentation ID
+        When: POST /api/v1/samples/validate
+        Then: Returns 404
+        """
+        sample_data = {
+            "sample_type": "sugar",
+            "value": 20.5,
+            "units": "°Brix",
+            "recorded_at": "2024-11-02T10:00:00"
+        }
+        
+        response = client.post(
+            "/api/v1/samples/validate",
+            params={"fermentation_id": 99999},
+            json=sample_data
+        )
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+    
+    def test_validate_sample_without_authentication(self, unauthenticated_client):
+        """
+        Should require authentication.
+        
+        Given: No authentication
+        When: POST /api/v1/samples/validate
+        Then: Returns 403
+        """
+        sample_data = {
+            "sample_type": "sugar",
+            "value": 20.5,
+            "units": "°Brix",
+            "recorded_at": "2024-11-02T10:00:00"
+        }
+        
+        response = unauthenticated_client.post(
+            "/api/v1/samples/validate",
+            params={"fermentation_id": 1},
+            json=sample_data
+        )
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN
