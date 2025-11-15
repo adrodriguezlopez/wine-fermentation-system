@@ -27,7 +27,8 @@ from src.modules.fermentation.src.api.schemas.responses.fermentation_responses i
     PaginatedResponse,
     ValidationResponse,
     ValidationErrorDetail,
-    TimelineResponse
+    TimelineResponse,
+    StatisticsResponse
 )
 from src.modules.fermentation.src.service_component.interfaces.fermentation_service_interface import IFermentationService
 from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
@@ -761,6 +762,155 @@ async def get_fermentation_timeline(
             sample_count=sample_count,
             first_sample_date=first_sample_date,
             last_sample_date=last_sample_date
+        )
+        
+    except HTTPException:
+        raise
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+
+
+# =============================================================================
+# GET /api/v1/fermentations/{id}/statistics - Get Fermentation Statistics
+# =============================================================================
+
+@router.get(
+    "/{fermentation_id}/statistics",
+    response_model=StatisticsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get fermentation statistics",
+    description="Calculates and returns statistical analysis of fermentation progress",
+    responses={
+        200: {"description": "Statistics calculated successfully"},
+        404: {"description": "Fermentation not found"},
+        403: {"description": "Not authenticated"}
+    },
+    tags=["fermentations"]
+)
+async def get_fermentation_statistics(
+    fermentation_id: int = Path(..., description="Fermentation ID", gt=0),
+    current_user: Annotated[UserContext, Depends(get_current_user)] = None,
+    fermentation_service: Annotated[IFermentationService, Depends(get_fermentation_service)] = None,
+    sample_service: Annotated[ISampleService, Depends(get_sample_service)] = None
+) -> StatisticsResponse:
+    """
+    Get statistical analysis for a fermentation.
+    
+    Calculates aggregated metrics including:
+    - Duration (days from start to last sample)
+    - Sample counts (total + by type)
+    - Sugar progression (initial, latest, drop)
+    - Temperature averages
+    - Sample frequency
+    
+    **Business Rules:**
+    - Requires at least fermentation data (samples optional)
+    - Sugar statistics require sugar samples
+    - Duration calculated from start_date to last sample
+    
+    **Authentication:**
+    - Required: Yes (JWT Bearer token)
+    - Roles: Any authenticated user from the same winery
+    
+    **Multi-tenancy:**
+    - Enforced via fermentation ownership check
+    
+    **Example Response:**
+    ```json
+    {
+        "fermentation_id": 1,
+        "status": "ACTIVE",
+        "start_date": "2024-11-01T10:00:00",
+        "duration_days": 14.5,
+        "total_samples": 25,
+        "samples_by_type": {"sugar": 10, "temperature": 8, "density": 7},
+        "initial_sugar": 22.5,
+        "latest_sugar": 12.0,
+        "sugar_drop": 10.5,
+        "avg_temperature": 18.2,
+        "avg_samples_per_day": 1.72
+    }
+    ```
+    
+    Status: ✅ Implemented (Phase 4 - 2025-11-15)
+    """
+    try:
+        from src.modules.fermentation.src.domain.enums.sample_type import SampleType
+        from collections import Counter
+        
+        # Step 1: Get fermentation
+        fermentation = await fermentation_service.get_fermentation(
+            fermentation_id=fermentation_id,
+            winery_id=current_user.winery_id
+        )
+        
+        if fermentation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Fermentation {fermentation_id} not found"
+            )
+        
+        # Step 2: Get all samples
+        samples = await sample_service.get_samples_by_fermentation(
+            fermentation_id=fermentation_id,
+            winery_id=current_user.winery_id
+        )
+        
+        # Step 3: Calculate statistics
+        total_samples = len(samples)
+        
+        # Count samples by type
+        sample_types = [s.sample_type for s in samples]
+        samples_by_type = dict(Counter(sample_types))
+        
+        # Duration calculation
+        duration_days = None
+        if samples:
+            last_sample_date = samples[-1].recorded_at
+            duration = last_sample_date - fermentation.start_date
+            duration_days = duration.total_seconds() / 86400  # Convert to days
+        
+        # Sugar statistics
+        sugar_samples = [s for s in samples if s.sample_type == SampleType.SUGAR.value]
+        initial_sugar = fermentation.initial_sugar_brix
+        latest_sugar = None
+        sugar_drop = None
+        
+        if sugar_samples:
+            latest_sugar = sugar_samples[-1].value
+            sugar_drop = initial_sugar - latest_sugar
+        
+        # Temperature statistics
+        temp_samples = [s for s in samples if s.sample_type == SampleType.TEMPERATURE.value]
+        avg_temperature = None
+        if temp_samples:
+            avg_temperature = sum(s.value for s in temp_samples) / len(temp_samples)
+        
+        # Sample frequency
+        avg_samples_per_day = None
+        if duration_days and duration_days > 0:
+            avg_samples_per_day = total_samples / duration_days
+        
+        return StatisticsResponse(
+            fermentation_id=fermentation.id,
+            status=fermentation.status,
+            start_date=fermentation.start_date,
+            duration_days=duration_days,
+            total_samples=total_samples,
+            samples_by_type=samples_by_type,
+            initial_sugar=initial_sugar,
+            latest_sugar=latest_sugar,
+            sugar_drop=sugar_drop,
+            avg_temperature=avg_temperature,
+            avg_samples_per_day=avg_samples_per_day
         )
         
     except HTTPException:

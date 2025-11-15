@@ -140,3 +140,38 @@ class TimelineResponse(BaseModel):
     sample_count: int = Field(..., description="Total number of samples", ge=0)
     first_sample_date: Optional[datetime] = Field(None, description="Date of first sample")
     last_sample_date: Optional[datetime] = Field(None, description="Date of most recent sample")
+
+
+class StatisticsResponse(BaseModel):
+    """
+    Response DTO for fermentation statistics.
+    
+    Provides aggregated metrics and analysis of fermentation progress.
+    Useful for dashboards and reporting.
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    # Basic info
+    fermentation_id: int = Field(..., description="Fermentation ID")
+    status: str = Field(..., description="Current fermentation status")
+    
+    # Duration metrics
+    start_date: datetime = Field(..., description="Fermentation start date")
+    duration_days: Optional[float] = Field(None, description="Duration in days (from start to last sample)")
+    
+    # Sample metrics
+    total_samples: int = Field(..., description="Total number of samples recorded", ge=0)
+    samples_by_type: dict = Field(
+        default_factory=dict,
+        description="Count of samples by type (e.g., {'sugar': 10, 'temperature': 8})"
+    )
+    
+    # Value statistics (for sugar samples)
+    initial_sugar: Optional[float] = Field(None, description="Initial sugar value (°Brix)")
+    latest_sugar: Optional[float] = Field(None, description="Most recent sugar value (°Brix)")
+    sugar_drop: Optional[float] = Field(None, description="Total sugar drop (°Brix)")
+    avg_temperature: Optional[float] = Field(None, description="Average temperature (°C)")
+    
+    # Sample frequency
+    avg_samples_per_day: Optional[float] = Field(None, description="Average samples recorded per day")

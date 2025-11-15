@@ -1236,3 +1236,136 @@ class TestGetFermentationTimeline:
         
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
+
+# =============================================================================
+# GET /api/v1/fermentations/{id}/statistics
+# =============================================================================
+
+class TestGetFermentationStatistics:
+    """Test suite for GET /api/v1/fermentations/{id}/statistics endpoint"""
+    
+    def test_get_statistics_success(self, client):
+        """
+        ✅ GET statistics with complete data
+        
+        Given: Fermentation exists with various samples
+        When: GET /fermentations/{id}/statistics
+        Then: Returns calculated statistics
+        """
+        # Create fermentation
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Create samples: 2 sugar, 2 temperature
+        samples = [
+            {"sample_type": "sugar", "value": 20.0, "units": "°Brix", "recorded_at": "2024-11-02T10:00:00"},
+            {"sample_type": "temperature", "value": 18.0, "units": "°C", "recorded_at": "2024-11-03T10:00:00"},
+            {"sample_type": "sugar", "value": 15.0, "units": "°Brix", "recorded_at": "2024-11-04T10:00:00"},
+            {"sample_type": "temperature", "value": 20.0, "units": "°C", "recorded_at": "2024-11-05T10:00:00"}
+        ]
+        for sample_data in samples:
+            client.post(f"/api/v1/fermentations/{fermentation_id}/samples", json=sample_data)
+        
+        # Act: Get statistics
+        response = client.get(f"/api/v1/fermentations/{fermentation_id}/statistics")
+        
+        # Assert: Success
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        # Verify basic fields
+        assert data["fermentation_id"] == fermentation_id
+        assert data["status"] == "ACTIVE"
+        assert data["start_date"] == "2024-11-01T10:00:00"
+        
+        # Verify sample counts
+        assert data["total_samples"] == 4
+        assert data["samples_by_type"] == {"sugar": 2, "temperature": 2}
+        
+        # Verify sugar statistics
+        assert data["initial_sugar"] == 22.5
+        assert data["latest_sugar"] == 15.0
+        assert data["sugar_drop"] == 7.5
+        
+        # Verify temperature statistics
+        assert data["avg_temperature"] == 19.0  # (18 + 20) / 2
+        
+        # Verify duration (approximately 4 days from start to last sample)
+        assert data["duration_days"] is not None
+        assert 3.9 < data["duration_days"] < 4.1
+        
+        # Verify sample frequency
+        assert data["avg_samples_per_day"] is not None
+        assert data["avg_samples_per_day"] > 0
+    
+    def test_get_statistics_no_samples(self, client):
+        """
+        ✅ GET statistics with fermentation but no samples
+        
+        Given: Fermentation exists with no samples
+        When: GET /fermentations/{id}/statistics
+        Then: Returns statistics with null values for sample-dependent metrics
+        """
+        # Create fermentation (no samples)
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Act: Get statistics
+        response = client.get(f"/api/v1/fermentations/{fermentation_id}/statistics")
+        
+        # Assert: Success with empty stats
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert data["total_samples"] == 0
+        assert data["samples_by_type"] == {}
+        assert data["duration_days"] is None
+        assert data["latest_sugar"] is None
+        assert data["sugar_drop"] is None
+        assert data["avg_temperature"] is None
+        assert data["avg_samples_per_day"] is None
+        
+        # Initial sugar should still be present (from fermentation data)
+        assert data["initial_sugar"] == 22.5
+    
+    def test_get_statistics_not_found(self, client):
+        """
+        ❌ GET statistics for non-existent fermentation
+        
+        Given: Fermentation ID 999 doesn't exist
+        When: GET /fermentations/999/statistics
+        Then: Returns 404 Not Found
+        """
+        response = client.get("/api/v1/fermentations/999/statistics")
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "not found" in response.json()["detail"].lower()
+    
+    def test_get_statistics_without_authentication(self, unauthenticated_client):
+        """
+        🔒 GET statistics requires authentication
+        
+        Given: Statistics endpoint exists
+        When: GET without auth token
+        Then: Returns 403 Forbidden
+        """
+        response = unauthenticated_client.get("/api/v1/fermentations/1/statistics")
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
