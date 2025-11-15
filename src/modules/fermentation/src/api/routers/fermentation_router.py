@@ -40,6 +40,7 @@ from src.modules.fermentation.src.service_component.errors import (
     BusinessRuleViolation
 )
 from src.modules.fermentation.src.api.dependencies import get_fermentation_service, get_sample_service
+from src.modules.fermentation.src.api.error_handlers import handle_service_errors
 
 
 # Router instance
@@ -56,6 +57,7 @@ router = APIRouter(
     summary="Create a new fermentation",
     description="Creates a new fermentation for the authenticated user's winery. Requires WINEMAKER or ADMIN role."
 )
+@handle_service_errors
 async def create_fermentation(
     request: FermentationCreateRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
@@ -78,56 +80,31 @@ async def create_fermentation(
         HTTP 400: Business validation error (e.g., vessel in use, invalid ranges)
         HTTP 401: Not authenticated
     """
-    try:
-        # Convert API request to service DTO
-        create_dto = FermentationCreate(
-            fermented_by_user_id=current_user.user_id,  # From auth context
-            vintage_year=request.vintage_year,
-            yeast_strain=request.yeast_strain,
-            vessel_code=request.vessel_code,
-            input_mass_kg=request.input_mass_kg,
-            initial_sugar_brix=request.initial_sugar_brix,
-            initial_density=request.initial_density,
-            start_date=request.start_date
-        )
-        
-        # Call service layer (REFACTOR: replaced mock with real service)
-        created_fermentation = await service.create_fermentation(
-            winery_id=current_user.winery_id,  # Multi-tenancy from auth context
-            user_id=current_user.user_id,      # Audit trail
-            data=create_dto
-        )
-        
-        # Convert entity to response DTO
-        return FermentationResponse.from_entity(created_fermentation)
-        
-    except ValidationError as e:
-        # Service validation failed (business rules)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-    except ValueError as e:
-        # Validation errors from service (includes validator errors)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-    except (DuplicateError, BusinessRuleViolation) as e:
-        # Business logic violations (e.g., vessel in use)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-    except Exception as e:
-        # Log unexpected errors in production
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    # Convert API request to service DTO
+    create_dto = FermentationCreate(
+        fermented_by_user_id=current_user.user_id,  # From auth context
+        vintage_year=request.vintage_year,
+        yeast_strain=request.yeast_strain,
+        vessel_code=request.vessel_code,
+        input_mass_kg=request.input_mass_kg,
+        initial_sugar_brix=request.initial_sugar_brix,
+        initial_density=request.initial_density,
+        start_date=request.start_date
+    )
+    
+    # Call service layer (REFACTOR: replaced mock with real service)
+    created_fermentation = await service.create_fermentation(
+        winery_id=current_user.winery_id,  # Multi-tenancy from auth context
+        user_id=current_user.user_id,      # Audit trail
+        data=create_dto
+    )
+    
+    # Convert entity to response DTO
+    return FermentationResponse.from_entity(created_fermentation)
 
 
 @router.get("/{fermentation_id}", response_model=FermentationResponse, status_code=200)
+@handle_service_errors
 async def get_fermentation(
     fermentation_id: int,
     current_user: Annotated[UserContext, Depends(get_current_user)],
@@ -155,29 +132,18 @@ async def get_fermentation(
         - Service returns None for wrong winery (security - don't reveal existence)
         - Soft-deleted records return 404
     """
-    try:
-        fermentation = await service.get_fermentation(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id
-        )
-        
-        if fermentation is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Fermentation with ID {fermentation_id} not found"
-            )
-        
-        return FermentationResponse.from_entity(fermentation)
+    fermentation = await service.get_fermentation(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id
+    )
     
-    except HTTPException:
-        # Re-raise HTTP exceptions (404, etc.)
-        raise
-    except Exception as e:
-        # Log unexpected errors in production
+    if fermentation is None:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fermentation with ID {fermentation_id} not found"
         )
+    
+    return FermentationResponse.from_entity(fermentation)
 
 
 @router.get(
@@ -187,6 +153,7 @@ async def get_fermentation(
     summary="List fermentations",
     description="List all fermentations for the authenticated user's winery with pagination support."
 )
+@handle_service_errors
 async def list_fermentations(
     current_user: Annotated[UserContext, Depends(get_current_user)],
     service: Annotated[IFermentationService, Depends(get_fermentation_service)],
@@ -217,38 +184,30 @@ async def list_fermentations(
         - Status filtering: Client-side or service-side
         - Completed fermentations excluded by default
     """
-    try:
-        # Get all fermentations for winery (service applies multi-tenancy)
-        all_fermentations = await service.get_fermentations_by_winery(
-            winery_id=current_user.winery_id,
-            status=status_filter,
-            include_completed=include_completed
-        )
-        
-        # Calculate pagination
-        total = len(all_fermentations)
-        start_idx = (page - 1) * size
-        end_idx = start_idx + size
-        
-        # Slice for current page
-        page_items = all_fermentations[start_idx:end_idx]
-        
-        # Convert entities to response DTOs
-        items = [FermentationResponse.from_entity(f) for f in page_items]
-        
-        return PaginatedResponse(
-            items=items,
-            total=total,
-            page=page,
-            size=size
-        )
+    # Get all fermentations for winery (service applies multi-tenancy)
+    all_fermentations = await service.get_fermentations_by_winery(
+        winery_id=current_user.winery_id,
+        status=status_filter,
+        include_completed=include_completed
+    )
     
-    except Exception as e:
-        # Log unexpected errors in production
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    # Calculate pagination
+    total = len(all_fermentations)
+    start_idx = (page - 1) * size
+    end_idx = start_idx + size
+    
+    # Slice for current page
+    page_items = all_fermentations[start_idx:end_idx]
+    
+    # Convert entities to response DTOs
+    items = [FermentationResponse.from_entity(f) for f in page_items]
+    
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        size=size
+    )
 
 
 @router.patch(
