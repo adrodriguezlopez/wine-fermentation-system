@@ -48,5 +48,11 @@ poetry.lock
 *.db
 .env.local
 .env.development.local
+
+# Implementation plans (temporary documentation)
+IMPLEMENTATION_PLAN_*.md
+
+# SQLite test databases (temporary files from integration tests)
+src/modules/*/test_*
 .env.test.local
 .env.production.local

@@ -1,0 +1,177 @@
+"""
+Response schemas for Fermentation endpoints
+
+These Pydantic models define the structure of data returned by the API.
+They convert domain entities to JSON-serializable DTOs.
+"""
+
+from datetime import datetime
+from typing import Optional, List, Generic, TypeVar, TYPE_CHECKING
+from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from src.modules.fermentation.src.api.schemas.responses.sample_responses import SampleResponse
+    from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
+
+
+T = TypeVar('T')
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """
+    Generic paginated response wrapper
+    
+    Wraps a list of items with pagination metadata.
+    Used for any list endpoint that supports pagination.
+    """
+    items: List[T] = Field(..., description="List of items for current page")
+    total: int = Field(..., description="Total number of items across all pages", ge=0)
+    page: int = Field(..., description="Current page number (1-indexed)", ge=1)
+    size: int = Field(..., description="Number of items per page", ge=1, le=100)
+    
+    @property
+    def total_pages(self) -> int:
+        """Calculate total number of pages"""
+        if self.size == 0:
+            return 0
+        return (self.total + self.size - 1) // self.size
+
+
+class FermentationResponse(BaseModel):
+    """
+    Response DTO for Fermentation entity
+    
+    Returns fermentation data to API clients with proper JSON serialization.
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    # Primary key
+    id: int = Field(..., description="Fermentation unique identifier")
+    
+    # Foreign keys
+    winery_id: int = Field(..., description="Winery that owns this fermentation")
+    
+    # Wine production details
+    vintage_year: int = Field(..., description="Harvest year", ge=1900, le=2100)
+    yeast_strain: str = Field(..., description="Yeast strain used", max_length=100)
+    vessel_code: Optional[str] = Field(None, description="Fermentation vessel code", max_length=50)
+    
+    # Initial measurements
+    input_mass_kg: float = Field(..., description="Initial grape mass in kg", gt=0)
+    initial_sugar_brix: float = Field(..., description="Initial sugar content in Brix", ge=0, le=50)
+    initial_density: float = Field(..., description="Initial must density", gt=0)
+    
+    # Fermentation management
+    status: str = Field(..., description="Current fermentation status", max_length=20)
+    start_date: datetime = Field(..., description="Fermentation start date and time")
+    
+    # Audit fields
+    created_at: datetime = Field(..., description="Record creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
+    
+    @classmethod
+    def from_entity(cls, fermentation: "Fermentation") -> "FermentationResponse":
+        """
+        Convert Fermentation entity to response DTO
+        
+        Args:
+            fermentation: Domain entity from database
+            
+        Returns:
+            FermentationResponse with data from entity
+        """
+        return cls(
+            id=fermentation.id,
+            winery_id=fermentation.winery_id,
+            vintage_year=fermentation.vintage_year,
+            yeast_strain=fermentation.yeast_strain,
+            vessel_code=fermentation.vessel_code,
+            input_mass_kg=fermentation.input_mass_kg,
+            initial_sugar_brix=fermentation.initial_sugar_brix,
+            initial_density=fermentation.initial_density,
+            status=fermentation.status,
+            start_date=fermentation.start_date,
+            created_at=fermentation.created_at,
+            updated_at=fermentation.updated_at,
+        )
+
+
+class ValidationErrorDetail(BaseModel):
+    """Individual validation error detail."""
+    field: str = Field(..., description="Field that failed validation")
+    message: str = Field(..., description="Error message")
+    code: Optional[str] = Field(None, description="Error code")
+
+
+class ValidationResponse(BaseModel):
+    """
+    Response for validation endpoint.
+    
+    Returns validation result without creating/modifying data.
+    """
+    valid: bool = Field(..., description="Whether the data is valid")
+    errors: List[ValidationErrorDetail] = Field(
+        default_factory=list,
+        description="List of validation errors (empty if valid)"
+    )
+
+
+class TimelineResponse(BaseModel):
+    """
+    Response DTO for fermentation timeline.
+    
+    Combines fermentation data with all samples in chronological order.
+    Useful for displaying fermentation progress over time.
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    # Fermentation data
+    fermentation: FermentationResponse = Field(..., description="Fermentation details")
+    
+    # Samples in chronological order
+    samples: List["SampleResponse"] = Field(
+        default_factory=list,
+        description="All samples for this fermentation, ordered chronologically"
+    )
+    
+    # Computed metadata
+    sample_count: int = Field(..., description="Total number of samples", ge=0)
+    first_sample_date: Optional[datetime] = Field(None, description="Date of first sample")
+    last_sample_date: Optional[datetime] = Field(None, description="Date of most recent sample")
+
+
+class StatisticsResponse(BaseModel):
+    """
+    Response DTO for fermentation statistics.
+    
+    Provides aggregated metrics and analysis of fermentation progress.
+    Useful for dashboards and reporting.
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    # Basic info
+    fermentation_id: int = Field(..., description="Fermentation ID")
+    status: str = Field(..., description="Current fermentation status")
+    
+    # Duration metrics
+    start_date: datetime = Field(..., description="Fermentation start date")
+    duration_days: Optional[float] = Field(None, description="Duration in days (from start to last sample)")
+    
+    # Sample metrics
+    total_samples: int = Field(..., description="Total number of samples recorded", ge=0)
+    samples_by_type: dict = Field(
+        default_factory=dict,
+        description="Count of samples by type (e.g., {'sugar': 10, 'temperature': 8})"
+    )
+    
+    # Value statistics (for sugar samples)
+    initial_sugar: Optional[float] = Field(None, description="Initial sugar value (°Brix)")
+    latest_sugar: Optional[float] = Field(None, description="Most recent sugar value (°Brix)")
+    sugar_drop: Optional[float] = Field(None, description="Total sugar drop (°Brix)")
+    avg_temperature: Optional[float] = Field(None, description="Average temperature (°C)")
+    
+    # Sample frequency
+    avg_samples_per_day: Optional[float] = Field(None, description="Average samples recorded per day")
