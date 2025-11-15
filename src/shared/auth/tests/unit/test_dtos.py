@@ -234,9 +234,8 @@ class TestUserResponse:
         assert "password" not in response.__dict__
         assert "password_hash" not in response.__dict__
 
-    @pytest.mark.skip(reason="Requires fermentation module for User entity relationships - tested in integration tests")
     def test_from_entity(self, sample_user):
-        """Test creating UserResponse from User entity."""
+        """Test creating UserResponse from User entity (using Mock)."""
         response = UserResponse.from_entity(sample_user)
 
         assert response.id == sample_user.id

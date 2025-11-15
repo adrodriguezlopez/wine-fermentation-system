@@ -5,11 +5,11 @@ Combines high-level workflow methods with granular validation functions.
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
-from domain.entities.samples.base_sample import BaseSample
-from service_component.models.schemas.validations.validation_result import ValidationResult
-from service_component.models.schemas.validations.validation_error import ValidationError
-from domain.enums.sample_type import SampleType
-from domain.enums.fermentation_status import FermentationStatus
+from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_error import ValidationError
+from src.modules.fermentation.src.domain.enums.sample_type import SampleType
+from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
 
 
 class IValidationService(ABC):

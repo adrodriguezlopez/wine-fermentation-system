@@ -72,23 +72,31 @@
 - **Status:** Fully implemented with SQLAlchemy integration, multi-tenancy verified
 - **Compliance:** ADR-003 compliant (zero sample operations)
 
-**SampleRepository** ✅ COMPLETE
-- **Methods:** 11 fully implemented
-  - ✅ `create()` - Polymorphic sample creation
+**SampleRepository** ✅ COMPLETE + REFACTORED
+- **Methods:** 11 fully implemented with async session management
+  - ✅ `create()` - Polymorphic sample creation with session context
   - ✅ `upsert_sample()` - Upsert with conflict resolution
-  - ✅ `get_sample_by_id()` - Single sample retrieval
-  - ✅ `get_samples_by_fermentation_id()` - Chronological listing
-  - ✅ `get_samples_in_timerange()` - Time-based queries
+  - ✅ `get_sample_by_id()` - Single sample retrieval (returns None if not found)
+  - ✅ `get_samples_by_fermentation_id()` - Chronological listing across all types
+  - ✅ `get_samples_in_timerange()` - Time-based queries with session context
   - ✅ `get_latest_sample()` - Most recent sample retrieval
-  - ✅ `get_latest_sample_by_type()` - Type-filtered latest sample
-  - ✅ `get_fermentation_start_date()` - Helper for validation
-  - ✅ `check_duplicate_timestamp()` - Duplicate detection
-  - ✅ `soft_delete_sample()` - Logical deletion
+  - ✅ `get_latest_sample_by_type()` - Type-filtered latest sample with session context
+  - ✅ `get_fermentation_start_date()` - Helper for validation with session context
+  - ✅ `check_duplicate_timestamp()` - Duplicate detection with session context
+  - ✅ `soft_delete_sample()` - Logical deletion with session context (no error if not found)
   - ✅ `bulk_upsert_samples()` - Batch operations
 - **Unit Tests:** 12 passing (interface validation)
 - **Integration Tests:** 1 passing (real database persistence)
-- **Status:** Fully implemented with polymorphic support and helper method `_map_to_domain()`
+- **API Integration Tests:** 12 passing (full endpoint validation)
+- **Status:** Production-ready with session context managers, error handling, and API integration
 - **Compliance:** ADR-003 compliant (all sample operations centralized)
+- **Recent Refactoring (2025-11-15):**
+  - Added `async with session_cm as session:` pattern to all methods
+  - Changed ValueError → None returns for not-found scenarios
+  - Fixed celcius/celsius typo in imports (6 occurrences)
+  - Handle sample_type as both string and enum
+  - Fixed SugarSample units override (only default if not provided)
+  - File size reduced 24% (608→460 lines) by removing duplicates
 
 **Error Handling** ✅ COMPLETE
 - **Classes:** 7 error types (RepositoryError hierarchy)
@@ -103,10 +111,32 @@
 - **Integration Tests:** 9 passing (real PostgreSQL operations)
   - FermentationRepository: 8 tests (CRUD, multi-tenancy, queries)
   - SampleRepository: 1 test (polymorphic sample persistence)
-- **Total:** 48 tests (39 unit + 9 integration)
+- **API Integration Tests:** 12 passing (Sample endpoints end-to-end)
+  - POST /samples: 4 tests (create, validation, auth, not found)
+  - GET /samples: 3 tests (list, empty, not found)
+  - GET /samples/{id}: 2 tests (get, not found)
+  - GET /samples/latest: 3 tests (latest, no samples, filter by type)
+- **Total:** 60 tests (39 unit + 9 integration + 12 API)
 
-### Critical Fix Applied (2025-10-26)
-**SQLAlchemy Mapper Error Resolution:**
+### Critical Fixes Applied
+
+**2025-11-15: Sample Repository Session Management & API Integration**
+- **Problem:** Repository methods missing session context, causing "session not defined" errors
+- **Solution:** Added `async with session_cm as session:` to all repository methods
+- **Impact:** All 12 API integration tests now passing
+- **Methods Fixed:**
+  - `get_latest_sample_by_type()` - Added session context
+  - `check_duplicate_timestamp()` - Added session context
+  - `get_fermentation_start_date()` - Added session context
+  - `soft_delete_sample()` - Added session context
+- **Additional Fixes:**
+  - Fixed import typo: `celsius_temperature_sample` → `celcius_temperature_sample`
+  - Changed error handling: `ValueError` → `return None` for not-found scenarios
+  - Fixed sample_type comparisons to handle both string and enum values
+  - Fixed `SugarSample.__init__()` to preserve user-provided units
+  - Removed duplicate method implementations (24% file size reduction)
+
+**2025-10-26: SQLAlchemy Mapper Error Resolution**
 - **Problem:** Double import of sample entities causing mapper registration conflicts
 - **Solution:** Moved entity imports inside methods to prevent duplicate registration
 - **Impact:** +39 tests enabled (previously blocked)

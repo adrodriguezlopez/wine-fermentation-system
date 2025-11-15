@@ -92,9 +92,10 @@ def sample_fermentation():
 def sample_create_dto():
     """Sample creation DTO for testing."""
     return SampleCreate(
-        recorded_by_user_id=1,
         sample_type=SampleType.SUGAR,
-        value=15.5
+        value=15.5,
+        units="Brix",
+        recorded_at=datetime(2025, 10, 21, 10, 0, 0)
     )
 
 
@@ -206,6 +207,7 @@ class TestAddSample:
         )
         sample_service._create_sample_entity.assert_called_once_with(
             fermentation_id=1,
+            user_id=1,
             data=sample_create_dto
         )
         mock_validation_orchestrator.validate_sample_complete.assert_awaited_once()
@@ -523,8 +525,7 @@ class TestGetLatestSample:
         assert result == sample_entity
         mock_fermentation_repo.get_by_id.assert_awaited_once()
         mock_sample_repo.get_latest_sample.assert_awaited_once_with(
-            fermentation_id=1,
-            sample_type=None
+            fermentation_id=1
         )
     
     @pytest.mark.asyncio
@@ -539,7 +540,7 @@ class TestGetLatestSample:
         """Should filter by sample_type when provided."""
         # Arrange
         mock_fermentation_repo.get_by_id.return_value = sample_fermentation
-        mock_sample_repo.get_latest_sample.return_value = sample_entity
+        mock_sample_repo.get_latest_sample_by_type.return_value = sample_entity
         
         # Act
         result = await sample_service.get_latest_sample(
@@ -550,7 +551,7 @@ class TestGetLatestSample:
         
         # Assert
         assert result == sample_entity
-        mock_sample_repo.get_latest_sample.assert_awaited_once_with(
+        mock_sample_repo.get_latest_sample_by_type.assert_awaited_once_with(
             fermentation_id=1,
             sample_type=SampleType.SUGAR
         )

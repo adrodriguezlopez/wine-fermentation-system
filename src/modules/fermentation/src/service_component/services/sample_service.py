@@ -128,6 +128,7 @@ class SampleService(ISampleService):
         # Step 3: Create BaseSample entity for validation
         sample = self._create_sample_entity(
             fermentation_id=fermentation_id,
+            user_id=user_id,
             data=data
         )
         
@@ -156,6 +157,7 @@ class SampleService(ISampleService):
     def _create_sample_entity(
         self,
         fermentation_id: int,
+        user_id: int,
         data: SampleCreate
     ) -> BaseSample:
         """
@@ -164,11 +166,11 @@ class SampleService(ISampleService):
         """
         sample = BaseSample()
         sample.fermentation_id = fermentation_id
-        sample.recorded_by_user_id = data.recorded_by_user_id
+        sample.recorded_by_user_id = user_id
         sample.sample_type = data.sample_type.value
         sample.value = data.value
-        sample.units = self._get_units_for_sample_type(data.sample_type)
-        sample.recorded_at = datetime.now()  # Server timestamp
+        sample.units = data.units  # Use units from request
+        sample.recorded_at = data.recorded_at  # Use timestamp from request
         sample.is_deleted = False
         return sample
     
@@ -311,10 +313,15 @@ class SampleService(ISampleService):
             )
         
         # Step 2: Get latest sample via repository (with optional type filter)
-        latest_sample = await self._sample_repo.get_latest_sample(
-            fermentation_id=fermentation_id,
-            sample_type=sample_type
-        )
+        if sample_type:
+            latest_sample = await self._sample_repo.get_latest_sample_by_type(
+                fermentation_id=fermentation_id,
+                sample_type=sample_type
+            )
+        else:
+            latest_sample = await self._sample_repo.get_latest_sample(
+                fermentation_id=fermentation_id
+            )
         
         return latest_sample
     

@@ -16,6 +16,8 @@ Defines the core business model, domain entities, enums, DTOs, and repository in
 ## Arquitectura específica del componente
 - **Entities**: User (en `entities/`)
   - User: Core authentication entity with winery isolation
+  - **NOTE (Nov 15, 2025)**: Cross-module relationships (fermentations, samples) DISABLED to allow independent testing
+  - Fermentation module's back-references to User are sufficient for application functionality
 - **Enums**: UserRole (en `enums/`)
   - UserRole: ADMIN, WINEMAKER, OPERATOR, VIEWER with permission methods
 - **DTOs**: 9 data transfer objects (en `dtos.py`)
@@ -172,11 +174,14 @@ Defines the core business model, domain entities, enums, DTOs, and repository in
 - Maintain referential integrity
 - Support undo operations
 
-### Why lazy="raise" for relationships?
-- Prevents accidental N+1 query problems
-- Forces explicit relationship loading
-- Better performance visibility
-- Encourages proper query design
+### Why are User relationships to Fermentation disabled?
+**Reason (Nov 15, 2025)**: Cross-module relationships caused circular dependency issues during Auth unit testing
+- **Problem**: SQLAlchemy tried to resolve `Fermentation` and `BaseSample` entities when Auth tests ran alone
+- **Error**: `InvalidRequestError: expression failed to locate a name` when fermentation module not loaded
+- **Solution**: Commented out `fermentations` and `samples` relationships in User entity
+- **Impact**: Auth module can now be tested independently without Fermentation dependencies
+- **Application**: Still works correctly - Fermentation module defines back-references (fermented_by_user, recorded_by_user)
+- **Alternative**: Use explicit queries when navigating from User to Fermentations/Samples if needed
 
 ### Why immutable UserContext?
 - Thread-safe for async operations

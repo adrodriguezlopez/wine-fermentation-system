@@ -14,10 +14,11 @@ def test_fermentation_service_interface_methods() -> None:
     If a new method is added, this test will fail,
     enforcing TDD and documentation updates.
     
-    Expected methods (7):
+    Expected methods (8):
     - create_fermentation: Create with validation
     - get_fermentation: Get by ID
     - get_fermentations_by_winery: List with filters
+    - update_fermentation: Update fermentation data
     - update_status: Status transitions
     - complete_fermentation: Complete with validation
     - soft_delete: Soft delete
@@ -34,6 +35,7 @@ def test_fermentation_service_interface_methods() -> None:
         "create_fermentation",
         "get_fermentation",
         "get_fermentations_by_winery",
+        "update_fermentation",
         "update_status",
         "complete_fermentation",
         "soft_delete",

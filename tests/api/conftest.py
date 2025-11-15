@@ -40,6 +40,11 @@ from src.modules.fermentation.src.domain.entities.fermentation import Fermentati
 from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
 from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
 from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot
+# Import sample entities
+from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
+from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
 
 
 # =============================================================================
@@ -194,11 +199,13 @@ def create_test_app(user_override: UserContext = None, db_override: AsyncSession
     from src.shared.auth.infra.api.dependencies import get_current_user, require_winemaker
     from src.shared.infra.database.fastapi_session import get_db_session as real_get_db_session
     from src.modules.fermentation.src.api.routers.fermentation_router import router as fermentation_router
+    from src.modules.fermentation.src.api.routers.sample_router import router as sample_router
     
     # Create minimal FastAPI app for testing
     app = FastAPI(title="Fermentation API - Test")
     
-    # Include fermentation router
+    # Include routers (sample router first for route specificity)
+    app.include_router(sample_router)
     app.include_router(fermentation_router)
     
     # Test endpoint to verify client works

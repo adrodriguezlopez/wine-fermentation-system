@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
-from domain.entities.samples.base_sample import BaseSample
-from service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
 
 class IValidationOrchestrator(ABC):
     """

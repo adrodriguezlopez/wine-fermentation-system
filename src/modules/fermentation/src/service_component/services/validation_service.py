@@ -1,12 +1,12 @@
 import datetime
 from typing import Any, Dict, List, Optional, Union
-from domain.entities.samples.base_sample import BaseSample
-from domain.repositories import ISampleRepository
-from service_component.interfaces import IValidationService
-from domain.enums.fermentation_status import FermentationStatus
-from domain.enums.sample_type import SampleType
-from service_component.models.schemas.validations.validation_result import ValidationResult
-from service_component.models.schemas.validations.validation_error import ValidationError
+from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
+from src.modules.fermentation.src.domain.repositories import ISampleRepository
+from src.modules.fermentation.src.service_component.interfaces import IValidationService
+from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
+from src.modules.fermentation.src.domain.enums.sample_type import SampleType
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_error import ValidationError
 
 
 class ValidationService(IValidationService):

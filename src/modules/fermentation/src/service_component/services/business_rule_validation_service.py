@@ -1,9 +1,9 @@
-from domain.enums.sample_type import SampleType
-from domain.repositories.sample_repository_interface import ISampleRepository
-from domain.repositories.fermentation_repository_interface import IFermentationRepository
-from service_component.interfaces.business_rule_validation_service_interface import IBusinessRuleValidationService
-from service_component.models.schemas.validations.validation_error import ValidationError
-from service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.domain.enums.sample_type import SampleType
+from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
+from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import IFermentationRepository
+from src.modules.fermentation.src.service_component.interfaces.business_rule_validation_service_interface import IBusinessRuleValidationService
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_error import ValidationError
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
 
 
 class BusinessRuleValidationService(IBusinessRuleValidationService):
