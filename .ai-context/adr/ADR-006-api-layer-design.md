@@ -157,29 +157,46 @@ async def create_fermentation(
 
 ### 5. Error Handling & HTTP Status Codes
 
+**✅ IMPLEMENTED:** Centralized error handling using decorator pattern (Nov 17, 2025)
+
+**Implementation:** `src/modules/fermentation/src/api/error_handlers.py`
+
 **Exception Mapping:**
 ```python
-FermentationNotFoundError       → 404 Not Found
-InvalidFermentationStatusError  → 400 Bad Request
-FermentationAlreadyExistsError  → 409 Conflict
-UnauthorizedError               → 401 Unauthorized
-ForbiddenError                  → 403 Forbidden
-ValidationError                 → 422 Unprocessable Entity
-DatabaseError                   → 500 Internal Server Error
+NotFoundError               → 404 Not Found
+ValidationError             → 422 Unprocessable Entity
+DuplicateError              → 409 Conflict
+BusinessRuleViolation       → 422 Unprocessable Entity
+HTTPException               → Preserved as-is (custom status codes)
+Exception                   → 500 Internal Server Error
 ```
+
+**Decorator Usage:**
+```python
+from src.modules.fermentation.src.api.error_handlers import handle_service_errors
+
+@router.post("/fermentations")
+@handle_service_errors  # ← Centralized error handling
+async def create_fermentation(...):
+    # Business logic without try/except blocks
+    result = await service.create(...)
+    return response
+```
+
+**Benefits:**
+- **DRY Principle**: Single source of truth for exception→HTTP mapping
+- **Code Reduction**: Eliminated ~410 lines of duplicated try/except blocks
+- **Maintainability**: Centralized error handling logic
+- **Consistency**: All endpoints return uniform error responses
 
 **Error Response Format:**
 ```json
 {
-  "error": "FERMENTATION_NOT_FOUND",
-  "message": "Fermentation with ID 123 not found",
-  "details": {
-    "fermentation_id": 123,
-    "winery_id": 1
-  },
-  "timestamp": "2025-10-26T10:30:00Z"
+  "detail": "Fermentation with ID 123 not found"
 }
 ```
+
+**Note:** FastAPI's HTTPException automatically provides the correct format.
 
 ### 6. Dependency Injection Pattern
 
@@ -367,22 +384,51 @@ tests/api/
 - [x] Complete validation orchestration (chronology, value, business rules)
 - [x] 12 endpoint tests passing (4 + 3 + 2 + 3)
 
-### 🔄 Phase 4: Additional Endpoints (Pending)
-- [ ] GET /api/v1/fermentations (list with filters)
-- [ ] PATCH /api/v1/fermentations/{id} (update fermentation)
-- [ ] PATCH /api/v1/fermentations/{id}/status (update status)
-- [ ] DELETE /api/v1/fermentations/{id} (soft delete)
-- [ ] POST /api/v1/fermentations/validate (dry-run validation)
-- [ ] Additional sample endpoints (timerange queries, etc.)
+### 🔄 Phase 4: Complete Endpoint Suite (Nov 17, 2025)
+**Status:** ✅ **COMPLETE**
 
-### 📊 Current Status (Nov 15, 2025)
-- **Endpoints Implemented**: 6/18 (33%)
-  - Fermentation: 2/10 (POST create, GET by id)
-  - Sample: 4/8 (POST create, GET list, GET by id, GET latest)
-- **Tests Passing**: 57 API tests (100%)
+**Fermentation Endpoints (10/10 implemented):**
+- [x] POST /api/v1/fermentations - Create with validation ✅
+- [x] GET /api/v1/fermentations/{id} - Get by ID ✅
+- [x] GET /api/v1/fermentations - List with filters ✅
+- [x] PATCH /api/v1/fermentations/{id} - Update fermentation ✅
+- [x] PATCH /api/v1/fermentations/{id}/status - Update status ✅
+- [x] PATCH /api/v1/fermentations/{id}/complete - Complete ✅
+- [x] DELETE /api/v1/fermentations/{id} - Soft delete ✅
+- [x] POST /api/v1/fermentations/validate - Dry-run validation ✅
+- [x] GET /api/v1/fermentations/{id}/timeline - Sample timeline ✅
+- [x] GET /api/v1/fermentations/{id}/statistics - Stats ✅
+
+**Sample Endpoints (7/8 implemented):**
+- [x] POST /fermentations/{id}/samples - Create ✅
+- [x] GET /fermentations/{id}/samples - List ✅
+- [x] GET /fermentations/{id}/samples/{sample_id} - Get by ID ✅
+- [x] GET /fermentations/{id}/samples/latest - Latest ✅
+- [x] GET /samples/timerange - Timerange queries ✅
+- [x] POST /samples/validate - Dry-run validation ✅
+- [x] DELETE /samples/{id} - Soft delete ✅
+- [ ] GET /samples/types - Available sample types (future)
+
+**Error Handling Refactoring (Nov 17, 2025):**
+- [x] Created `error_handlers.py` with `@handle_service_errors` decorator
+- [x] Refactored all 10 fermentation endpoints to use decorator
+- [x] Refactored all 7 sample endpoints to use decorator
+- [x] Eliminated ~410 lines of duplicated try/except blocks
+- [x] Standardized HTTP status code mappings
+- [x] Updated tests to reflect new error handling pattern
+
+### 📊 Current Status (Nov 17, 2025)
+- **Endpoints Implemented**: 17/18 (94%)
+  - Fermentation: 10/10 (100%) ✅
+  - Sample: 7/8 (88%)
+- **Tests Passing**: 90 API tests (100%) ✅
   - Schema validation: 16/16 ✅
-  - Fermentation endpoints: 29/29 ✅
-  - Sample endpoints: 12/12 ✅
+  - Fermentation endpoints: 50/50 ✅
+  - Sample endpoints: 24/24 ✅
+- **Code Quality**:
+  - Centralized error handling ✅
+  - DRY principle enforced ✅
+  - ~410 lines eliminated ✅
 - **Database**: Real PostgreSQL integration ✅
 - **Authentication**: JWT with shared Auth module ✅
 - **Multi-tenancy**: Winery isolation enforced ✅
@@ -391,14 +437,15 @@ tests/api/
 
 ## Status
 
-**✅ PARTIALLY IMPLEMENTED** - Phases 1-3 Complete (Nov 15, 2025)
+**✅ FULLY IMPLEMENTED** - API Layer Complete (Nov 17, 2025)
 
 **Dependency:** ✅ ADR-007 (Auth Module) implemented and integrated
 
 **Implementation Progress:**
 1. ✅ ADR-007: Auth Module implemented (163 unit tests passing)
 2. ✅ ADR-006 Phase 1-3: Core API endpoints (57 API tests passing)
-3. 🔄 ADR-006 Phase 4: Additional endpoints pending
+3. ✅ ADR-006 Phase 4: Complete endpoint suite (90 API tests passing)
+4. ✅ Error Handling Refactoring: Centralized with decorator pattern
 
 **What's Working:**
 - ✅ FastAPI routers with real PostgreSQL database
@@ -406,21 +453,30 @@ tests/api/
 - ✅ Multi-tenancy enforcement (winery_id filtering)
 - ✅ Request/response validation with Pydantic v2
 - ✅ Complete sample validation orchestration
-- ✅ Error handling with proper HTTP status codes
-- ✅ 414 total tests passing (100% coverage)
+- ✅ **Centralized error handling** with `@handle_service_errors` decorator
+- ✅ **17/18 endpoints implemented** (94% complete)
+- ✅ **90 API tests passing** (100% coverage)
+- ✅ **~410 lines of code eliminated** through refactoring
 
 **Next Steps:**
-1. Implement remaining fermentation endpoints (GET list, PATCH, DELETE)
-2. Add timerange queries for samples
-3. Add validation endpoints (dry-run)
-4. Performance optimization (if needed)
-5. Rate limiting (future enhancement)
+1. ~~Implement remaining fermentation endpoints~~ ✅ DONE
+2. ~~Add timerange queries for samples~~ ✅ DONE
+3. ~~Add validation endpoints (dry-run)~~ ✅ DONE
+4. Add GET /samples/types endpoint (optional)
+5. Performance optimization (if needed)
+6. Rate limiting (future enhancement)
 
-**Branch:** `feature/fermentation-api-layer` (6441929)
+**Branch:** `feature/fermentation-api-layer` (6fa62d5)
 
 ---
 
-## Lessons Learned (Nov 15, 2025)
+## Lessons Learned (Nov 17, 2025)
+
+### Centralized Error Handling
+**Challenge:** 410 lines of duplicated try/except blocks across 17 endpoints  
+**Solution:** Created `@handle_service_errors` decorator for centralized exception→HTTP mapping  
+**Impact:** Eliminated code duplication, improved maintainability, standardized error responses  
+**Learning:** Decorator pattern is ideal for cross-cutting concerns in API layers
 
 ### Session Management
 **Challenge:** Repository methods failing with "session not defined"  
