@@ -26,9 +26,11 @@ from src.modules.fermentation.src.api.schemas.responses.fermentation_responses i
     FermentationResponse,
     PaginatedResponse,
     ValidationResponse,
-    ValidationErrorDetail
+    ValidationErrorDetail,
+    TimelineResponse
 )
 from src.modules.fermentation.src.service_component.interfaces.fermentation_service_interface import IFermentationService
+from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
 from src.modules.fermentation.src.domain.dtos import FermentationCreate, FermentationUpdate
 from src.modules.fermentation.src.service_component.errors import (
     ValidationError,
@@ -36,7 +38,7 @@ from src.modules.fermentation.src.service_component.errors import (
     DuplicateError,
     BusinessRuleViolation
 )
-from src.modules.fermentation.src.api.dependencies import get_fermentation_service
+from src.modules.fermentation.src.api.dependencies import get_fermentation_service, get_sample_service
 
 
 # Router instance
@@ -663,6 +665,112 @@ async def validate_fermentation_data(
         
     except Exception as e:
         # Log unexpected errors in production
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+
+
+# =============================================================================
+# GET /api/v1/fermentations/{id}/timeline - Get Fermentation Timeline
+# =============================================================================
+
+@router.get(
+    "/{fermentation_id}/timeline",
+    response_model=TimelineResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get fermentation timeline",
+    description="Retrieves fermentation details with all samples in chronological order",
+    responses={
+        200: {"description": "Timeline data retrieved successfully"},
+        404: {"description": "Fermentation not found"},
+        403: {"description": "Not authenticated"}
+    },
+    tags=["fermentations"]
+)
+async def get_fermentation_timeline(
+    fermentation_id: int = Path(..., description="Fermentation ID", gt=0),
+    current_user: Annotated[UserContext, Depends(get_current_user)] = None,
+    fermentation_service: Annotated[IFermentationService, Depends(get_fermentation_service)] = None,
+    sample_service: Annotated[ISampleService, Depends(get_sample_service)] = None
+) -> TimelineResponse:
+    """
+    Get complete timeline for a fermentation.
+    
+    Combines fermentation data with all samples in chronological order.
+    Useful for visualizing fermentation progress over time.
+    
+    **Business Rules:**
+    - Returns fermentation details + all samples
+    - Samples ordered by recorded_at (chronological)
+    - Includes metadata: sample_count, first/last sample dates
+    
+    **Authentication:**
+    - Required: Yes (JWT Bearer token)
+    - Roles: Any authenticated user from the same winery
+    
+    **Multi-tenancy:**
+    - Enforced via fermentation ownership check
+    
+    **Example Response:**
+    ```json
+    {
+        "fermentation": {...},
+        "samples": [{...}, {...}],
+        "sample_count": 15,
+        "first_sample_date": "2024-11-01T10:00:00",
+        "last_sample_date": "2024-11-15T14:30:00"
+    }
+    ```
+    
+    Status: ✅ Implemented (Phase 4 - 2025-11-15)
+    """
+    try:
+        # Step 1: Get fermentation
+        fermentation = await fermentation_service.get_fermentation(
+            fermentation_id=fermentation_id,
+            winery_id=current_user.winery_id
+        )
+        
+        if fermentation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Fermentation {fermentation_id} not found"
+            )
+        
+        # Step 2: Get all samples for fermentation (chronologically ordered)
+        samples = await sample_service.get_samples_by_fermentation(
+            fermentation_id=fermentation_id,
+            winery_id=current_user.winery_id
+        )
+        
+        # Step 3: Build response
+        from src.modules.fermentation.src.api.schemas.responses.sample_responses import SampleResponse
+        
+        fermentation_response = FermentationResponse.from_entity(fermentation)
+        sample_responses = [SampleResponse.from_entity(s) for s in samples]
+        
+        # Calculate metadata
+        sample_count = len(samples)
+        first_sample_date = samples[0].recorded_at if samples else None
+        last_sample_date = samples[-1].recorded_at if samples else None
+        
+        return TimelineResponse(
+            fermentation=fermentation_response,
+            samples=sample_responses,
+            sample_count=sample_count,
+            first_sample_date=first_sample_date,
+            last_sample_date=last_sample_date
+        )
+        
+    except HTTPException:
+        raise
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {str(e)}"

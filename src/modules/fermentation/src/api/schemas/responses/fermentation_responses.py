@@ -6,8 +6,12 @@ They convert domain entities to JSON-serializable DTOs.
 """
 
 from datetime import datetime
-from typing import Optional, List, Generic, TypeVar
+from typing import Optional, List, Generic, TypeVar, TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from src.modules.fermentation.src.api.schemas.responses.sample_responses import SampleResponse
+    from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 
 
 T = TypeVar('T')
@@ -111,3 +115,28 @@ class ValidationResponse(BaseModel):
         default_factory=list,
         description="List of validation errors (empty if valid)"
     )
+
+
+class TimelineResponse(BaseModel):
+    """
+    Response DTO for fermentation timeline.
+    
+    Combines fermentation data with all samples in chronological order.
+    Useful for displaying fermentation progress over time.
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    # Fermentation data
+    fermentation: FermentationResponse = Field(..., description="Fermentation details")
+    
+    # Samples in chronological order
+    samples: List["SampleResponse"] = Field(
+        default_factory=list,
+        description="All samples for this fermentation, ordered chronologically"
+    )
+    
+    # Computed metadata
+    sample_count: int = Field(..., description="Total number of samples", ge=0)
+    first_sample_date: Optional[datetime] = Field(None, description="Date of first sample")
+    last_sample_date: Optional[datetime] = Field(None, description="Date of most recent sample")

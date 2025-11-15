@@ -1111,3 +1111,128 @@ class TestValidateFermentationEndpoint:
         response = unauthenticated_client.post("/api/v1/fermentations/validate", json=data)
         assert response.status_code in [401, 403]
 
+
+# =============================================================================
+# GET /api/v1/fermentations/{id}/timeline
+# =============================================================================
+
+class TestGetFermentationTimeline:
+    """Test suite for GET /api/v1/fermentations/{id}/timeline endpoint"""
+    
+    def test_get_timeline_success(self, client):
+        """
+        ✅ GET timeline with fermentation + samples
+        
+        Given: Fermentation exists with 3 samples
+        When: GET /fermentations/{id}/timeline
+        Then: Returns fermentation + all samples chronologically + metadata
+        """
+        # Create fermentation
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Create 3 samples at different times
+        samples = [
+            {"sample_type": "sugar", "value": 22.0, "units": "°Brix", "recorded_at": "2024-11-02T10:00:00"},
+            {"sample_type": "temperature", "value": 18.0, "units": "°C", "recorded_at": "2024-11-03T10:00:00"},
+            {"sample_type": "sugar", "value": 15.0, "units": "°Brix", "recorded_at": "2024-11-04T10:00:00"}
+        ]
+        for sample_data in samples:
+            client.post(f"/api/v1/fermentations/{fermentation_id}/samples", json=sample_data)
+        
+        # Act: Get timeline
+        response = client.get(f"/api/v1/fermentations/{fermentation_id}/timeline")
+        
+        # Assert: Success
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        # Verify structure
+        assert "fermentation" in data
+        assert "samples" in data
+        assert "sample_count" in data
+        assert "first_sample_date" in data
+        assert "last_sample_date" in data
+        
+        # Verify fermentation data
+        assert data["fermentation"]["id"] == fermentation_id
+        assert data["fermentation"]["vintage_year"] == 2024
+        
+        # Verify samples
+        assert data["sample_count"] == 3
+        assert len(data["samples"]) == 3
+        
+        # Verify chronological order (first to last)
+        assert data["samples"][0]["value"] == 22.0
+        assert data["samples"][1]["value"] == 18.0
+        assert data["samples"][2]["value"] == 15.0
+        
+        # Verify metadata
+        assert data["first_sample_date"] == "2024-11-02T10:00:00"
+        assert data["last_sample_date"] == "2024-11-04T10:00:00"
+    
+    def test_get_timeline_no_samples(self, client):
+        """
+        ✅ GET timeline with fermentation but no samples
+        
+        Given: Fermentation exists with no samples
+        When: GET /fermentations/{id}/timeline
+        Then: Returns fermentation + empty samples list
+        """
+        # Create fermentation (no samples)
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Act: Get timeline
+        response = client.get(f"/api/v1/fermentations/{fermentation_id}/timeline")
+        
+        # Assert: Success with empty samples
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert data["sample_count"] == 0
+        assert len(data["samples"]) == 0
+        assert data["first_sample_date"] is None
+        assert data["last_sample_date"] is None
+    
+    def test_get_timeline_not_found(self, client):
+        """
+        ❌ GET timeline for non-existent fermentation
+        
+        Given: Fermentation ID 999 doesn't exist
+        When: GET /fermentations/999/timeline
+        Then: Returns 404 Not Found
+        """
+        response = client.get("/api/v1/fermentations/999/timeline")
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "not found" in response.json()["detail"].lower()
+    
+    def test_get_timeline_without_authentication(self, unauthenticated_client):
+        """
+        🔒 GET timeline requires authentication
+        
+        Given: Timeline endpoint exists
+        When: GET without auth token
+        Then: Returns 403 Forbidden
+        """
+        response = unauthenticated_client.get("/api/v1/fermentations/1/timeline")
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
