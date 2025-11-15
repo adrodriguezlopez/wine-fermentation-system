@@ -29,6 +29,7 @@ from src.modules.fermentation.src.api.schemas.requests.sample_requests import (
 from src.modules.fermentation.src.api.schemas.responses.sample_responses import (
     SampleResponse
 )
+from src.modules.fermentation.src.api.error_handlers import handle_service_errors
 from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
 from src.modules.fermentation.src.domain.dtos import SampleCreate
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
@@ -54,6 +55,7 @@ router = APIRouter(prefix="/api/v1/fermentations", tags=["samples"])
     summary="Add a sample measurement to a fermentation",
     description="Creates a new sample measurement for the specified fermentation. Requires WINEMAKER or ADMIN role."
 )
+@handle_service_errors
 async def create_sample(
     fermentation_id: int = Path(..., gt=0, description="ID of the fermentation"),
     request: SampleCreateRequest = ...,
@@ -78,41 +80,24 @@ async def create_sample(
         HTTP 422: Invalid sample data
         HTTP 401: Not authenticated
     """
-    try:
-        # Convert API request to service DTO
-        sample_dto = SampleCreate(
-            sample_type=SampleType(request.sample_type),  # Convert string to enum
-            value=request.value,
-            units=request.units,
-            recorded_at=request.recorded_at
-        )
-        
-        # Call service to create sample
-        sample = await sample_service.add_sample(
-            fermentation_id=fermentation_id,
-            winery_id=current_user.winery_id,
-            user_id=current_user.user_id,
-            data=sample_dto
-        )
-        
-        # Convert entity to response DTO
-        return SampleResponse.from_entity(sample)
-        
-    except NotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+    # Convert API request to service DTO
+    sample_dto = SampleCreate(
+        sample_type=SampleType(request.sample_type),  # Convert string to enum
+        value=request.value,
+        units=request.units,
+        recorded_at=request.recorded_at
+    )
+    
+    # Call service to create sample
+    sample = await sample_service.add_sample(
+        fermentation_id=fermentation_id,
+        winery_id=current_user.winery_id,
+        user_id=current_user.user_id,
+        data=sample_dto
+    )
+    
+    # Convert entity to response DTO
+    return SampleResponse.from_entity(sample)
 
 
 # ======================================================================================
