@@ -291,20 +291,22 @@ class SampleRepository(BaseRepository, ISampleRepository):
         from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
         from sqlalchemy import select
         
-        samples = []
-        
-        for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
-            stmt = select(sample_class).where(
-                sample_class.fermentation_id == fermentation_id,
-                sample_class.recorded_at >= start_time,
-                sample_class.recorded_at <= end_time
-            ).order_by(sample_class.recorded_at.asc())
+        session_cm = await self.get_session()
+        async with session_cm as session:
+            samples = []
             
-            result = await session.execute(stmt)
-            samples.extend(result.scalars().all())
-        
-        samples.sort(key=lambda s: s.recorded_at)
-        return samples
+            for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
+                stmt = select(sample_class).where(
+                    sample_class.fermentation_id == fermentation_id,
+                    sample_class.recorded_at >= start_time,
+                    sample_class.recorded_at <= end_time
+                ).order_by(sample_class.recorded_at.asc())
+                
+                result = await session.execute(stmt)
+                samples.extend(result.scalars().all())
+            
+            samples.sort(key=lambda s: s.recorded_at)
+            return samples
 
     async def get_latest_sample(self, fermentation_id: int) -> Optional[BaseSample]:
         """

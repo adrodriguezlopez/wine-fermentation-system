@@ -18,6 +18,7 @@ Following ADR-006 API Layer Design
 
 from fastapi import APIRouter, Depends, status, HTTPException, Path, Query
 from typing import Annotated, List, Optional
+from datetime import datetime
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.infra.api.dependencies import require_winemaker, get_current_user
@@ -326,3 +327,72 @@ async def get_sample_types() -> List[str]:
         List[str]: List of sample type values (e.g., ["sugar", "temperature", "density"])
     """
     return [sample_type.value for sample_type in SampleType]
+
+
+# ======================================================================================
+# GET /api/v1/samples/timerange - Get Samples in Time Range
+# ======================================================================================
+
+@samples_router.get(
+    "/timerange",
+    response_model=List[SampleResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Get samples in time range",
+    description="Retrieves all samples within a specific time range for a fermentation."
+)
+async def get_samples_by_timerange(
+    fermentation_id: int = Query(..., gt=0, description="ID of the fermentation"),
+    start_date: datetime = Query(..., description="Start of time range (ISO 8601 format)"),
+    end_date: datetime = Query(..., description="End of time range (ISO 8601 format)"),
+    current_user: Annotated[UserContext, Depends(get_current_user)] = None,
+    sample_service: Annotated[ISampleService, Depends(get_sample_service)] = None
+) -> List[SampleResponse]:
+    """
+    Get samples within a time range for a fermentation.
+    
+    Retrieves all samples recorded between start_date and end_date,
+    ordered chronologically. Useful for analyzing trends over specific periods.
+    
+    Args:
+        fermentation_id: ID of the fermentation
+        start_date: Start of time range (inclusive)
+        end_date: End of time range (inclusive)
+        current_user: Authenticated user context
+        sample_service: Sample service instance
+        
+    Returns:
+        List[SampleResponse]: Samples in chronological order
+    
+    Raises:
+        HTTP 400: Invalid time range (start >= end)
+        HTTP 404: Fermentation not found
+        HTTP 401: Not authenticated
+    
+    Example:
+        GET /api/v1/samples/timerange?fermentation_id=1&start_date=2024-11-01T00:00:00&end_date=2024-11-10T23:59:59
+    """
+    try:
+        samples = await sample_service.get_samples_in_timerange(
+            fermentation_id=fermentation_id,
+            winery_id=current_user.winery_id,
+            start=start_date,
+            end=end_date
+        )
+        
+        return [SampleResponse.from_entity(s) for s in samples]
+        
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )

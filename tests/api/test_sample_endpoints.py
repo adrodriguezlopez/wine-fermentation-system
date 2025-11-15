@@ -461,3 +461,197 @@ class TestGetSampleTypes:
         data = response.json()
         assert isinstance(data, list)
         assert len(data) == 3
+
+
+# ======================================================================================
+# PHASE 4: GET /api/v1/samples/timerange - Get Samples in Time Range
+# ======================================================================================
+
+class TestGetSamplesInTimerange:
+    """Tests for GET /api/v1/samples/timerange endpoint."""
+    
+    def test_get_samples_in_timerange_success(self, client, mock_user_context):
+        """
+        Should return samples within specified time range.
+        
+        Given: Fermentation with samples at different times
+        When: GET /api/v1/samples/timerange with valid time range
+        Then: Returns 200 with samples in range, chronologically ordered
+        """
+        # Create fermentation
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Create samples at different times
+        samples = [
+            {
+                "sample_type": "sugar",
+                "value": 22.0,
+                "units": "°Brix",
+                "recorded_at": "2024-11-01T10:00:00"  # Outside range
+            },
+            {
+                "sample_type": "sugar",
+                "value": 20.0,
+                "units": "°Brix",
+                "recorded_at": "2024-11-05T10:00:00"  # In range
+            },
+            {
+                "sample_type": "sugar",
+                "value": 18.0,
+                "units": "°Brix",
+                "recorded_at": "2024-11-10T10:00:00"  # In range
+            },
+            {
+                "sample_type": "sugar",
+                "value": 15.0,
+                "units": "°Brix",
+                "recorded_at": "2024-11-15T10:00:00"  # Outside range
+            }
+        ]
+        
+        for sample in samples:
+            client.post(f"/api/v1/fermentations/{fermentation_id}/samples", json=sample)
+        
+        # Query time range
+        response = client.get(
+            "/api/v1/samples/timerange",
+            params={
+                "fermentation_id": fermentation_id,
+                "start_date": "2024-11-05T00:00:00",
+                "end_date": "2024-11-10T23:59:59"
+            }
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        # Should return only the 2 samples in range
+        assert len(data) == 2
+        assert data[0]["value"] == 20.0
+        assert data[1]["value"] == 18.0
+        
+        # Verify chronological order
+        assert data[0]["recorded_at"] < data[1]["recorded_at"]
+    
+    def test_get_samples_in_timerange_empty(self, client, mock_user_context):
+        """
+        Should return empty list when no samples in range.
+        
+        Given: Fermentation with samples outside time range
+        When: GET /api/v1/samples/timerange with range containing no samples
+        Then: Returns 200 with empty list
+        """
+        # Create fermentation
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Create sample outside range
+        sample_data = {
+            "sample_type": "sugar",
+            "value": 22.0,
+            "units": "°Brix",
+            "recorded_at": "2024-11-01T10:00:00"
+        }
+        client.post(f"/api/v1/fermentations/{fermentation_id}/samples", json=sample_data)
+        
+        # Query time range with no samples
+        response = client.get(
+            "/api/v1/samples/timerange",
+            params={
+                "fermentation_id": fermentation_id,
+                "start_date": "2024-12-01T00:00:00",
+                "end_date": "2024-12-31T23:59:59"
+            }
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data) == 0
+    
+    def test_get_samples_in_timerange_invalid_range(self, client, mock_user_context):
+        """
+        Should return 400 for invalid time range (start >= end).
+        
+        Given: Valid fermentation
+        When: GET /api/v1/samples/timerange with start_date >= end_date
+        Then: Returns 400 with validation error
+        """
+        # Create fermentation
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Query with invalid range
+        response = client.get(
+            "/api/v1/samples/timerange",
+            params={
+                "fermentation_id": fermentation_id,
+                "start_date": "2024-11-10T00:00:00",
+                "end_date": "2024-11-05T00:00:00"  # Before start
+            }
+        )
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "detail" in response.json()
+    
+    def test_get_samples_in_timerange_fermentation_not_found(self, client):
+        """
+        Should return 404 for non-existent fermentation.
+        
+        Given: Non-existent fermentation ID
+        When: GET /api/v1/samples/timerange
+        Then: Returns 404
+        """
+        response = client.get(
+            "/api/v1/samples/timerange",
+            params={
+                "fermentation_id": 99999,
+                "start_date": "2024-11-01T00:00:00",
+                "end_date": "2024-11-30T23:59:59"
+            }
+        )
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+    
+    def test_get_samples_in_timerange_without_authentication(self, unauthenticated_client):
+        """
+        Should require authentication.
+        
+        Given: No authentication
+        When: GET /api/v1/samples/timerange
+        Then: Returns 403 (Forbidden - dependency failed)
+        """
+        response = unauthenticated_client.get(
+            "/api/v1/samples/timerange",
+            params={
+                "fermentation_id": 1,
+                "start_date": "2024-11-01T00:00:00",
+                "end_date": "2024-11-30T23:59:59"
+            }
+        )
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN

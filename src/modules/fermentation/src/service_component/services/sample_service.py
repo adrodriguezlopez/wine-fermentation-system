@@ -382,8 +382,8 @@ class SampleService(ISampleService):
         # Step 3: Get samples in timerange via repository
         samples = await self._sample_repo.get_samples_in_timerange(
             fermentation_id=fermentation_id,
-            start=start,
-            end=end
+            start_time=start,
+            end_time=end
         )
         
         return samples
