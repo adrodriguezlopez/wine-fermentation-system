@@ -1,8 +1,8 @@
 from typing import Union
-from domain.enums.sample_type import SampleType
-from service_component.interfaces.value_validation_service_interface import IValueValidationService
-from service_component.models.schemas.validations.validation_error import ValidationError
-from service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.domain.enums.sample_type import SampleType
+from src.modules.fermentation.src.service_component.interfaces.value_validation_service_interface import IValueValidationService
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_error import ValidationError
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
 
 
 class ValueValidationService(IValueValidationService):

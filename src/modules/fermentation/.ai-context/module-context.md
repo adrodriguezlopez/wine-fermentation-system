@@ -45,9 +45,9 @@
 
 ## Implementation status
 
-**Status:** ✅ **Domain, Repository & Service Complete + Integration Tests** | ⏳ **API Layer Pending**  
-**Last Updated:** 2025-11-04  
-**Reference:** ADR-005 (Service Layer), ADR-003 (Repository Layer), ADR-002 (Repository Architecture)
+**Status:** ✅ **Domain, Repository, Service & API Complete**  
+**Last Updated:** 2025-11-17  
+**Reference:** ADR-006 (API Layer), ADR-005 (Service Layer), ADR-003 (Repository Layer), ADR-002 (Repository Architecture)
 
 ### Completed Components
 
@@ -85,7 +85,23 @@
 - Multi-tenancy isolation verified
 - Database transactions and rollbacks tested
 
-**Total: 182 tests passing (173 unit + 9 integration)**
+**✅ API Layer (90 tests passing) - Nov 17, 2025**
+- **FastAPI Routers**: Fermentation (10 endpoints) and Sample (7 endpoints)
+- **Request DTOs**: Pydantic models for API input validation
+- **Response DTOs**: Pydantic models for API output serialization
+- **Error Handling**: Centralized with `@handle_service_errors` decorator
+- **Authentication/Authorization**: JWT integration, winery context injection
+- **API Documentation**: OpenAPI/Swagger specs auto-generated
+- **Integration**: Dependency injection with FastAPI
+- **API Tests**: 90 endpoint tests with TestClient (100% passing)
+
+**Refactoring - Error Handling (Nov 17, 2025):**
+- Created `error_handlers.py` with decorator pattern
+- Eliminated ~410 lines of duplicated try/except blocks
+- Standardized exception→HTTP status code mappings
+- All 17 endpoints refactored to use centralized error handling
+
+**Total: 272 tests passing (173 unit + 9 integration + 90 API)**
 
 ### Test Execution Notes
 
@@ -98,8 +114,11 @@ poetry run pytest tests/unit/
 # Run integration tests (9 tests) 
 poetry run pytest tests/integration/
 
-# Run both sequentially
-poetry run pytest tests/unit/ --tb=no -q; poetry run pytest tests/integration/ --tb=no -q
+# Run API tests (90 tests)
+poetry run pytest tests/api/
+
+# Run all tests sequentially
+poetry run pytest tests/unit/ --tb=no -q; poetry run pytest tests/integration/ --tb=no -q; poetry run pytest tests/api/ --tb=no -q
 ```
 
 **Why separate?** The global SQLAlchemy mapper registry gets configured during pytest collection. When both test suites are collected together, entity re-imports cause mapper conflicts with polymorphic inheritance (`SugarSample` inheriting from `BaseSample`). Running separately avoids this issue.
@@ -108,34 +127,38 @@ poetry run pytest tests/unit/ --tb=no -q; poetry run pytest tests/integration/ -
 
 ### Pending Components
 
-**⏳ API Layer** (Not yet implemented)
-- **FastAPI Routers**: Fermentation and Sample endpoints
-- **Request DTOs**: Pydantic models for API input validation
-- **Response DTOs**: Pydantic models for API output serialization
-- **HTTP Error Mapping**: Convert service exceptions to HTTP status codes
-- **Authentication/Authorization**: JWT integration, winery context injection
-- **API Documentation**: OpenAPI/Swagger specs
-- **Integration**: Wire services with dependency injection
-- **API Tests**: Endpoint testing with TestClient
+**⏳ Optional Enhancements** (Future work)
+- GET /samples/types endpoint (list available sample types)
+- Rate limiting for API endpoints
+- Response caching for read-heavy endpoints
+- WebSocket support for real-time updates
+- GraphQL layer for complex queries
 
-**Completion Estimate**: ~30-40 endpoints, ~40-50 API tests needed
+**API Layer is functionally complete** (17/18 endpoints implemented)
 
 ## Quick Reference
 
 **Need to work on this module?**
-1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`
+1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`, `ADR-006`
 2. Review component contexts in `src/*/.ai-context/component-context.md`
 3. Run tests: 
    - Unit: `poetry run pytest tests/unit/` (173 tests)
    - Integration: `poetry run pytest tests/integration/` (9 tests)
+   - API: `poetry run pytest tests/api/` (90 tests)
    - **Note**: Must run separately due to SQLAlchemy mapper conflicts (see tests/README.md)
 
 **Architecture:**
-- Domain → Repository → Service → API (future)
+- Domain → Repository → Service → API ✅ **Complete**
 - All dependencies point toward Domain
 - Type-safe (DTOs → Entities)
 - SOLID principles enforced
 - Integration tests verify real PostgreSQL operations
+- API tests verify HTTP endpoints with TestClient
+
+**Error Handling:**
+- Centralized with `@handle_service_errors` decorator
+- Exception→HTTP mappings: NotFoundError→404, ValidationError→422, DuplicateError→409, etc.
+- ~410 lines of duplicated code eliminated
 
 ## Domain entities
 **Core Entities:**

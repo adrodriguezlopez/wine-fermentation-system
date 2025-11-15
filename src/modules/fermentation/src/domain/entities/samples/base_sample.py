@@ -15,6 +15,10 @@ class BaseSample(BaseEntity):
 
     __tablename__ = "samples"
     __table_args__ = {"extend_existing": True}  # Allow re-registration for testing
+    __mapper_args__ = {
+        "polymorphic_on": "sample_type",
+        "polymorphic_identity": "base_sample",
+    }
 
     # Primary identification
     # Id is inherited from BaseEntity

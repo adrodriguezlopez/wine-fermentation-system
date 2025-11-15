@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Union
-from domain.enums.sample_type import SampleType
-from service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.domain.enums.sample_type import SampleType
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
 
 class IValueValidationService(ABC):
     """

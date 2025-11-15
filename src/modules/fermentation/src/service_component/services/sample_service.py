@@ -128,6 +128,7 @@ class SampleService(ISampleService):
         # Step 3: Create BaseSample entity for validation
         sample = self._create_sample_entity(
             fermentation_id=fermentation_id,
+            user_id=user_id,
             data=data
         )
         
@@ -156,6 +157,7 @@ class SampleService(ISampleService):
     def _create_sample_entity(
         self,
         fermentation_id: int,
+        user_id: int,
         data: SampleCreate
     ) -> BaseSample:
         """
@@ -164,11 +166,11 @@ class SampleService(ISampleService):
         """
         sample = BaseSample()
         sample.fermentation_id = fermentation_id
-        sample.recorded_by_user_id = data.recorded_by_user_id
+        sample.recorded_by_user_id = user_id
         sample.sample_type = data.sample_type.value
         sample.value = data.value
-        sample.units = self._get_units_for_sample_type(data.sample_type)
-        sample.recorded_at = datetime.now()  # Server timestamp
+        sample.units = data.units  # Use units from request
+        sample.recorded_at = data.recorded_at  # Use timestamp from request
         sample.is_deleted = False
         return sample
     
@@ -311,10 +313,15 @@ class SampleService(ISampleService):
             )
         
         # Step 2: Get latest sample via repository (with optional type filter)
-        latest_sample = await self._sample_repo.get_latest_sample(
-            fermentation_id=fermentation_id,
-            sample_type=sample_type
-        )
+        if sample_type:
+            latest_sample = await self._sample_repo.get_latest_sample_by_type(
+                fermentation_id=fermentation_id,
+                sample_type=sample_type
+            )
+        else:
+            latest_sample = await self._sample_repo.get_latest_sample(
+                fermentation_id=fermentation_id
+            )
         
         return latest_sample
     
@@ -375,8 +382,8 @@ class SampleService(ISampleService):
         # Step 3: Get samples in timerange via repository
         samples = await self._sample_repo.get_samples_in_timerange(
             fermentation_id=fermentation_id,
-            start=start,
-            end=end
+            start_time=start,
+            end_time=end
         )
         
         return samples
@@ -384,6 +391,7 @@ class SampleService(ISampleService):
     async def validate_sample_data(
         self,
         fermentation_id: int,
+        winery_id: int,
         data: SampleCreate
     ) -> ValidationResult:
         """
@@ -392,12 +400,13 @@ class SampleService(ISampleService):
         Useful for frontend validation before submitting form.
 
         Business logic:
-        1. Verifies fermentation exists
+        1. Verifies fermentation exists and belongs to winery
         2. Delegates to ValidationOrchestrator.validate_sample_complete()
         3. Does NOT create sample, only validates
 
         Args:
             fermentation_id: ID of fermentation
+            winery_id: Winery ID for access control
             data: Sample data to validate
 
         Returns:
@@ -409,22 +418,22 @@ class SampleService(ISampleService):
         """
         from src.modules.fermentation.src.service_component.errors import NotFoundError
         
-        # Step 1: Verify fermentation exists
-        # Note: We don't need winery_id here since this is just validation
-        # The actual add_sample() will verify ownership
+        # Step 1: Verify fermentation exists and belongs to winery
         fermentation = await self._fermentation_repo.get_by_id(
             fermentation_id=fermentation_id,
-            winery_id=None  # Skip winery check for validation-only
+            winery_id=winery_id  # Enforce multi-tenancy
         )
         
         if fermentation is None:
             raise NotFoundError(
-                f"Fermentation {fermentation_id} not found"
+                f"Fermentation {fermentation_id} not found or access denied"
             )
         
         # Step 2: Create sample entity for validation (dry-run)
+        # Use user_id=0 as placeholder since we're only validating, not persisting
         sample = self._create_sample_entity(
             fermentation_id=fermentation_id,
+            user_id=0,  # Placeholder for validation-only
             data=data
         )
         
@@ -435,3 +444,62 @@ class SampleService(ISampleService):
         )
         
         return validation_result
+
+    # ==================================================================================
+    # DELETION OPERATIONS
+    # ==================================================================================
+
+    async def delete_sample(
+        self,
+        sample_id: int,
+        fermentation_id: int,
+        winery_id: int
+    ) -> None:
+        """
+        Soft deletes a sample.
+
+        Business logic:
+        1. Verifies sample exists and belongs to fermentation
+        2. Verifies fermentation belongs to winery (access control)
+        3. Marks sample as deleted (soft delete)
+
+        Args:
+            sample_id: ID of sample to delete
+            fermentation_id: ID of fermentation (access control)
+            winery_id: Winery ID for access control
+
+        Returns:
+            None
+
+        Raises:
+            NotFoundError: If sample or fermentation doesn't exist
+            RepositoryError: If database operation fails
+        
+        Status: ✅ Implemented via TDD (Phase 4 - 2025-10-22)
+        """
+        from src.modules.fermentation.src.service_component.errors import NotFoundError
+        
+        # Step 1: Verify fermentation exists and belongs to winery
+        fermentation = await self._fermentation_repo.get_by_id(
+            fermentation_id=fermentation_id,
+            winery_id=winery_id
+        )
+        
+        if fermentation is None:
+            raise NotFoundError(
+                f"Fermentation {fermentation_id} not found or access denied"
+            )
+        
+        # Step 2: Verify sample exists and belongs to fermentation
+        sample = await self._sample_repo.get_sample_by_id(
+            sample_id=sample_id,
+            fermentation_id=fermentation_id
+        )
+        
+        if sample is None:
+            raise NotFoundError(
+                f"Sample {sample_id} not found"
+            )
+        
+        # Step 3: Soft delete the sample
+        await self._sample_repo.soft_delete_sample(sample_id=sample_id)

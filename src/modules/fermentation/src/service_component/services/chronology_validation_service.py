@@ -1,9 +1,9 @@
 import datetime
-from domain.entities.samples.base_sample import BaseSample
-from domain.repositories.sample_repository_interface import ISampleRepository
-from service_component.interfaces.chronology_validation_service_interface import IChronologyValidationService
-from service_component.models.schemas.validations.validation_error import ValidationError
-from service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
+from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
+from src.modules.fermentation.src.service_component.interfaces.chronology_validation_service_interface import IChronologyValidationService
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_error import ValidationError
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
 
 
 class ChronologyValidationService(IChronologyValidationService):

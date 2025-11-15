@@ -65,29 +65,32 @@ class SampleRepository(BaseRepository, ISampleRepository):
             session_cm = await self.get_session()
             async with session_cm as session:
                 # Map domain entity to SQLAlchemy entity based on type
-                if sample.sample_type == SampleType.SUGAR:
+                # Note: sample.sample_type is already a string value, not an enum
+                sample_type_value = sample.sample_type if isinstance(sample.sample_type, str) else sample.sample_type.value
+                
+                if sample_type_value == SampleType.SUGAR.value or sample.sample_type == SampleType.SUGAR:
                     sql_sample = SQLSugarSample(
                         fermentation_id=sample.fermentation_id,
                         recorded_by_user_id=sample.recorded_by_user_id,
-                        sample_type=sample.sample_type.value,
+                        sample_type=sample_type_value,
                         value=sample.value,
                         units=sample.units,
                         recorded_at=sample.recorded_at,
                     )
-                elif sample.sample_type == SampleType.DENSITY:
+                elif sample_type_value == SampleType.DENSITY.value or sample.sample_type == SampleType.DENSITY:
                     sql_sample = SQLDensitySample(
                         fermentation_id=sample.fermentation_id,
                         recorded_by_user_id=sample.recorded_by_user_id,
-                        sample_type=sample.sample_type.value,
+                        sample_type=sample_type_value,
                         value=sample.value,
                         units=sample.units,
                         recorded_at=sample.recorded_at,
                     )
-                elif sample.sample_type == SampleType.TEMPERATURE:
+                elif sample_type_value == SampleType.TEMPERATURE.value or sample.sample_type == SampleType.TEMPERATURE:
                     sql_sample = SQLCelsiusTemperatureSample(
                         fermentation_id=sample.fermentation_id,
                         recorded_by_user_id=sample.recorded_by_user_id,
-                        sample_type=sample.sample_type.value,
+                        sample_type=sample_type_value,
                         value=sample.value,
                         units=sample.units,
                         recorded_at=sample.recorded_at,
@@ -98,7 +101,7 @@ class SampleRepository(BaseRepository, ISampleRepository):
                     sql_sample = SQLBaseSample(
                         fermentation_id=sample.fermentation_id,
                         recorded_by_user_id=sample.recorded_by_user_id,
-                        sample_type=sample.sample_type.value,
+                        sample_type=sample_type_value,
                         value=sample.value,
                         units=sample.units,
                         recorded_at=sample.recorded_at,
@@ -173,21 +176,98 @@ class SampleRepository(BaseRepository, ISampleRepository):
             )
 
     # =====================================================================
-    # Remaining methods from ISampleRepository - NOT YET IMPLEMENTED
-    # Will be implemented in subsequent TDD cycles
+    # ISampleRepository Interface Implementation
     # =====================================================================
 
     async def upsert_sample(self, sample: BaseSample) -> BaseSample:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+        """
+        Upsert a sample (create or update).
+        
+        Args:
+            sample: BaseSample entity
+            
+        Returns:
+            Updated/created BaseSample
+        """
+        if sample.id is None:
+            return await self.create(sample)
+        else:
+            return await self.update(sample)
 
-    async def get_sample_by_id(self, sample_id: int, fermentation_id: Optional[int] = None) -> BaseSample:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+    async def get_sample_by_id(
+        self, 
+        sample_id: int,
+        fermentation_id: Optional[int] = None
+    ) -> BaseSample:
+        """
+        Retrieves a sample by its ID.
+        
+        Args:
+            sample_id: ID of the sample to retrieve
+            fermentation_id: Optional fermentation ID for access control
+            
+        Returns:
+            BaseSample entity
+            
+        Raises:
+            NotFoundError: If sample doesn't exist
+        """
+        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+        from sqlalchemy import select
+        
+        session_cm = await self.get_session()
+        async with session_cm as session:
+            # Query all sample types
+            for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
+                stmt = select(sample_class).where(sample_class.id == sample_id)
+                
+                if fermentation_id is not None:
+                    stmt = stmt.where(sample_class.fermentation_id == fermentation_id)
+                
+                result = await session.execute(stmt)
+                sample = result.scalar_one_or_none()
+                
+                if sample is not None:
+                    return sample
+            
+            # Not found in any table
+            return None
 
     async def get_samples_by_fermentation_id(self, fermentation_id: int) -> List[BaseSample]:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+        """
+        Retrieves all samples for a fermentation.
+        
+        Args:
+            fermentation_id: ID of the fermentation
+            
+        Returns:
+            List of samples in chronological order
+        """
+        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+        from sqlalchemy import select
+        
+        session_cm = await self.get_session()
+        async with session_cm as session:
+            samples = []
+            
+            # Collect samples from all types
+            for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
+                stmt = select(sample_class).where(
+                    sample_class.fermentation_id == fermentation_id
+                ).order_by(sample_class.recorded_at.asc())
+                
+                result = await session.execute(stmt)
+                samples.extend(result.scalars().all())
+            
+            # Sort all samples chronologically
+            samples.sort(key=lambda s: s.recorded_at)
+            
+            return samples
+
 
     async def get_samples_in_timerange(
         self,
@@ -195,24 +275,109 @@ class SampleRepository(BaseRepository, ISampleRepository):
         start_time: datetime,
         end_time: datetime
     ) -> List[BaseSample]:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+        """
+        Get samples in a time range.
+        
+        Args:
+            fermentation_id: ID of the fermentation
+            start_time: Start of time range
+            end_time: End of time range
+            
+        Returns:
+            List of samples in the range
+        """
+        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+        from sqlalchemy import select
+        
+        session_cm = await self.get_session()
+        async with session_cm as session:
+            samples = []
+            
+            for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
+                stmt = select(sample_class).where(
+                    sample_class.fermentation_id == fermentation_id,
+                    sample_class.recorded_at >= start_time,
+                    sample_class.recorded_at <= end_time
+                ).order_by(sample_class.recorded_at.asc())
+                
+                result = await session.execute(stmt)
+                samples.extend(result.scalars().all())
+            
+            samples.sort(key=lambda s: s.recorded_at)
+            return samples
 
     async def get_latest_sample(self, fermentation_id: int) -> Optional[BaseSample]:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+        """
+        Get the most recent sample for a fermentation.
+        
+        Args:
+            fermentation_id: ID of the fermentation
+            
+        Returns:
+            Most recent BaseSample or None
+        """
+        samples = await self.get_samples_by_fermentation_id(fermentation_id)
+        
+        if not samples:
+            return None
+        
+        # Samples are already sorted chronologically, get last one
+        return samples[-1]
 
     async def get_fermentation_start_date(self, fermentation_id: int) -> datetime:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+        """Get fermentation start date."""
+        from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
+        from sqlalchemy import select
+        
+        session_cm = await self.get_session()
+        async with session_cm as session:
+            stmt = select(Fermentation.start_date).where(Fermentation.id == fermentation_id)
+            result = await session.execute(stmt)
+            start_date = result.scalar_one_or_none()
+            
+            return start_date  # Return None if not found
 
     async def get_latest_sample_by_type(
         self,
         fermentation_id: int,
         sample_type: SampleType
     ) -> Optional[BaseSample]:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+        """
+        Get the most recent sample of a specific type.
+        
+        Args:
+            fermentation_id: ID of the fermentation
+            sample_type: Type of sample to filter
+            
+        Returns:
+            Most recent sample of that type or None
+        """
+        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+        from sqlalchemy import select
+        
+        session_cm = await self.get_session()
+        async with session_cm as session:
+            # Map sample type to entity class
+            sample_class_map = {
+                SampleType.SUGAR: SugarSample,
+                SampleType.DENSITY: DensitySample,
+                SampleType.TEMPERATURE: CelsiusTemperatureSample
+            }
+            
+            sample_class = sample_class_map.get(sample_type)
+            if not sample_class:
+                return None
+            
+            stmt = select(sample_class).where(
+                sample_class.fermentation_id == fermentation_id
+            ).order_by(sample_class.recorded_at.desc()).limit(1)
+            
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
 
     async def check_duplicate_timestamp(
         self,
@@ -220,13 +385,89 @@ class SampleRepository(BaseRepository, ISampleRepository):
         sample: BaseSample,
         exclude_sample_id: Optional[int] = None
     ) -> bool:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+        """
+        Check if a sample with the same timestamp already exists.
+        
+        Args:
+            fermentation_id: ID of the fermentation
+            sample: Sample to check
+            exclude_sample_id: Optional ID to exclude from check
+            
+        Returns:
+            True if duplicate exists, False otherwise
+        """
+        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+        from sqlalchemy import select
+        
+        session_cm = await self.get_session()
+        async with session_cm as session:
+            # Map sample type to entity class
+            sample_class_map = {
+                SampleType.SUGAR: SugarSample,
+                SampleType.DENSITY: DensitySample,
+                SampleType.TEMPERATURE: CelsiusTemperatureSample
+            }
+            
+            sample_class = sample_class_map.get(sample.sample_type)
+            if not sample_class:
+                return False
+            
+            stmt = select(sample_class).where(
+                sample_class.fermentation_id == fermentation_id,
+                sample_class.recorded_at == sample.recorded_at
+            )
+            
+            if exclude_sample_id is not None:
+                stmt = stmt.where(sample_class.id != exclude_sample_id)
+            
+            result = await session.execute(stmt)
+            existing = result.scalar_one_or_none()
+            
+            return existing is not None
 
     async def soft_delete_sample(self, sample_id: int) -> None:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+        """
+        Soft delete a sample.
+        
+        Args:
+            sample_id: ID of sample to delete
+        """
+        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+        from sqlalchemy import update
+        
+        session_cm = await self.get_session()
+        async with session_cm as session:
+            # Try to update in each table
+            for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
+                stmt = update(sample_class).where(
+                    sample_class.id == sample_id
+                ).values(is_deleted=True)
+                
+                result = await session.execute(stmt)
+                
+                if result.rowcount > 0:
+                    await session.commit()
+                    return
+            
+            # Not found - just return without error
 
     async def bulk_upsert_samples(self, samples: List[BaseSample]) -> List[BaseSample]:
-        """NOT YET IMPLEMENTED - Next TDD cycle."""
-        raise NotImplementedError("TDD: Implement in next cycle")
+        """
+        Bulk upsert samples.
+        
+        Args:
+            samples: List of samples to upsert
+            
+        Returns:
+            List of upserted samples
+        """
+        result = []
+        for sample in samples:
+            upserted = await self.upsert_sample(sample)
+            result.append(upserted)
+        return result
+

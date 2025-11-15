@@ -10,5 +10,7 @@ class SugarSample(BaseSample):
     }
 
     def __init__(self, **kwargs: Any) -> None:
-        kwargs["units"] = "brix"
+        # Only set default units if not provided
+        if "units" not in kwargs:
+            kwargs["units"] = "brix"
         super().__init__(**kwargs)

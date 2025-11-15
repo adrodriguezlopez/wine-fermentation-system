@@ -211,6 +211,7 @@ class ISampleService(ABC):
     async def validate_sample_data(
         self,
         fermentation_id: int,
+        winery_id: int,
         data: SampleCreate
     ) -> ValidationResult:
         """
@@ -219,17 +220,53 @@ class ISampleService(ABC):
         Useful for frontend validation before submitting form.
 
         Business logic:
-        1. Verifies fermentation exists
+        1. Verifies fermentation exists and belongs to winery
         2. Delegates to ValidationOrchestrator.validate_sample_complete()
         3. Does NOT create sample, only validates
 
         Args:
             fermentation_id: ID of fermentation
+            winery_id: Winery ID for access control
             data: Sample data to validate
 
         Returns:
             ValidationResult: Validation result with errors/warnings
 
         Note: Does NOT add sample, only validates
+        """
+        pass
+
+    # ==================================================================================
+    # DELETION OPERATIONS
+    # ==================================================================================
+
+    @abstractmethod
+    async def delete_sample(
+        self,
+        sample_id: int,
+        fermentation_id: int,
+        winery_id: int
+    ) -> None:
+        """
+        Soft deletes a sample.
+
+        Business logic:
+        1. Verifies sample exists and belongs to fermentation
+        2. Verifies fermentation belongs to winery (access control)
+        3. Marks sample as deleted (soft delete)
+
+        Args:
+            sample_id: ID of sample to delete
+            fermentation_id: ID of fermentation (access control)
+            winery_id: Winery ID for access control
+
+        Returns:
+            None
+
+        Raises:
+            NotFoundError: If sample or fermentation doesn't exist
+            RepositoryError: If database operation fails
+        
+        Status: ✅ Implemented via TDD (Phase 4 - 2025-10-22)
         """
         pass

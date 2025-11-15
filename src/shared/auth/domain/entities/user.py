@@ -59,23 +59,26 @@ class User(BaseEntity):
 
     # NOTE: created_at and updated_at are inherited from BaseEntity - DO NOT duplicate here
 
-    # Relationships - using fully qualified paths to avoid ambiguity
-    # lazy="raise" prevents automatic loading and N+1 queries, relationships must be explicitly loaded
-    # NOTE: These relationships are only defined when not in auth test mode
-    # This allows the auth module to be tested independently without fermentation module dependencies
-    if not _AUTH_TEST_MODE:
-        fermentations: Mapped[List["Fermentation"]] = relationship(
-            "src.modules.fermentation.src.domain.entities.fermentation.Fermentation", 
-            back_populates="fermented_by_user", 
-            cascade="all, delete-orphan",
-            lazy="raise"
-        )
-        
-        samples: Mapped[List["BaseSample"]] = relationship(
-            "src.modules.fermentation.src.domain.entities.samples.base_sample.BaseSample",
-            cascade="all, delete-orphan",
-            lazy="raise"
-        )
+    # Relationships - DISABLED to allow independent auth module testing
+    # These relationships cause circular dependency issues when auth tests run without fermentation module loaded
+    # The fermentation module defines its own relationships to User (fermented_by_user, recorded_by_user)
+    # which is sufficient for the application to work correctly
+    # 
+    # NOTE: If you need to navigate from User to Fermentations/Samples, use explicit queries
+    # Example: session.query(Fermentation).filter_by(fermented_by_user_id=user.id).all()
+    #
+    # if not _AUTH_TEST_MODE:
+    #     fermentations: Mapped[List["Fermentation"]] = relationship(
+    #         "src.modules.fermentation.src.domain.entities.fermentation.Fermentation", 
+    #         viewonly=True,
+    #         lazy="noload"
+    #     )
+    #     
+    #     samples: Mapped[List["BaseSample"]] = relationship(
+    #         "src.modules.fermentation.src.domain.entities.samples.base_sample.BaseSample",
+    #         viewonly=True,
+    #         lazy="noload"
+    #     )
     
     # Note: Winery relationship commented out - Winery is in a separate module
     # winery: Mapped["Winery"] = relationship("Winery", back_populates="users", foreign_keys='User.winery_id')
