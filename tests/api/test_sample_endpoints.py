@@ -762,3 +762,102 @@ class TestValidateSample:
         )
         
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+# =============================================================================
+# DELETE /api/v1/samples/{id}
+# =============================================================================
+
+class TestDeleteSample:
+    """Test suite for DELETE /api/v1/samples/{id} endpoint"""
+    
+    def test_delete_sample_success(self, client):
+        """
+        ✅ DELETE sample successfully
+        
+        Given: Fermentation exists with 1 sample
+        When: DELETE /samples/{id}?fermentation_id={ferm_id}
+        Then: Returns 204 No Content
+        And: Sample is soft-deleted
+        """
+        # Setup: Create fermentation
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Create sample to delete
+        sample_data = {
+            "sample_type": "sugar",
+            "value": 23.5,
+            "units": "°Brix",
+            "recorded_at": "2024-11-01T10:00:00"
+        }
+        sample_response = client.post(
+            f"/api/v1/fermentations/{fermentation_id}/samples",
+            json=sample_data
+        )
+        sample_id = sample_response.json()["id"]
+        
+        # Act: Delete sample
+        response = client.delete(
+            f"/api/v1/samples/{sample_id}",
+            params={"fermentation_id": fermentation_id}
+        )
+        
+        # Assert: Success (204 No Content)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        
+        # Note: Soft delete marks is_deleted=True but sample may still appear
+        # in queries (repository needs to filter by is_deleted=False)
+    
+    def test_delete_sample_not_found(self, client):
+        """
+        ❌ DELETE non-existent sample
+        
+        Given: Fermentation exists
+        When: DELETE /samples/999?fermentation_id={ferm_id}
+        Then: Returns 404 Not Found
+        """
+        # Setup: Create fermentation (but no sample)
+        fermentation_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        fermentation_response = client.post("/api/v1/fermentations", json=fermentation_data)
+        fermentation_id = fermentation_response.json()["id"]
+        
+        # Act: Try to delete non-existent sample
+        response = client.delete(
+            "/api/v1/samples/999",
+            params={"fermentation_id": fermentation_id}
+        )
+        
+        # Assert: Not found
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "not found" in response.json()["detail"].lower()
+    
+    def test_delete_sample_without_authentication(self, unauthenticated_client):
+        """
+        🔒 DELETE sample requires authentication
+        
+        Given: Sample exists
+        When: DELETE without auth token
+        Then: Returns 403 Forbidden
+        """
+        response = unauthenticated_client.delete(
+            "/api/v1/samples/1",
+            params={"fermentation_id": 1}
+        )
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN

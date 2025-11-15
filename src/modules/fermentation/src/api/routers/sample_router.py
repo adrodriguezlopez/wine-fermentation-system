@@ -471,3 +471,68 @@ async def validate_sample(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {str(e)}"
         )
+
+
+# =============================================================================
+# DELETE /api/v1/samples/{id} - Delete sample
+# =============================================================================
+
+@samples_router.delete(
+    "/{sample_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a sample",
+    description="Soft deletes a sample (marks as deleted but keeps in database)",
+    responses={
+        204: {"description": "Sample deleted successfully"},
+        404: {"description": "Sample or fermentation not found"},
+        403: {"description": "Not authenticated"}
+    },
+    tags=["samples"]
+)
+async def delete_sample(
+    sample_id: int = Path(..., description="Sample ID", gt=0),
+    fermentation_id: int = Query(..., description="Fermentation ID", gt=0),
+    sample_service: Annotated[ISampleService, Depends(get_sample_service)] = None,
+    current_user: Annotated[UserContext, Depends(get_current_user)] = None
+) -> None:
+    """
+    Delete a sample (soft delete).
+    
+    **Business Rules:**
+    - Sample must exist and belong to specified fermentation
+    - Fermentation must belong to user's winery (multi-tenancy)
+    - Soft delete only (marks is_deleted=True)
+    
+    **Authentication:**
+    - Required: Yes (JWT Bearer token)
+    - Roles: Any authenticated user from the same winery
+    
+    **Multi-tenancy:**
+    - Enforced via fermentation ownership check
+    
+    **Example:**
+    ```bash
+    curl -X DELETE "http://localhost:8000/api/v1/samples/123?fermentation_id=1" \
+         -H "Authorization: Bearer YOUR_JWT_TOKEN"
+    ```
+    
+    Status: ✅ Implemented (Phase 4 - 2025-11-15)
+    """
+    try:
+        await sample_service.delete_sample(
+            sample_id=sample_id,
+            fermentation_id=fermentation_id,
+            winery_id=current_user.winery_id
+        )
+        # 204 No Content - no body returned
+        
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )

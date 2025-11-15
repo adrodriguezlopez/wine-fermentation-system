@@ -235,3 +235,38 @@ class ISampleService(ABC):
         Note: Does NOT add sample, only validates
         """
         pass
+
+    # ==================================================================================
+    # DELETION OPERATIONS
+    # ==================================================================================
+
+    @abstractmethod
+    async def delete_sample(
+        self,
+        sample_id: int,
+        fermentation_id: int,
+        winery_id: int
+    ) -> None:
+        """
+        Soft deletes a sample.
+
+        Business logic:
+        1. Verifies sample exists and belongs to fermentation
+        2. Verifies fermentation belongs to winery (access control)
+        3. Marks sample as deleted (soft delete)
+
+        Args:
+            sample_id: ID of sample to delete
+            fermentation_id: ID of fermentation (access control)
+            winery_id: Winery ID for access control
+
+        Returns:
+            None
+
+        Raises:
+            NotFoundError: If sample or fermentation doesn't exist
+            RepositoryError: If database operation fails
+        
+        Status: ✅ Implemented via TDD (Phase 4 - 2025-10-22)
+        """
+        pass

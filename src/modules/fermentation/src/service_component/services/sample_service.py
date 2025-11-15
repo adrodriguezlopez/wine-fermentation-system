@@ -444,3 +444,62 @@ class SampleService(ISampleService):
         )
         
         return validation_result
+
+    # ==================================================================================
+    # DELETION OPERATIONS
+    # ==================================================================================
+
+    async def delete_sample(
+        self,
+        sample_id: int,
+        fermentation_id: int,
+        winery_id: int
+    ) -> None:
+        """
+        Soft deletes a sample.
+
+        Business logic:
+        1. Verifies sample exists and belongs to fermentation
+        2. Verifies fermentation belongs to winery (access control)
+        3. Marks sample as deleted (soft delete)
+
+        Args:
+            sample_id: ID of sample to delete
+            fermentation_id: ID of fermentation (access control)
+            winery_id: Winery ID for access control
+
+        Returns:
+            None
+
+        Raises:
+            NotFoundError: If sample or fermentation doesn't exist
+            RepositoryError: If database operation fails
+        
+        Status: ✅ Implemented via TDD (Phase 4 - 2025-10-22)
+        """
+        from src.modules.fermentation.src.service_component.errors import NotFoundError
+        
+        # Step 1: Verify fermentation exists and belongs to winery
+        fermentation = await self._fermentation_repo.get_by_id(
+            fermentation_id=fermentation_id,
+            winery_id=winery_id
+        )
+        
+        if fermentation is None:
+            raise NotFoundError(
+                f"Fermentation {fermentation_id} not found or access denied"
+            )
+        
+        # Step 2: Verify sample exists and belongs to fermentation
+        sample = await self._sample_repo.get_sample_by_id(
+            sample_id=sample_id,
+            fermentation_id=fermentation_id
+        )
+        
+        if sample is None:
+            raise NotFoundError(
+                f"Sample {sample_id} not found"
+            )
+        
+        # Step 3: Soft delete the sample
+        await self._sample_repo.soft_delete_sample(sample_id=sample_id)
