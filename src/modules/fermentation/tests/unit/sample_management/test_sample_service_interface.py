@@ -19,13 +19,14 @@ def test_sample_service_interface_methods() -> None:
     If a new method is added, this test will fail,
     enforcing TDD and documentation updates.
     
-    Expected methods (6):
+    Expected methods (7):
     - add_sample: Add sample with full validation
     - get_sample: Get specific sample by ID
     - get_samples_by_fermentation: List all samples for fermentation
     - get_latest_sample: Get most recent sample (optionally by type)
     - get_samples_in_timerange: Get samples in date range
     - validate_sample_data: Pre-validation (dry-run)
+    - delete_sample: Soft delete sample
     
     NOTE: Following ADR-003, sample operations are separate from fermentation operations.
     """
@@ -41,6 +42,7 @@ def test_sample_service_interface_methods() -> None:
         "get_latest_sample",
         "get_samples_in_timerange",
         "validate_sample_data",
+        "delete_sample",
     }
 
     # Get all abstract methods defined in the interface

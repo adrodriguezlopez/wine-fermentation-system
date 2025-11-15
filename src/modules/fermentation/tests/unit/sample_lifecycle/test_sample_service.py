@@ -656,8 +656,8 @@ class TestGetSamplesInTimerange:
         mock_fermentation_repo.get_by_id.assert_awaited_once()
         mock_sample_repo.get_samples_in_timerange.assert_awaited_once_with(
             fermentation_id=1,
-            start=start,
-            end=end
+            start_time=start,
+            end_time=end
         )
     
     @pytest.mark.asyncio
@@ -785,6 +785,7 @@ class TestValidateSampleData:
         # Act
         result = await sample_service.validate_sample_data(
             fermentation_id=1,
+            winery_id=1,
             data=sample_create_dto
         )
         
@@ -816,6 +817,7 @@ class TestValidateSampleData:
         # Act
         result = await sample_service.validate_sample_data(
             fermentation_id=1,
+            winery_id=1,
             data=sample_create_dto
         )
         
@@ -839,5 +841,6 @@ class TestValidateSampleData:
         with pytest.raises(NotFoundError, match="Fermentation .* not found"):
             await sample_service.validate_sample_data(
                 fermentation_id=999,
+                winery_id=1,
                 data=sample_create_dto
             )
