@@ -120,3 +120,47 @@ class FermentationUpdateRequest(BaseModel):
         None,
         description="Fermentation start date and time"
     )
+
+
+class StatusUpdateRequest(BaseModel):
+    """
+    Request DTO for updating fermentation status
+    
+    Used for PATCH /fermentations/{id}/status endpoint.
+    Validates status transitions via service layer.
+    """
+    
+    status: str = Field(
+        ...,
+        min_length=1,
+        max_length=20,
+        description="New fermentation status (e.g., IN_PROGRESS, COMPLETED, PAUSED)"
+    )
+
+
+class CompleteFermentationRequest(BaseModel):
+    """
+    Request DTO for completing a fermentation
+    
+    Used for PATCH /fermentations/{id}/complete endpoint.
+    Requires final metrics to calculate yields and outcomes.
+    """
+    
+    final_sugar_brix: float = Field(
+        ...,
+        ge=0,
+        le=50,
+        description="Final residual sugar in °Brix (0-50)"
+    )
+    
+    final_mass_kg: float = Field(
+        ...,
+        gt=0,
+        description="Final mass after fermentation in kilograms (must be positive)"
+    )
+    
+    notes: Optional[str] = Field(
+        None,
+        max_length=500,
+        description="Optional completion notes or observations"
+    )

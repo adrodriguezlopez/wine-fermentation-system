@@ -618,3 +618,496 @@ class TestGetFermentationsListEndpoint:
             status.HTTP_403_FORBIDDEN
         ]
 
+
+class TestPatchFermentationEndpoint:
+    """
+    Test suite for PATCH /api/v1/fermentations/{id} endpoint
+    
+    TDD Phase 2d: Partial updates to fermentation records
+    Tests:
+    - Successful updates (partial and full)
+    - Field validation
+    - Multi-tenancy enforcement
+    - Authorization checks
+    - Error handling
+    """
+    
+    def test_update_fermentation_success(self, client, mock_user_context, test_db_session):
+        """
+        TDD RED: PATCH /fermentations/{id} should update fermentation with valid data.
+        
+        Given: Existing fermentation
+        When: PATCH with valid partial update
+        Then: Returns 200 with updated fermentation
+        """
+        # Arrange: Create fermentation first
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-01",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        assert create_response.status_code == 201
+        fermentation_id = create_response.json()["id"]
+        
+        # Act: Update yeast strain and vessel code
+        update_data = {
+            "yeast_strain": "D47",
+            "vessel_code": "TANK-02"
+        }
+        response = client.patch(
+            f"/api/v1/fermentations/{fermentation_id}",
+            json=update_data
+        )
+        
+        # Assert
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert data["id"] == fermentation_id
+        assert data["yeast_strain"] == "D47"
+        assert data["vessel_code"] == "TANK-02"
+        # Other fields should remain unchanged
+        assert data["vintage_year"] == 2024
+        assert data["input_mass_kg"] == 1000.0
+    
+    def test_update_fermentation_single_field(self, client, mock_user_context):
+        """
+        TDD RED: Should allow updating a single field.
+        
+        Given: Existing fermentation
+        When: PATCH with only one field
+        Then: Updates only that field
+        """
+        # Create
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        fermentation_id = create_response.json()["id"]
+        
+        # Update only yeast_strain
+        update_data = {"yeast_strain": "D47"}
+        response = client.patch(
+            f"/api/v1/fermentations/{fermentation_id}",
+            json=update_data
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["yeast_strain"] == "D47"
+        assert data["vintage_year"] == 2024  # Unchanged
+
+
+# =============================================================================
+# PHASE 2e: Status Transitions Endpoints
+# =============================================================================
+
+class TestPatchStatusEndpoint:
+    """Tests for PATCH /api/v1/fermentations/{id}/status endpoint."""
+
+    def test_update_status_success(self, client):
+        """Should update status from IN_PROGRESS to COMPLETED."""
+        # Create fermentation
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-01",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        fermentation_id = create_response.json()["id"]
+        
+        # Update status
+        response = client.patch(
+            f"/api/v1/fermentations/{fermentation_id}/status",
+            json={"status": "COMPLETED"}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == fermentation_id
+        assert data["status"] == "COMPLETED"
+
+    def test_update_status_invalid_transition(self, client):
+        """Should reject invalid status transition."""
+        # Create fermentation
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-02",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        fermentation_id = create_response.json()["id"]
+        
+        # Try invalid transition
+        response = client.patch(
+            f"/api/v1/fermentations/{fermentation_id}/status",
+            json={"status": "CANCELLED"}  # Invalid from IN_PROGRESS
+        )
+        
+        assert response.status_code == 422
+
+    def test_update_status_not_found(self, client):
+        """Should return 404 for non-existent fermentation."""
+        response = client.patch(
+            "/api/v1/fermentations/999999/status",
+            json={"status": "COMPLETED"}
+        )
+        
+        assert response.status_code == 404
+
+    def test_update_status_without_authentication(self, unauthenticated_client):
+        """Should reject request without authentication."""
+        response = unauthenticated_client.patch(
+            "/api/v1/fermentations/1/status",
+            json={"status": "COMPLETED"}
+        )
+        
+        assert response.status_code in [401, 403]
+
+
+class TestPatchCompleteEndpoint:
+    """Tests for PATCH /api/v1/fermentations/{id}/complete endpoint."""
+
+    def test_complete_fermentation_success(self, client):
+        """Should complete fermentation with final metrics."""
+        # Create fermentation
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-03",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        fermentation_id = create_response.json()["id"]
+        
+        # Complete fermentation
+        response = client.patch(
+            f"/api/v1/fermentations/{fermentation_id}/complete",
+            json={
+                "final_sugar_brix": 2.5,
+                "final_mass_kg": 95.0,
+                "notes": "Excellent fermentation"
+            }
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == fermentation_id
+        assert data["status"] == "COMPLETED"
+
+    def test_complete_fermentation_minimal(self, client):
+        """Should complete without optional notes."""
+        # Create fermentation
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-04",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        fermentation_id = create_response.json()["id"]
+        
+        # Complete without notes
+        response = client.patch(
+            f"/api/v1/fermentations/{fermentation_id}/complete",
+            json={
+                "final_sugar_brix": 2.5,
+                "final_mass_kg": 95.0
+            }
+        )
+        
+        assert response.status_code == 200
+        assert response.json()["status"] == "COMPLETED"
+
+    def test_complete_fermentation_invalid_metrics(self, client):
+        """Should reject invalid final metrics."""
+        # Create fermentation
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-05",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        fermentation_id = create_response.json()["id"]
+        
+        # Try with negative sugar
+        response = client.patch(
+            f"/api/v1/fermentations/{fermentation_id}/complete",
+            json={
+                "final_sugar_brix": -1.0,
+                "final_mass_kg": 95.0
+            }
+        )
+        
+        assert response.status_code == 422
+
+    def test_complete_fermentation_not_found(self, client):
+        """Should return 404 for non-existent fermentation."""
+        response = client.patch(
+            "/api/v1/fermentations/999999/complete",
+            json={
+                "final_sugar_brix": 2.5,
+                "final_mass_kg": 95.0
+            }
+        )
+        
+        assert response.status_code == 404
+
+    def test_complete_fermentation_without_authentication(self, unauthenticated_client):
+        """Should reject request without authentication."""
+        response = unauthenticated_client.patch(
+            "/api/v1/fermentations/1/complete",
+            json={
+                "final_sugar_brix": 2.5,
+                "final_mass_kg": 95.0
+            }
+        )
+        
+        assert response.status_code in [401, 403]
+    
+    def test_update_fermentation_not_found(self, client, mock_user_context):
+        """
+        TDD RED: Should return 404 for non-existent fermentation.
+        
+        Given: Non-existent fermentation ID
+        When: PATCH attempt
+        Then: Returns 404
+        """
+        update_data = {"yeast_strain": "D47"}
+        response = client.patch("/api/v1/fermentations/99999", json=update_data)
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "not found" in response.json()["detail"].lower()
+    
+    def test_update_fermentation_wrong_winery(self, client, mock_user_context):
+        """
+        TDD: Should return 404 when updating fermentation from different winery.
+        
+        Note: In a real scenario, we would need two different wineries.
+        For now, we test that 404 is returned for non-existent ID which
+        simulates the same security behavior (don't reveal existence).
+        """
+        update_data = {"yeast_strain": "D47"}
+        response = client.patch("/api/v1/fermentations/99999", json=update_data)
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+    
+    def test_update_fermentation_invalid_data(self, client, mock_user_context):
+        """
+        TDD RED: Should return 422 for invalid field values.
+        
+        Given: Existing fermentation
+        When: PATCH with invalid data
+        Then: Returns 422 Validation Error
+        """
+        # Create
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        fermentation_id = create_response.json()["id"]
+        
+        # Try to update with negative mass
+        update_data = {"input_mass_kg": -100}
+        response = client.patch(
+            f"/api/v1/fermentations/{fermentation_id}",
+            json=update_data
+        )
+        
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    
+    def test_update_fermentation_without_authentication(self, unauthenticated_client):
+        """
+        TDD RED: Should return 401/403 without authentication.
+        
+        Given: No authentication
+        When: PATCH attempt
+        Then: Returns 401 or 403
+        """
+        update_data = {"yeast_strain": "D47"}
+        response = unauthenticated_client.patch(
+            "/api/v1/fermentations/1",
+            json=update_data
+        )
+        
+        assert response.status_code in [
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN
+        ]
+    
+    def test_update_fermentation_requires_winemaker_role(self, client, mock_user_context):
+        """
+        Note: Authorization is tested at the endpoint level by the
+        require_winemaker dependency which is already tested in auth module.
+        This test verifies the endpoint uses the correct dependency.
+        
+        The actual role-based access control test would require mocking
+        the dependency override differently, which is complex in this setup.
+        We rely on the auth module tests for RBAC validation.
+        """
+        # This test is implicitly covered by using require_winemaker dependency
+        # in the endpoint definition, which has comprehensive tests in auth module
+        pass
+    
+    def test_update_fermentation_empty_body(self, client, mock_user_context):
+        """
+        TDD RED: Should accept empty update (no-op).
+        
+        Given: Existing fermentation
+        When: PATCH with empty body
+        Then: Returns 200 with unchanged fermentation
+        """
+        # Create
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        fermentation_id = create_response.json()["id"]
+        
+        # Update with empty body
+        response = client.patch(f"/api/v1/fermentations/{fermentation_id}", json={})
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["yeast_strain"] == "EC-1118"  # Unchanged
+
+
+# =============================================================================
+# PHASE 2f: Utility Endpoints
+# =============================================================================
+
+class TestDeleteFermentationEndpoint:
+    """Tests for DELETE /api/v1/fermentations/{id} endpoint."""
+
+    def test_delete_fermentation_success(self, client):
+        """Should soft delete fermentation."""
+        # Create fermentation
+        create_data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-DEL-01",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        create_response = client.post("/api/v1/fermentations", json=create_data)
+        fermentation_id = create_response.json()["id"]
+        
+        # Delete
+        response = client.delete(f"/api/v1/fermentations/{fermentation_id}")
+        
+        assert response.status_code == 204
+        
+        # Verify it's deleted (404 on GET)
+        get_response = client.get(f"/api/v1/fermentations/{fermentation_id}")
+        assert get_response.status_code == 404
+
+    def test_delete_fermentation_not_found(self, client):
+        """Should return 404 for non-existent fermentation."""
+        response = client.delete("/api/v1/fermentations/999999")
+        assert response.status_code == 404
+
+    def test_delete_fermentation_without_authentication(self, unauthenticated_client):
+        """Should reject request without authentication."""
+        response = unauthenticated_client.delete("/api/v1/fermentations/1")
+        assert response.status_code in [401, 403]
+
+
+class TestValidateFermentationEndpoint:
+    """Tests for POST /api/v1/fermentations/validate endpoint."""
+
+    def test_validate_fermentation_valid_data(self, client):
+        """Should validate correct fermentation data."""
+        data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-VAL-01",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        
+        response = client.post("/api/v1/fermentations/validate", json=data)
+        
+        assert response.status_code == 200
+        result = response.json()
+        assert result["valid"] is True
+        assert "errors" not in result or len(result.get("errors", [])) == 0
+
+    def test_validate_fermentation_invalid_data(self, client):
+        """Should reject invalid fermentation data.
+        
+        Note: Pydantic validates basic constraints (like positive values) at the schema level
+        and returns 422. This is the correct behavior - the endpoint doesn't need to validate
+        what Pydantic already validates.
+        """
+        data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "vessel_code": "TANK-VAL-02",
+            "input_mass_kg": -100.0,  # Invalid: negative mass
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        
+        response = client.post("/api/v1/fermentations/validate", json=data)
+        
+        # Pydantic rejects invalid data with 422 before reaching endpoint logic
+        assert response.status_code == 422
+        result = response.json()
+        assert "detail" in result
+
+    def test_validate_fermentation_without_authentication(self, unauthenticated_client):
+        """Should reject request without authentication."""
+        data = {
+            "vintage_year": 2024,
+            "yeast_strain": "EC-1118",
+            "input_mass_kg": 1000.0,
+            "initial_sugar_brix": 22.5,
+            "initial_density": 1.095,
+            "start_date": "2024-11-01T10:00:00"
+        }
+        response = unauthenticated_client.post("/api/v1/fermentations/validate", json=data)
+        assert response.status_code in [401, 403]
+

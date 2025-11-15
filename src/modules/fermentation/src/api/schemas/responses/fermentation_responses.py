@@ -91,3 +91,23 @@ class FermentationResponse(BaseModel):
             created_at=fermentation.created_at,
             updated_at=fermentation.updated_at,
         )
+
+
+class ValidationErrorDetail(BaseModel):
+    """Individual validation error detail."""
+    field: str = Field(..., description="Field that failed validation")
+    message: str = Field(..., description="Error message")
+    code: Optional[str] = Field(None, description="Error code")
+
+
+class ValidationResponse(BaseModel):
+    """
+    Response for validation endpoint.
+    
+    Returns validation result without creating/modifying data.
+    """
+    valid: bool = Field(..., description="Whether the data is valid")
+    errors: List[ValidationErrorDetail] = Field(
+        default_factory=list,
+        description="List of validation errors (empty if valid)"
+    )

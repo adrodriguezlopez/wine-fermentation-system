@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
-from src.modules.fermentation.src.domain.dtos import FermentationCreate
+from src.modules.fermentation.src.domain.dtos import FermentationCreate, FermentationUpdate
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
 from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
 
@@ -131,6 +131,44 @@ class IFermentationService(ABC):
             List[Fermentation]: List of fermentations matching criteria
 
         Raises:
+            RepositoryError: If database operation fails
+        """
+        pass
+
+    # ==================================================================================
+    # UPDATE OPERATIONS
+    # ==================================================================================
+
+    @abstractmethod
+    async def update_fermentation(
+        self,
+        fermentation_id: int,
+        winery_id: int,
+        user_id: int,
+        data: FermentationUpdate
+    ) -> Fermentation:
+        """
+        Updates an existing fermentation with partial data.
+
+        Business logic:
+        1. Validates access (winery scoping)
+        2. Validates update data
+        3. Applies partial updates (only provided fields)
+        4. Updates modification audit trail
+        5. Returns updated entity
+
+        Args:
+            fermentation_id: ID of fermentation to update
+            winery_id: Winery ID for access control
+            user_id: ID of user making update (audit)
+            data: Partial update data (only provided fields updated)
+
+        Returns:
+            Fermentation: Updated fermentation entity
+
+        Raises:
+            NotFoundError: If fermentation not found
+            ValidationError: If update data is invalid
             RepositoryError: If database operation fails
         """
         pass

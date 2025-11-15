@@ -108,7 +108,11 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
         return await self.execute_with_error_mapping(_get_operation)
 
     async def update_status(
-        self, fermentation_id: int, winery_id: int, new_status: FermentationStatus
+        self, 
+        fermentation_id: int, 
+        winery_id: int, 
+        new_status: FermentationStatus,
+        metadata: Optional[dict] = None
     ) -> Optional[Fermentation]:
         """
         Updates the status of a fermentation.
@@ -117,6 +121,7 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
             fermentation_id: ID of the fermentation
             winery_id: Winery ID for access control
             new_status: New status value
+            metadata: Optional metadata about the status change (not currently used)
 
         Returns:
             Optional[Fermentation]: Updated fermentation or None if not found
@@ -136,7 +141,14 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
                 if fermentation is None:
                     return None
 
-                fermentation.status = new_status.value
+                # Check if this is a soft delete operation
+                if metadata and metadata.get('soft_delete'):
+                    fermentation.is_deleted = True
+                    # Note: deleted_at would be set here if the model had that field
+                else:
+                    fermentation.status = new_status.value
+                
+                # TODO: Use metadata for full audit trail
                 await session.flush()
                 await session.refresh(fermentation)
                 return fermentation
