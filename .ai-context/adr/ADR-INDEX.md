@@ -14,9 +14,9 @@
 | **[ADR-003](./ADR-003-repository-interface-refactoring.md)** | Repository Separation of Concerns | ✅ Implemented | 2025-10-04 | Medium |
 | **[ADR-004](./ADR-004-harvest-module-consolidation.md)** | Harvest Module Consolidation | ✅ Implemented | 2025-10-05 | High |
 | **[ADR-005](./ADR-005-service-layer-interfaces.md)** | Service Layer Interfaces & Type Safety | ✅ Implemented | 2025-10-11 | High |
-| **[ADR-006](./ADR-006-api-layer-design.md)** | API Layer Design & FastAPI Integration | ✅ Implemented | 2025-11-17 | High |
+| **[ADR-006](./ADR-006-api-layer-design.md)** | API Layer Design & FastAPI Integration | ✅ Implemented | 2025-11-15 | High |
 | **[ADR-007](./ADR-007-auth-module-design.md)** | Authentication Module (Shared Infrastructure) | ✅ Implemented | 2025-11-04 | Critical |
-| **[ADR-008](./ADR-008-centralized-error-handling.md)** | Centralized Error Handling for API Layer | ✅ Implemented | 2025-11-17 | Medium |
+| **[ADR-008](./ADR-008-centralized-error-handling.md)** | Centralized Error Handling for API Layer | ✅ Implemented | 2025-11-15 | Medium |
 
 **Legend:**
 - ✅ **Implemented** - Fully implemented with tests passing
@@ -80,7 +80,7 @@
 
 ### ADR-006: API Layer Design & FastAPI Integration
 **Decision:** REST API with FastAPI, JWT auth, Pydantic DTOs  
-**Status:** ✅ **FULLY IMPLEMENTED** (Nov 17, 2025)  
+**Status:** ✅ **FULLY IMPLEMENTED** (Nov 15, 2025)  
 **Impact:** Exposes fermentation functionality via HTTP  
 **Key Points:**
 - **All Phases Complete**: All endpoints implemented
@@ -102,7 +102,7 @@
 
 ### ADR-008: Centralized Error Handling for API Layer
 **Decision:** Use decorator pattern for exception→HTTP mapping  
-**Status:** ✅ **Implemented** (Nov 17, 2025)  
+**Status:** ✅ **Implemented** (Nov 15, 2025)  
 **Impact:** Eliminated code duplication, improved maintainability  
 **Key Points:**
 - **Single decorator**: `@handle_service_errors` wraps all endpoints
@@ -126,7 +126,7 @@
 
 ---
 
-## 📊 Current Status (Nov 17, 2025)
+## 📊 Current Status (Nov 15, 2025)
 
 **Implementation Complete:**
 - ✅ Domain Layer (Entities, DTOs, Enums, Interfaces)
@@ -144,7 +144,7 @@
 - ✅ **ADR-008 COMPLETE**: Error handling refactored with decorator pattern
 - Branch: feature/fermentation-api-layer (commit 6fa62d5)
 
-**Recent Achievements (Nov 17, 2025):**
+**Recent Achievements (Nov 15, 2025):**
 - ✅ Phase 4 Complete: All 17 endpoints implemented (10 fermentation + 7 sample)
 - ✅ Error Handling Refactored: ~410 lines eliminated via decorator pattern
 - ✅ All 90 API tests passing (100% coverage)

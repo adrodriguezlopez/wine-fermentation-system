@@ -446,3 +446,7 @@ async def delete_sample(
         winery_id=current_user.winery_id
     )
     # 204 No Content - no body returned
+
+
+# Export both routers for app registration
+__all__ = ["router", "samples_router"]
