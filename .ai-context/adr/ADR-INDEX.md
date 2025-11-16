@@ -83,9 +83,9 @@
 **Status:** ✅ **FULLY IMPLEMENTED** (Nov 15, 2025)  
 **Impact:** Exposes fermentation functionality via HTTP  
 **Key Points:**
-- **All Phases Complete**: All endpoints implemented
+- **All Phases Complete**: All 18 endpoints implemented (100%)
   - 10 fermentation endpoints (create, get, list, update, delete, validate, timeline, stats, etc.)
-  - 7 sample endpoints (create, get, list, latest, timerange, validate, delete)
+  - 8 sample endpoints (create, get, list, latest, types, timerange, validate, delete)
 - **Tests**: 90 API tests passing (100% coverage)
 - Real PostgreSQL database integration ✅
 - JWT authentication with shared Auth module ✅
@@ -93,7 +93,7 @@
 - Pydantic v2 for request/response DTOs ✅
 - **Centralized error handling** with decorator pattern ✅
 - **Code quality**: ~410 lines eliminated via refactoring ✅
-- **Branch**: feature/fermentation-api-layer
+- **Branch**: feature/fermentation-api-layer (merged to main)
 
 ### ADR-007: Authentication Module (Shared Infrastructure)
 **Decision:** JWT-based auth in src/shared/auth/ with User entity, role-based authorization  
@@ -145,17 +145,18 @@
 - Branch: feature/fermentation-api-layer (commit 6fa62d5)
 
 **Recent Achievements (Nov 15, 2025):**
-- ✅ Phase 4 Complete: All 17 endpoints implemented (10 fermentation + 7 sample)
+- ✅ Phase 4 Complete: All 18 endpoints implemented (10 fermentation + 8 sample)
 - ✅ Error Handling Refactored: ~410 lines eliminated via decorator pattern
 - ✅ All 90 API tests passing (100% coverage)
 - ✅ Code quality improved: DRY principle enforced
 - ✅ Documentation updated: ADR-006, ADR-008 (NEW), module-context.md
+- ✅ Router exports fixed: samples_router properly registered
 
 **Code Metrics:**
-- API endpoints: 17/18 implemented (94%)
-- Code reduction: ~330 lines net (-9.5% in router files)
+- API endpoints: 18/18 implemented (100%) ✅
+- Code reduction: ~410 lines eliminated via refactoring
 - Test coverage: 272/272 tests passing (100%)
-- Commits: 5 incremental commits with clear messages
+- Commits: 9 total (incremental commits with clear messages)
 
 ---
 
