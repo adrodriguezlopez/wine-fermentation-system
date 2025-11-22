@@ -20,7 +20,8 @@ from src.modules.fermentation.src.api.schemas.requests.fermentation_requests imp
     FermentationCreateRequest,
     FermentationUpdateRequest,
     StatusUpdateRequest,
-    CompleteFermentationRequest
+    CompleteFermentationRequest,
+    FermentationWithBlendCreateRequest
 )
 from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import (
     FermentationResponse,
@@ -32,14 +33,15 @@ from src.modules.fermentation.src.api.schemas.responses.fermentation_responses i
 )
 from src.modules.fermentation.src.service_component.interfaces.fermentation_service_interface import IFermentationService
 from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
-from src.modules.fermentation.src.domain.dtos import FermentationCreate, FermentationUpdate
+from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import IUnitOfWork
+from src.modules.fermentation.src.domain.dtos import FermentationCreate, FermentationUpdate, FermentationWithBlendCreate, LotSourceData
 from src.modules.fermentation.src.service_component.errors import (
     ValidationError,
     NotFoundError,
     DuplicateError,
     BusinessRuleViolation
 )
-from src.modules.fermentation.src.api.dependencies import get_fermentation_service, get_sample_service
+from src.modules.fermentation.src.api.dependencies import get_fermentation_service, get_sample_service, get_unit_of_work
 from src.modules.fermentation.src.api.error_handlers import handle_service_errors
 
 
@@ -97,6 +99,107 @@ async def create_fermentation(
         winery_id=current_user.winery_id,  # Multi-tenancy from auth context
         user_id=current_user.user_id,      # Audit trail
         data=create_dto
+    )
+    
+    # Convert entity to response DTO
+    return FermentationResponse.from_entity(created_fermentation)
+
+
+@router.post(
+    "/blends",
+    response_model=FermentationResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create fermentation with blend (multiple harvest lots)",
+    description="Creates a fermentation from multiple harvest lots atomically. Uses UnitOfWork pattern to ensure all-or-nothing creation."
+)
+@handle_service_errors
+async def create_fermentation_with_blend(
+    request: FermentationWithBlendCreateRequest,
+    current_user: Annotated[UserContext, Depends(require_winemaker)],
+    service: Annotated[IFermentationService, Depends(get_fermentation_service)],
+    uow: Annotated[IUnitOfWork, Depends(get_unit_of_work)]
+) -> FermentationResponse:
+    """
+    Create fermentation from multiple harvest lots (blend) - ATOMIC operation.
+    
+    Uses UnitOfWork pattern to ensure:
+    - Fermentation + all lot sources created together
+    - Automatic rollback if any operation fails
+    - Data consistency across multiple tables
+    
+    Args:
+        request: Fermentation + blend data (validated by Pydantic)
+        current_user: Authenticated user context (provides winery_id)
+        service: Fermentation service (injected)
+        uow: Unit of Work for atomic transaction (injected)
+    
+    Returns:
+        FermentationResponse: Created fermentation with ID
+    
+    Raises:
+        HTTP 403: Insufficient permissions (not WINEMAKER or ADMIN)
+        HTTP 422: Invalid request data (Pydantic validation)
+        HTTP 400: Business validation error
+            - Harvest lot doesn't exist or doesn't belong to winery
+            - Mass mismatch (sum of lots != fermentation mass)
+            - Duplicate lot IDs
+            - Lot already exhausted
+        HTTP 401: Not authenticated
+    
+    Use Case (ADR-001 Fruit Origin Model):
+        Creating wine blends from multiple vineyard blocks while
+        maintaining complete traceability and referential integrity.
+    
+    Example Request:
+        ```json
+        {
+          "vintage_year": 2024,
+          "yeast_strain": "EC-1118",
+          "input_mass_kg": 100.0,
+          "initial_sugar_brix": 22.5,
+          "initial_density": 1.095,
+          "start_date": "2024-11-22T10:00:00",
+          "lot_sources": [
+            {"harvest_lot_id": 1, "mass_used_kg": 60.0},
+            {"harvest_lot_id": 2, "mass_used_kg": 40.0}
+          ]
+        }
+        ```
+    
+    Status: ✅ NEW - Part of UnitOfWork implementation (Nov 22, 2025)
+    """
+    # Convert API request to service DTOs
+    fermentation_dto = FermentationCreate(
+        fermented_by_user_id=current_user.user_id,
+        vintage_year=request.vintage_year,
+        yeast_strain=request.yeast_strain,
+        vessel_code=request.vessel_code,
+        input_mass_kg=request.input_mass_kg,
+        initial_sugar_brix=request.initial_sugar_brix,
+        initial_density=request.initial_density,
+        start_date=request.start_date
+    )
+    
+    lot_sources_dto = [
+        LotSourceData(
+            harvest_lot_id=lot.harvest_lot_id,
+            mass_used_kg=lot.mass_used_kg,
+            notes=lot.notes
+        )
+        for lot in request.lot_sources
+    ]
+    
+    blend_dto = FermentationWithBlendCreate(
+        fermentation_data=fermentation_dto,
+        lot_sources=lot_sources_dto
+    )
+    
+    # Call service layer with UnitOfWork
+    created_fermentation = await service.create_fermentation_with_blend(
+        winery_id=current_user.winery_id,
+        user_id=current_user.user_id,
+        data=blend_dto,
+        uow=uow
     )
     
     # Convert entity to response DTO

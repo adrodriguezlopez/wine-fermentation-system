@@ -23,6 +23,10 @@ from src.modules.fermentation.src.domain.repositories.sample_repository_interfac
 from src.modules.fermentation.src.repository_component.repositories.sample_repository import SampleRepository
 from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
 from src.modules.fermentation.src.service_component.services.sample_service import SampleService
+
+# UnitOfWork imports
+from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import IUnitOfWork
+from src.modules.fermentation.src.repository_component.unit_of_work import UnitOfWork
 from src.modules.fermentation.src.service_component.interfaces.validation_orchestrator_interface import IValidationOrchestrator
 from src.modules.fermentation.src.service_component.services.validation_orchestrator import ValidationOrchestrator
 from src.modules.fermentation.src.service_component.interfaces.chronology_validation_service_interface import IChronologyValidationService
@@ -192,4 +196,43 @@ async def get_sample_service(
         validation_orchestrator=validation_orchestrator,
         fermentation_repo=fermentation_repo
     )
+
+
+async def get_unit_of_work(
+    session: Annotated[AsyncSession, Depends(get_db_session)]
+) -> IUnitOfWork:
+    """
+    Dependency: Get UnitOfWork for atomic multi-repository operations.
+    
+    Use when you need to coordinate multiple repositories in a single transaction.
+    Ensures atomicity: all operations succeed or all are rolled back.
+    
+    Use Cases:
+    - Creating fermentation with multiple harvest lot sources (blend)
+    - Completing fermentation with final samples
+    - Bulk operations requiring consistency
+    
+    Args:
+        session: AsyncSession from FastAPI dependency (auto-injected)
+    
+    Returns:
+        IUnitOfWork: Unit of Work with coordinated session management
+    
+    Lifecycle:
+        - Session managed by get_db_session (commit/rollback/close automatic)
+        - UnitOfWork wraps session for multi-repository coordination
+        - Use: async with uow: ... await uow.commit()
+    
+    Example:
+        ```python
+        async def create_blend(uow: Annotated[IUnitOfWork, Depends(get_unit_of_work)]):
+            async with uow:
+                fermentation = await uow.fermentation_repo.create(...)
+                lot1 = await uow.lot_source_repo.create(...)
+                lot2 = await uow.lot_source_repo.create(...)
+                await uow.commit()  # All or nothing!
+        ```
+    """
+    session_manager = FastAPISessionManager(session)
+    return UnitOfWork(session_manager)
 

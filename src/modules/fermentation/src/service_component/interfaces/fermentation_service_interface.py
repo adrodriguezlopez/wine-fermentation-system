@@ -20,9 +20,10 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
-from src.modules.fermentation.src.domain.dtos import FermentationCreate, FermentationUpdate
+from src.modules.fermentation.src.domain.dtos import FermentationCreate, FermentationUpdate, FermentationWithBlendCreate
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
 from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import IUnitOfWork
 
 
 class IFermentationService(ABC):
@@ -73,6 +74,72 @@ class IFermentationService(ABC):
         Raises:
             ValidationError: If data is invalid (e.g., negative values, invalid year)
             RepositoryError: If database operation fails
+        """
+        pass
+
+    @abstractmethod
+    async def create_fermentation_with_blend(
+        self,
+        winery_id: int,
+        user_id: int,
+        data: FermentationWithBlendCreate,
+        uow: IUnitOfWork
+    ) -> Fermentation:
+        """
+        Creates a fermentation from multiple harvest lots (blend) atomically.
+        
+        Uses UnitOfWork pattern to ensure fermentation and all lot sources
+        are created together or not at all. Critical for data integrity in blends.
+        
+        Business logic:
+        1. Validates fermentation base data
+        2. Validates all harvest lots exist and belong to winery
+        3. Validates mass consistency (sum of lots == fermentation mass)
+        4. Validates lot availability (not exhausted)
+        5. Creates fermentation record
+        6. Creates all lot source records
+        7. Commits transaction atomically
+        
+        Use Case (ADR-001 Fruit Origin Model):
+        - Creating wine blends from multiple vineyard blocks
+        - Tracking grape origin for regulatory/quality purposes
+        - Maintaining referential integrity across fermentation + lot sources
+        
+        Args:
+            winery_id: ID of the winery (multi-tenant scoping)
+            user_id: ID of user creating fermentation (audit trail)
+            data: Fermentation + blend data (DTO)
+            uow: Unit of Work for atomic transaction
+        
+        Returns:
+            Fermentation: Created fermentation entity with generated ID
+        
+        Raises:
+            ValidationError: If blend data is invalid
+                - Lot doesn't exist or doesn't belong to winery
+                - Mass mismatch (sum != fermentation mass)
+                - Lot already exhausted
+                - Duplicate lot IDs
+            RepositoryError: If database operation fails
+        
+        Example:
+            ```python
+            data = FermentationWithBlendCreate(
+                fermentation_data=FermentationCreate(...),
+                lot_sources=[
+                    LotSourceData(harvest_lot_id=1, mass_used_kg=60.0),
+                    LotSourceData(harvest_lot_id=2, mass_used_kg=40.0)
+                ]
+            )
+            
+            async with uow:
+                fermentation = await service.create_fermentation_with_blend(
+                    winery_id=1, user_id=1, data=data, uow=uow
+                )
+                # Auto-rollback on exception, explicit commit in service
+            ```
+        
+        Status: ⏳ NEW - Part of UnitOfWork implementation (Nov 22, 2025)
         """
         pass
 
