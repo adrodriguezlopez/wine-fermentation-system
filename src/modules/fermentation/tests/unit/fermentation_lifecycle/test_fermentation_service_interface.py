@@ -33,6 +33,7 @@ def test_fermentation_service_interface_methods() -> None:
 
     required_methods = {
         "create_fermentation",
+        "create_fermentation_with_blend",  # New method for blend creation
         "get_fermentation",
         "get_fermentations_by_winery",
         "update_fermentation",
