@@ -22,42 +22,48 @@ Related: ADR-002 (UnitOfWork pattern), test_unit_of_work.py (unit tests)
 import pytest
 from datetime import datetime
 from decimal import Decimal
+from contextlib import asynccontextmanager
 
 from src.modules.fermentation.src.repository_component.unit_of_work import UnitOfWork
 from src.modules.fermentation.src.domain.dtos import FermentationCreate
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
-from src.shared.infra.database import SessionManager
 
 
 @pytest.fixture
-async def session_manager(test_db_config):
+def session_manager_factory(db_session):
     """
-    Create a real SessionManager for integration tests.
+    Create a session manager factory for UnitOfWork.
+    
+    Uses the same pattern as conftest.py - returns a callable
+    that creates context managers for the test session.
     
     Args:
-        test_db_config: Test database configuration (from conftest.py)
+        db_session: Test database session from conftest
     
     Returns:
-        SessionManager: Real session manager connected to test DB
+        Callable that returns async context manager for session
     """
-    manager = SessionManager(test_db_config)
-    yield manager
-    await manager.close()
+    @asynccontextmanager
+    async def get_session():
+        """Async context manager that yields the test session."""
+        yield db_session
+    
+    return get_session
 
 
 @pytest.fixture
-async def uow(session_manager):
+def uow(session_manager_factory):
     """
-    Create a UnitOfWork instance with real session manager.
+    Create a UnitOfWork instance with test session factory.
     
     Args:
-        session_manager: Real SessionManager instance
+        session_manager_factory: Callable that returns session context manager
     
     Returns:
         UnitOfWork: UnitOfWork instance for integration testing
     """
-    return UnitOfWork(session_manager)
+    return UnitOfWork(session_manager_factory)
 
 
 class TestUnitOfWorkTransactionCommit:

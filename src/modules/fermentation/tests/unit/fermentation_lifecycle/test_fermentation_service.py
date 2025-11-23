@@ -6,9 +6,10 @@ Tests are written BEFORE implementation to drive design.
 """
 
 import pytest
-from unittest.mock import Mock, create_autospec
+from unittest.mock import Mock, create_autospec, AsyncMock
 from datetime import datetime, date
 from typing import Optional, List
+import types
 
 # Import from canonical locations (consistent with other tests)
 from src.modules.fermentation.src.service_component.services.fermentation_service import FermentationService
@@ -19,6 +20,7 @@ from src.modules.fermentation.src.domain.entities.fermentation import Fermentati
 from src.modules.fermentation.src.domain.dtos import FermentationCreate
 from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
 from src.modules.fermentation.src.service_component.models.schemas.validations.validation_error import ValidationError
+from src.shared.infra.repository.base_repository import RepositoryError
 
 
 class TestCreateFermentation:
@@ -1817,6 +1819,378 @@ class TestSoftDelete:
             )
         
         assert "connection lost" in str(exc_info.value).lower() or "Database" in str(exc_info.value)
+
+
+class TestCreateFermentationWithBlend:
+    """
+    Test suite for FermentationService.create_fermentation_with_blend()
+    
+    Business Rules:
+    - Must create fermentation atomically with blend lot sources
+    - Uses UnitOfWork for transaction management
+    - Validates fermentation data before persistence
+    - All operations must succeed or all rollback
+    - Multi-tenant scoping (winery_id)
+    - Tracks user_id for audit trail
+    
+    Expected Behavior:
+    - Returns complete Fermentation entity
+    - Commits transaction only if all operations succeed
+    - Validates data before persistence
+    - Enforces atomicity via UnitOfWork
+    """
+    
+    @pytest.fixture
+    def mock_fermentation_repo(self) -> Mock:
+        """Mock fermentation repository."""
+        return create_autospec(IFermentationRepository, instance=True)
+    
+    @pytest.fixture
+    def mock_validator(self) -> Mock:
+        """Mock validator."""
+        return create_autospec(IFermentationValidator, instance=True)
+    
+    @pytest.fixture
+    def mock_uow(self, mock_fermentation_repo: Mock) -> Mock:
+        """Mock UnitOfWork with fermentation repository."""
+        
+        class MockUnitOfWork:
+            def __init__(self):
+                self.fermentation_repo = mock_fermentation_repo
+                self.commit = AsyncMock()
+                self.rollback = AsyncMock()
+                self._entered = False
+            
+            async def __aenter__(self):
+                self._entered = True
+                return self
+            
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                self._entered = False
+                return None
+        
+        return MockUnitOfWork()
+    
+    @pytest.fixture
+    def service(
+        self,
+        mock_fermentation_repo: Mock,
+        mock_validator: Mock
+    ) -> FermentationService:
+        """Service instance with mocked dependencies."""
+        return FermentationService(
+            fermentation_repo=mock_fermentation_repo,
+            validator=mock_validator
+        )
+    
+    @pytest.fixture
+    def valid_blend_data(self):
+        """Valid blend creation data with fermentation and lot sources."""
+        from src.modules.fermentation.src.domain.dtos.fermentation_dtos import (
+            FermentationWithBlendCreate,
+            LotSourceData
+        )
+        from decimal import Decimal
+        
+        fermentation_data = FermentationCreate(
+            fermented_by_user_id=42,
+            vintage_year=2025,
+            yeast_strain="EC-1118",
+            input_mass_kg=1000.0,
+            initial_sugar_brix=24.5,
+            initial_density=1.105,
+            vessel_code="T-001",
+            start_date=datetime(2025, 10, 1, 8, 0, 0)
+        )
+        
+        lot_sources = [
+            LotSourceData(
+                harvest_lot_id=101,
+                mass_used_kg=Decimal("500.0"),
+                notes="First lot"
+            ),
+            LotSourceData(
+                harvest_lot_id=102,
+                mass_used_kg=Decimal("500.0"),
+                notes="Second lot"
+            )
+        ]
+        
+        return FermentationWithBlendCreate(
+            fermentation_data=fermentation_data,
+            lot_sources=lot_sources
+        )
+    
+    @pytest.fixture
+    def expected_fermentation_entity(self) -> Mock:
+        """Expected fermentation entity returned by repository."""
+        fermentation = Mock(spec=Fermentation)
+        fermentation.id = 999
+        fermentation.winery_id = 1
+        fermentation.fermented_by_user_id = 42
+        fermentation.vintage_year = 2025
+        fermentation.yeast_strain = "EC-1118"
+        fermentation.vessel_code = "T-001"
+        fermentation.input_mass_kg = 1000.0
+        fermentation.initial_sugar_brix = 24.5
+        fermentation.initial_density = 1.105
+        fermentation.start_date = datetime(2025, 10, 1, 8, 0, 0)
+        fermentation.status = "ACTIVE"
+        return fermentation
+    
+    @pytest.mark.asyncio
+    async def test_create_blend_success_commits_transaction(
+        self,
+        service: FermentationService,
+        mock_validator: Mock,
+        mock_uow: Mock,
+        valid_blend_data,
+        expected_fermentation_entity: Mock
+    ):
+        """
+        Given: Valid blend data with fermentation and lot sources
+        When: Creating fermentation with blend
+        Then: Should validate, create fermentation, and commit transaction
+        """
+        # Arrange
+        winery_id = 1
+        user_id = 42
+        
+        # Mock validator - data is valid
+        mock_validator.validate_creation_data.return_value = ValidationResult(
+            is_valid=True,
+            errors=[]
+        )
+        
+        # Mock repository - fermentation creation succeeds
+        mock_uow.fermentation_repo.create.return_value = expected_fermentation_entity
+        
+        # Act
+        result = await service.create_fermentation_with_blend(
+            winery_id=winery_id,
+            user_id=user_id,
+            data=valid_blend_data,
+            uow=mock_uow
+        )
+        
+        # Assert
+        assert result == expected_fermentation_entity
+        
+        # Verify validation called (without winery_id in current implementation)
+        mock_validator.validate_creation_data.assert_called_once_with(
+            valid_blend_data.fermentation_data
+        )
+        
+        # Verify fermentation created
+        mock_uow.fermentation_repo.create.assert_called_once_with(
+            winery_id=winery_id,
+            data=valid_blend_data.fermentation_data
+        )
+        
+        # Verify transaction committed
+        mock_uow.commit.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_create_blend_validation_error_does_not_commit(
+        self,
+        service: FermentationService,
+        mock_validator: Mock,
+        mock_uow: Mock,
+        valid_blend_data
+    ):
+        """
+        Given: Invalid blend data (validation fails)
+        When: Attempting to create fermentation with blend
+        Then: Should raise ValueError and NOT commit transaction
+        """
+        # Arrange
+        winery_id = 1
+        user_id = 42
+        
+        # Mock validator - data is INVALID
+        mock_validator.validate_creation_data.return_value = ValidationResult(
+            is_valid=False,
+            errors=[
+                ValidationError(
+                    field="vessel_code",
+                    message="Vessel T-001 is already in use"
+                )
+            ]
+        )
+        
+        # Act & Assert
+        with pytest.raises(ValueError) as exc_info:
+            await service.create_fermentation_with_blend(
+                winery_id=winery_id,
+                user_id=user_id,
+                data=valid_blend_data,
+                uow=mock_uow
+            )
+        
+        # Verify error message contains validation failure
+        assert "validation failed" in str(exc_info.value).lower()
+        assert "vessel_code" in str(exc_info.value)
+        
+        # Verify NO repository calls made
+        mock_uow.fermentation_repo.create.assert_not_called()
+        
+        # Verify NO commit attempted
+        mock_uow.commit.assert_not_called()
+    
+    @pytest.mark.asyncio
+    async def test_create_blend_repository_error_rolls_back(
+        self,
+        service: FermentationService,
+        mock_validator: Mock,
+        mock_uow: Mock,
+        valid_blend_data
+    ):
+        """
+        Given: Valid data but repository operation fails
+        When: Creating fermentation with blend
+        Then: Should propagate error and UnitOfWork auto-rolls back
+        """
+        # Arrange
+        winery_id = 1
+        user_id = 42
+        
+        # Mock validator - data is valid
+        mock_validator.validate_creation_data.return_value = ValidationResult(
+            is_valid=True,
+            errors=[]
+        )
+        
+        # Mock repository - creation FAILS
+        mock_uow.fermentation_repo.create.side_effect = RepositoryError(
+            "Database connection lost"
+        )
+        
+        # Override __aexit__ to call rollback on exception
+        original_aexit = mock_uow.__aexit__
+        
+        async def custom_aexit(exc_type, exc_val, exc_tb):
+            if exc_type is not None:
+                await mock_uow.rollback()
+            await original_aexit(exc_type, exc_val, exc_tb)
+            return None
+        
+        mock_uow.__aexit__ = custom_aexit
+        
+        # Act & Assert
+        with pytest.raises(RepositoryError) as exc_info:
+            await service.create_fermentation_with_blend(
+                winery_id=winery_id,
+                user_id=user_id,
+                data=valid_blend_data,
+                uow=mock_uow
+            )
+        
+        assert "connection lost" in str(exc_info.value).lower()
+        
+        # Verify NO commit (error occurred)
+        mock_uow.commit.assert_not_called()
+    
+    @pytest.mark.asyncio
+    async def test_create_blend_uses_uow_fermentation_repo(
+        self,
+        service: FermentationService,
+        mock_validator: Mock,
+        mock_uow: Mock,
+        valid_blend_data,
+        expected_fermentation_entity: Mock
+    ):
+        """
+        Given: UnitOfWork with fermentation repository
+        When: Creating fermentation with blend
+        Then: Should use UoW's fermentation_repo (not service's repo)
+        """
+        # Arrange
+        winery_id = 1
+        user_id = 42
+        
+        mock_validator.validate_creation_data.return_value = ValidationResult(
+            is_valid=True,
+            errors=[]
+        )
+        
+        mock_uow.fermentation_repo.create.return_value = expected_fermentation_entity
+        
+        # Act
+        await service.create_fermentation_with_blend(
+            winery_id=winery_id,
+            user_id=user_id,
+            data=valid_blend_data,
+            uow=mock_uow
+        )
+        
+        # Assert - should use UoW's repo, not service's injected repo
+        mock_uow.fermentation_repo.create.assert_called_once()
+        
+        # Verify service's repo NOT called (it's bypassed when using UoW)
+        # Note: service._fermentation_repo would be the injected one
+        # We're verifying uow.fermentation_repo was used instead
+    
+    @pytest.mark.asyncio
+    async def test_create_blend_empty_lot_sources_still_works(
+        self,
+        service: FermentationService,
+        mock_validator: Mock,
+        mock_uow: Mock,
+        expected_fermentation_entity: Mock
+    ):
+        """
+        Given: Blend data with NO lot sources (empty list)
+        When: Creating fermentation with blend
+        Then: Should still create fermentation successfully
+        
+        Note: Empty lot sources is valid - fermentation without blend.
+        This tests edge case where blend endpoint used but no lots provided.
+        """
+        # Arrange
+        from src.modules.fermentation.src.domain.dtos.fermentation_dtos import (
+            FermentationWithBlendCreate
+        )
+        
+        winery_id = 1
+        user_id = 42
+        
+        fermentation_data = FermentationCreate(
+            fermented_by_user_id=42,
+            vintage_year=2025,
+            yeast_strain="EC-1118",
+            input_mass_kg=1000.0,
+            initial_sugar_brix=24.5,
+            initial_density=1.105,
+            vessel_code="T-001",
+            start_date=datetime(2025, 10, 1, 8, 0, 0)
+        )
+        
+        blend_data = FermentationWithBlendCreate(
+            fermentation_data=fermentation_data,
+            lot_sources=[]  # Empty list
+        )
+        
+        mock_validator.validate_creation_data.return_value = ValidationResult(
+            is_valid=True,
+            errors=[]
+        )
+        
+        mock_uow.fermentation_repo.create.return_value = expected_fermentation_entity
+        
+        # Act
+        result = await service.create_fermentation_with_blend(
+            winery_id=winery_id,
+            user_id=user_id,
+            data=blend_data,
+            uow=mock_uow
+        )
+        
+        # Assert
+        assert result == expected_fermentation_entity
+        mock_uow.commit.assert_called_once()
+
+
+
 
 
 

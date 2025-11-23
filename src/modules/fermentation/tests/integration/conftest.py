@@ -116,7 +116,9 @@ async def db_engine():
     })
     
     # SQLAlchemy will create all tables
+    # Drop first to ensure clean state (important for SQLite which persists schema)
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     
     yield engine
