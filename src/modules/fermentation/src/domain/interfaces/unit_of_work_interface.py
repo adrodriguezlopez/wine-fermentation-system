@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import IFermentationRepository
     from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
+    from src.modules.fermentation.src.domain.repositories.lot_source_repository_interface import ILotSourceRepository
 
 
 class IUnitOfWork(ABC):
@@ -80,6 +81,22 @@ class IUnitOfWork(ABC):
         
         Returns:
             ISampleRepository: Repository sharing UoW's transaction
+        
+        Raises:
+            RuntimeError: If accessed outside active context
+        
+        Note: Lazy-loaded on first access
+        """
+        ...
+    
+    @property
+    @abstractmethod
+    def lot_source_repo(self) -> 'ILotSourceRepository':
+        """
+        Access to lot source repository within this UoW.
+        
+        Returns:
+            ILotSourceRepository: Repository sharing UoW's transaction
         
         Raises:
             RuntimeError: If accessed outside active context

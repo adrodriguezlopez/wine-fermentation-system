@@ -1846,17 +1846,24 @@ class TestCreateFermentationWithBlend:
         return create_autospec(IFermentationRepository, instance=True)
     
     @pytest.fixture
+    def mock_lot_source_repo(self) -> Mock:
+        """Mock lot source repository."""
+        from src.modules.fermentation.src.domain.repositories.lot_source_repository_interface import ILotSourceRepository
+        return create_autospec(ILotSourceRepository, instance=True)
+    
+    @pytest.fixture
     def mock_validator(self) -> Mock:
         """Mock validator."""
         return create_autospec(IFermentationValidator, instance=True)
     
     @pytest.fixture
-    def mock_uow(self, mock_fermentation_repo: Mock) -> Mock:
-        """Mock UnitOfWork with fermentation repository."""
+    def mock_uow(self, mock_fermentation_repo: Mock, mock_lot_source_repo: Mock) -> Mock:
+        """Mock UnitOfWork with fermentation and lot source repositories."""
         
         class MockUnitOfWork:
             def __init__(self):
                 self.fermentation_repo = mock_fermentation_repo
+                self.lot_source_repo = mock_lot_source_repo
                 self.commit = AsyncMock()
                 self.rollback = AsyncMock()
                 self._entered = False
@@ -1950,7 +1957,7 @@ class TestCreateFermentationWithBlend:
         """
         Given: Valid blend data with fermentation and lot sources
         When: Creating fermentation with blend
-        Then: Should validate, create fermentation, and commit transaction
+        Then: Should validate, create fermentation, create lot sources, and commit transaction
         """
         # Arrange
         winery_id = 1
@@ -1964,6 +1971,13 @@ class TestCreateFermentationWithBlend:
         
         # Mock repository - fermentation creation succeeds
         mock_uow.fermentation_repo.create.return_value = expected_fermentation_entity
+        
+        # Mock lot source creation
+        mock_lot_source_1 = Mock()
+        mock_lot_source_1.id = 1
+        mock_lot_source_2 = Mock()
+        mock_lot_source_2.id = 2
+        mock_uow.lot_source_repo.create.side_effect = [mock_lot_source_1, mock_lot_source_2]
         
         # Act
         result = await service.create_fermentation_with_blend(
@@ -1986,6 +2000,21 @@ class TestCreateFermentationWithBlend:
             winery_id=winery_id,
             data=valid_blend_data.fermentation_data
         )
+        
+        # Verify lot sources created (2 calls expected)
+        assert mock_uow.lot_source_repo.create.call_count == 2
+        
+        # Verify first lot source call
+        first_call = mock_uow.lot_source_repo.create.call_args_list[0]
+        assert first_call[1]['fermentation_id'] == expected_fermentation_entity.id
+        assert first_call[1]['winery_id'] == winery_id
+        assert first_call[1]['data'] == valid_blend_data.lot_sources[0]
+        
+        # Verify second lot source call
+        second_call = mock_uow.lot_source_repo.create.call_args_list[1]
+        assert second_call[1]['fermentation_id'] == expected_fermentation_entity.id
+        assert second_call[1]['winery_id'] == winery_id
+        assert second_call[1]['data'] == valid_blend_data.lot_sources[1]
         
         # Verify transaction committed
         mock_uow.commit.assert_called_once()

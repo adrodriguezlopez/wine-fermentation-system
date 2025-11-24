@@ -156,14 +156,13 @@ class FermentationService(IFermentationService):
                 data=data.fermentation_data
             )
             
-            # TODO: Create lot source records
-            # for lot_source in data.lot_sources:
-            #     await uow.lot_source_repo.create(
-            #         fermentation_id=fermentation.id,
-            #         harvest_lot_id=lot_source.harvest_lot_id,
-            #         mass_used_kg=lot_source.mass_used_kg,
-            #         notes=lot_source.notes
-            #     )
+            # Create lot source records
+            for lot_source in data.lot_sources:
+                await uow.lot_source_repo.create(
+                    fermentation_id=fermentation.id,
+                    winery_id=winery_id,
+                    data=lot_source
+                )
             
             # Commit transaction - all or nothing
             await uow.commit()

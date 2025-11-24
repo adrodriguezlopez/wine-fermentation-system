@@ -20,8 +20,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import IUnitOfWork
 from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import IFermentationRepository
 from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
+from src.modules.fermentation.src.domain.repositories.lot_source_repository_interface import ILotSourceRepository
 from src.modules.fermentation.src.repository_component.repositories.fermentation_repository import FermentationRepository
 from src.modules.fermentation.src.repository_component.repositories.sample_repository import SampleRepository
+from src.modules.fermentation.src.repository_component.repositories.lot_source_repository import LotSourceRepository
 from src.modules.fermentation.src.repository_component.errors import RepositoryError
 from src.shared.infra.interfaces.session_manager import ISessionManager
 from src.shared.infra.session.shared_session_manager import SharedSessionManager
@@ -102,6 +104,7 @@ class UnitOfWork(IUnitOfWork):
         # Lazy-loaded repositories
         self._fermentation_repo: Optional[IFermentationRepository] = None
         self._sample_repo: Optional[ISampleRepository] = None
+        self._lot_source_repo: Optional[ILotSourceRepository] = None
     
     @property
     def fermentation_repo(self) -> IFermentationRepository:
@@ -154,6 +157,32 @@ class UnitOfWork(IUnitOfWork):
             self._sample_repo = SampleRepository(shared_session_mgr)
         
         return self._sample_repo
+    
+    @property
+    def lot_source_repo(self) -> ILotSourceRepository:
+        """
+        Get lot source repository sharing this UoW's transaction.
+        
+        Returns:
+            ILotSourceRepository: Repository with shared session
+        
+        Raises:
+            RuntimeError: If accessed outside active context
+        
+        Note: Lazy-loaded on first access
+        """
+        if not self._is_active:
+            raise RuntimeError(
+                "Cannot access lot_source_repo outside active UnitOfWork context. "
+                "Use 'async with uow:' to activate."
+            )
+        
+        # Lazy initialization
+        if self._lot_source_repo is None:
+            shared_session_mgr = SharedSessionManager(self._session)
+            self._lot_source_repo = LotSourceRepository(shared_session_mgr)
+        
+        return self._lot_source_repo
     
     async def commit(self) -> None:
         """
