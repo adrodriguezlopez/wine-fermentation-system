@@ -230,7 +230,8 @@ async def test_vineyard_block(db_session, test_vineyard):
         vineyard_id=test_vineyard.id,
         code="BLK001",
         soil_type="Clay loam",
-        area_ha=2.5
+        area_ha=2.5,
+        is_deleted=False  # Explicitly set for soft-delete consistency
     )
     db_session.add(block)
     await db_session.flush()
@@ -306,7 +307,8 @@ async def test_harvest_lot(db_session, test_winery, test_vineyard_block):
         harvest_date=date(2024, 9, 15),
         weight_kg=1500.0,
         brix_at_harvest=24.5,
-        grape_variety="Cabernet Sauvignon"
+        grape_variety="Cabernet Sauvignon",
+        is_deleted=False  # Explicitly set for soft-delete consistency
     )
     db_session.add(harvest_lot)
     await db_session.flush()
@@ -370,3 +372,32 @@ async def fermentation_repository(db_session):
     
     session_manager = TestSessionManager(db_session)
     return FermentationRepository(session_manager)
+
+
+@pytest_asyncio.fixture
+async def harvest_lot_repository(db_session):
+    """
+    HarvestLotRepository instance configured with test database session.
+    
+    Uses a mock SessionManager that returns the test session,
+    allowing repository to work with the transactional test session.
+    """
+    from src.modules.fruit_origin.src.repository_component.repositories.harvest_lot_repository import HarvestLotRepository
+    from contextlib import asynccontextmanager
+    
+    # Mock SessionManager (same pattern as other repositories)
+    class TestSessionManager:
+        def __init__(self, session):
+            self._session = session
+        
+        @asynccontextmanager
+        async def get_session(self):
+            """Return async context manager that yields test session."""
+            yield self._session
+        
+        async def close(self):
+            """No-op - session managed by test fixture."""
+            pass
+    
+    session_manager = TestSessionManager(db_session)
+    return HarvestLotRepository(session_manager)

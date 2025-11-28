@@ -21,9 +21,11 @@ from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface impor
 from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import IFermentationRepository
 from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
 from src.modules.fermentation.src.domain.repositories.lot_source_repository_interface import ILotSourceRepository
+from src.modules.fruit_origin.src.domain.repositories.harvest_lot_repository_interface import IHarvestLotRepository
 from src.modules.fermentation.src.repository_component.repositories.fermentation_repository import FermentationRepository
 from src.modules.fermentation.src.repository_component.repositories.sample_repository import SampleRepository
 from src.modules.fermentation.src.repository_component.repositories.lot_source_repository import LotSourceRepository
+from src.modules.fruit_origin.src.repository_component.repositories.harvest_lot_repository import HarvestLotRepository
 from src.modules.fermentation.src.repository_component.errors import RepositoryError
 from src.shared.infra.interfaces.session_manager import ISessionManager
 from src.shared.infra.session.shared_session_manager import SharedSessionManager
@@ -105,6 +107,7 @@ class UnitOfWork(IUnitOfWork):
         self._fermentation_repo: Optional[IFermentationRepository] = None
         self._sample_repo: Optional[ISampleRepository] = None
         self._lot_source_repo: Optional[ILotSourceRepository] = None
+        self._harvest_lot_repo: Optional[IHarvestLotRepository] = None
     
     @property
     def fermentation_repo(self) -> IFermentationRepository:
@@ -183,6 +186,32 @@ class UnitOfWork(IUnitOfWork):
             self._lot_source_repo = LotSourceRepository(shared_session_mgr)
         
         return self._lot_source_repo
+    
+    @property
+    def harvest_lot_repo(self) -> IHarvestLotRepository:
+        """
+        Get harvest lot repository sharing this UoW's transaction.
+        
+        Returns:
+            IHarvestLotRepository: Repository with shared session
+        
+        Raises:
+            RuntimeError: If accessed outside active context
+        
+        Note: Lazy-loaded on first access
+        """
+        if not self._is_active:
+            raise RuntimeError(
+                "Cannot access harvest_lot_repo outside active UnitOfWork context. "
+                "Use 'async with uow:' to activate."
+            )
+        
+        # Lazy initialization
+        if self._harvest_lot_repo is None:
+            shared_session_mgr = SharedSessionManager(self._session)
+            self._harvest_lot_repo = HarvestLotRepository(shared_session_mgr)
+        
+        return self._harvest_lot_repo
     
     async def commit(self) -> None:
         """

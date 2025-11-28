@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADRs) - Index
 
 **Wine Fermentation System**  
-**Last Update:** November 15, 2025
+**Last Update:** November 25, 2025
 
 ---
 
@@ -17,11 +17,13 @@
 | **[ADR-006](./ADR-006-api-layer-design.md)** | API Layer Design & FastAPI Integration | ✅ Implemented | 2025-11-15 | High |
 | **[ADR-007](./ADR-007-auth-module-design.md)** | Authentication Module (Shared Infrastructure) | ✅ Implemented | 2025-11-04 | Critical |
 | **[ADR-008](./ADR-008-centralized-error-handling.md)** | Centralized Error Handling for API Layer | ✅ Implemented | 2025-11-15 | Medium |
+| **[ADR-009](./ADR-009-missing-repositories-implementation.md)** | Missing Repositories Implementation | 📋 Proposed | 2025-11-25 | High |
 
 **Legend:**
 - ✅ **Implemented** - Fully implemented with tests passing
 - 🚀 **Ready** - Prerequisites met, ready for implementation
 - 🔄 **In Progress** - Implementation ongoing
+- 📋 **Proposed** - Under review, not yet approved
 - ⚠️ **Superseded** - Replaced by newer decision
 
 ---

@@ -23,6 +23,8 @@ class VineyardBlock(BaseEntity):
     notes: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     irrigation: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     organic_certified: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    # Soft delete flag for consistency with other repositories
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
     vineyard: Mapped["Vineyard"] = relationship("Vineyard", back_populates="blocks")
     harvest_lots: Mapped[List["HarvestLot"]] = relationship("HarvestLot", back_populates="block", cascade="all, delete-orphan")

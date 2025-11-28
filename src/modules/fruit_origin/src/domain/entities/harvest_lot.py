@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, BigInteger, ForeignKey, Numeric, Date, Integer, TIMESTAMP, UniqueConstraint
+from sqlalchemy import String, BigInteger, ForeignKey, Numeric, Date, Integer, TIMESTAMP, UniqueConstraint, Boolean
 from typing import Optional
 from src.shared.infra.orm.base_entity import BaseEntity
 
@@ -28,6 +28,8 @@ class HarvestLot(BaseEntity):
     bins_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     field_temp_c: Mapped[Optional[float]] = mapped_column(Numeric(5,2), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    # Soft delete flag for consistency with other repositories
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
     block: Mapped["VineyardBlock"] = relationship("VineyardBlock", back_populates="harvest_lots")
 
