@@ -10,9 +10,21 @@ from .harvest_lot_dtos import (
     HarvestLotUpdate,
     HarvestLotSummary
 )
+from .vineyard_dtos import (
+    VineyardCreate,
+    VineyardUpdate,
+)
+from .vineyard_block_dtos import (
+    VineyardBlockCreate,
+    VineyardBlockUpdate,
+)
 
 __all__ = [
     'HarvestLotCreate',
     'HarvestLotUpdate',
     'HarvestLotSummary',
+    'VineyardCreate',
+    'VineyardUpdate',
+    'VineyardBlockCreate',
+    'VineyardBlockUpdate',
 ]

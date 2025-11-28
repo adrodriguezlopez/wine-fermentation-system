@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, BigInteger, ForeignKey, UniqueConstraint
+from sqlalchemy import String, BigInteger, ForeignKey, Boolean, UniqueConstraint
 from typing import List, Optional
 from src.shared.infra.orm.base_entity import BaseEntity
 
@@ -15,6 +15,8 @@ class Vineyard(BaseEntity):
     code: Mapped[str] = mapped_column(String(50), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    # Soft delete flag for consistency with other repositories
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
     blocks: Mapped[List["VineyardBlock"]] = relationship("VineyardBlock", back_populates="vineyard", cascade="all, delete-orphan")
 
