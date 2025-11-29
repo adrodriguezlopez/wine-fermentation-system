@@ -24,89 +24,84 @@ from src.modules.fruit_origin.src.repository_component.errors import (
 class VineyardBlockRepository(BaseRepository, IVineyardBlockRepository):
     """Implementation of VineyardBlock repository."""
 
-    def __init__(self, session: AsyncSession):
-        """
-        Initialize repository with async session.
-
-        Args:
-            session: SQLAlchemy async session
-        """
-        super().__init__(session)
-
     async def create(
         self, vineyard_id: int, winery_id: int, data: VineyardBlockCreate
     ) -> VineyardBlock:
         """Create a new vineyard block."""
-        try:
-            # Verify vineyard exists and belongs to winery
-            vineyard_query = select(Vineyard).where(
-                Vineyard.id == vineyard_id,
-                Vineyard.winery_id == winery_id,
-                Vineyard.is_deleted == False,
-            )
-            vineyard_result = await self.session.execute(vineyard_query)
-            vineyard = vineyard_result.scalar_one_or_none()
+        async def _create_operation():
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                # Verify vineyard exists and belongs to winery
+                vineyard_query = select(Vineyard).where(
+                    Vineyard.id == vineyard_id,
+                    Vineyard.winery_id == winery_id,
+                    Vineyard.is_deleted == False,
+                )
+                vineyard_result = await session.execute(vineyard_query)
+                vineyard = vineyard_result.scalar_one_or_none()
 
-            if not vineyard:
-                raise NotFoundError(
-                    f"Vineyard {vineyard_id} not found for winery {winery_id}"
+                if not vineyard:
+                    raise NotFoundError(
+                        f"Vineyard {vineyard_id} not found for winery {winery_id}"
+                    )
+
+                block = VineyardBlock(
+                    vineyard_id=vineyard_id,
+                    code=data.code,
+                    soil_type=data.soil_type,
+                    slope_pct=data.slope_pct,
+                    aspect_deg=data.aspect_deg,
+                    area_ha=data.area_ha,
+                    elevation_m=data.elevation_m,
+                    latitude=data.latitude,
+                    longitude=data.longitude,
+                    notes=data.notes,
+                    irrigation=data.irrigation,
+                    organic_certified=data.organic_certified,
+                    is_deleted=False,
                 )
 
-            block = VineyardBlock(
-                vineyard_id=vineyard_id,
-                code=data.code,
-                soil_type=data.soil_type,
-                slope_pct=data.slope_pct,
-                aspect_deg=data.aspect_deg,
-                area_ha=data.area_ha,
-                elevation_m=data.elevation_m,
-                latitude=data.latitude,
-                longitude=data.longitude,
-                notes=data.notes,
-                irrigation=data.irrigation,
-                organic_certified=data.organic_certified,
-                is_deleted=False,
-            )
+                session.add(block)
+                await session.flush()
+                await session.refresh(block)
 
-            self.session.add(block)
-            await self.session.flush()
-            await self.session.refresh(block)
+                return block
 
-            return block
-
+        try:
+            return await _create_operation()
         except NotFoundError:
             raise
-
         except IntegrityError as e:
-            await self.session.rollback()
             if "uq_vineyard_blocks__code__vineyard_id" in str(e).lower():
                 raise DuplicateCodeError(
                     f"Block with code '{data.code}' already exists for vineyard {vineyard_id}"
                 ) from e
             raise RepositoryError(f"Failed to create vineyard block: {str(e)}") from e
-
         except Exception as e:
-            await self.session.rollback()
             raise RepositoryError(f"Failed to create vineyard block: {str(e)}") from e
 
     async def get_by_id(
         self, block_id: int, winery_id: int
     ) -> Optional[VineyardBlock]:
         """Get a vineyard block by ID with winery scoping."""
-        try:
-            query = (
-                select(VineyardBlock)
-                .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
-                .where(
-                    VineyardBlock.id == block_id,
-                    Vineyard.winery_id == winery_id,
-                    VineyardBlock.is_deleted == False,
+        async def _get_operation():
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                query = (
+                    select(VineyardBlock)
+                    .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
+                    .where(
+                        VineyardBlock.id == block_id,
+                        Vineyard.winery_id == winery_id,
+                        VineyardBlock.is_deleted == False,
+                    )
                 )
-            )
 
-            result = await self.session.execute(query)
-            return result.scalar_one_or_none()
+                result = await session.execute(query)
+                return result.scalar_one_or_none()
 
+        try:
+            return await _get_operation()
         except Exception as e:
             raise RepositoryError(f"Failed to get vineyard block: {str(e)}") from e
 
@@ -114,21 +109,25 @@ class VineyardBlockRepository(BaseRepository, IVineyardBlockRepository):
         self, vineyard_id: int, winery_id: int
     ) -> List[VineyardBlock]:
         """Get all blocks for a vineyard."""
-        try:
-            query = (
-                select(VineyardBlock)
-                .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
-                .where(
-                    VineyardBlock.vineyard_id == vineyard_id,
-                    Vineyard.winery_id == winery_id,
-                    VineyardBlock.is_deleted == False,
+        async def _get_operation():
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                query = (
+                    select(VineyardBlock)
+                    .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
+                    .where(
+                        VineyardBlock.vineyard_id == vineyard_id,
+                        Vineyard.winery_id == winery_id,
+                        VineyardBlock.is_deleted == False,
+                    )
+                    .order_by(VineyardBlock.code.asc())
                 )
-                .order_by(VineyardBlock.code.asc())
-            )
 
-            result = await self.session.execute(query)
-            return list(result.scalars().all())
+                result = await session.execute(query)
+                return list(result.scalars().all())
 
+        try:
+            return await _get_operation()
         except Exception as e:
             raise RepositoryError(
                 f"Failed to get blocks for vineyard {vineyard_id}: {str(e)}"
@@ -138,21 +137,25 @@ class VineyardBlockRepository(BaseRepository, IVineyardBlockRepository):
         self, code: str, vineyard_id: int, winery_id: int
     ) -> Optional[VineyardBlock]:
         """Get a vineyard block by code within a vineyard."""
-        try:
-            query = (
-                select(VineyardBlock)
-                .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
-                .where(
-                    VineyardBlock.code == code,
-                    VineyardBlock.vineyard_id == vineyard_id,
-                    Vineyard.winery_id == winery_id,
-                    VineyardBlock.is_deleted == False,
+        async def _get_operation():
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                query = (
+                    select(VineyardBlock)
+                    .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
+                    .where(
+                        VineyardBlock.code == code,
+                        VineyardBlock.vineyard_id == vineyard_id,
+                        Vineyard.winery_id == winery_id,
+                        VineyardBlock.is_deleted == False,
+                    )
                 )
-            )
 
-            result = await self.session.execute(query)
-            return result.scalar_one_or_none()
+                result = await session.execute(query)
+                return result.scalar_one_or_none()
 
+        try:
+            return await _get_operation()
         except Exception as e:
             raise RepositoryError(
                 f"Failed to get vineyard block by code: {str(e)}"
@@ -162,42 +165,56 @@ class VineyardBlockRepository(BaseRepository, IVineyardBlockRepository):
         self, block_id: int, winery_id: int, data: VineyardBlockUpdate
     ) -> Optional[VineyardBlock]:
         """Update a vineyard block."""
+        async def _update_operation():
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                # Get block with winery scoping via vineyard join
+                query = (
+                    select(VineyardBlock)
+                    .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
+                    .where(
+                        VineyardBlock.id == block_id,
+                        Vineyard.winery_id == winery_id,
+                        VineyardBlock.is_deleted == False,
+                    )
+                )
+                result = await session.execute(query)
+                block = result.scalar_one_or_none()
+                if not block:
+                    return None
+
+                # Update only provided fields
+                if data.code is not None:
+                    block.code = data.code
+                if data.soil_type is not None:
+                    block.soil_type = data.soil_type
+                if data.slope_pct is not None:
+                    block.slope_pct = data.slope_pct
+                if data.aspect_deg is not None:
+                    block.aspect_deg = data.aspect_deg
+                if data.area_ha is not None:
+                    block.area_ha = data.area_ha
+                if data.elevation_m is not None:
+                    block.elevation_m = data.elevation_m
+                if data.latitude is not None:
+                    block.latitude = data.latitude
+                if data.longitude is not None:
+                    block.longitude = data.longitude
+                if data.notes is not None:
+                    block.notes = data.notes
+                if data.irrigation is not None:
+                    block.irrigation = data.irrigation
+                if data.organic_certified is not None:
+                    block.organic_certified = data.organic_certified
+
+                await session.flush()
+                await session.refresh(block)
+
+                return block
+
         try:
-            block = await self.get_by_id(block_id, winery_id)
-            if not block:
-                return None
-
-            # Update only provided fields
-            if data.code is not None:
-                block.code = data.code
-            if data.soil_type is not None:
-                block.soil_type = data.soil_type
-            if data.slope_pct is not None:
-                block.slope_pct = data.slope_pct
-            if data.aspect_deg is not None:
-                block.aspect_deg = data.aspect_deg
-            if data.area_ha is not None:
-                block.area_ha = data.area_ha
-            if data.elevation_m is not None:
-                block.elevation_m = data.elevation_m
-            if data.latitude is not None:
-                block.latitude = data.latitude
-            if data.longitude is not None:
-                block.longitude = data.longitude
-            if data.notes is not None:
-                block.notes = data.notes
-            if data.irrigation is not None:
-                block.irrigation = data.irrigation
-            if data.organic_certified is not None:
-                block.organic_certified = data.organic_certified
-
-            await self.session.flush()
-            await self.session.refresh(block)
-
-            return block
-
+            return await _update_operation()
         except IntegrityError as e:
-            await self.session.rollback()
             if "uq_vineyard_blocks__code__vineyard_id" in str(e).lower():
                 raise DuplicateCodeError(
                     f"Block with code '{data.code}' already exists for vineyard"
@@ -205,27 +222,39 @@ class VineyardBlockRepository(BaseRepository, IVineyardBlockRepository):
             raise RepositoryError(
                 f"Failed to update vineyard block: {str(e)}"
             ) from e
-
         except Exception as e:
-            await self.session.rollback()
             raise RepositoryError(
                 f"Failed to update vineyard block: {str(e)}"
             ) from e
 
     async def delete(self, block_id: int, winery_id: int) -> bool:
         """Soft delete a vineyard block."""
+        async def _delete_operation():
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                # Get block with winery scoping via vineyard join
+                query = (
+                    select(VineyardBlock)
+                    .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
+                    .where(
+                        VineyardBlock.id == block_id,
+                        Vineyard.winery_id == winery_id,
+                        VineyardBlock.is_deleted == False,
+                    )
+                )
+                result = await session.execute(query)
+                block = result.scalar_one_or_none()
+                if not block:
+                    return False
+
+                block.is_deleted = True
+                await session.flush()
+
+                return True
+
         try:
-            block = await self.get_by_id(block_id, winery_id)
-            if not block:
-                return False
-
-            block.is_deleted = True
-            await self.session.flush()
-
-            return True
-
+            return await _delete_operation()
         except Exception as e:
-            await self.session.rollback()
             raise RepositoryError(
                 f"Failed to delete vineyard block: {str(e)}"
             ) from e
