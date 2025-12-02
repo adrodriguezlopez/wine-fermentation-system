@@ -72,7 +72,9 @@ class VineyardBlockRepository(BaseRepository, IVineyardBlockRepository):
         except NotFoundError:
             raise
         except IntegrityError as e:
-            if "uq_vineyard_blocks__code__vineyard_id" in str(e).lower():
+            error_str = str(e).lower()
+            if ("uq_vineyard_blocks__code__vineyard_id" in error_str or
+                ("unique constraint" in error_str and "vineyard_blocks.code" in error_str)):
                 raise DuplicateCodeError(
                     f"Block with code '{data.code}' already exists for vineyard {vineyard_id}"
                 ) from e
@@ -215,7 +217,9 @@ class VineyardBlockRepository(BaseRepository, IVineyardBlockRepository):
         try:
             return await _update_operation()
         except IntegrityError as e:
-            if "uq_vineyard_blocks__code__vineyard_id" in str(e).lower():
+            error_str = str(e).lower()
+            if ("uq_vineyard_blocks__code__vineyard_id" in error_str or
+                ("unique constraint" in error_str and "vineyard_blocks.code" in error_str)):
                 raise DuplicateCodeError(
                     f"Block with code '{data.code}' already exists for vineyard"
                 ) from e

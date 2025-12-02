@@ -44,7 +44,10 @@ class VineyardRepository(BaseRepository, IVineyardRepository):
         try:
             return await _create_operation()
         except IntegrityError as e:
-            if "uq_vineyards__code__winery_id" in str(e).lower():
+            error_str = str(e).lower()
+            # Check for unique constraint on code+winery_id (works for both PostgreSQL and SQLite)
+            if ("uq_vineyards__code__winery_id" in error_str or 
+                ("unique constraint" in error_str and "vineyards.code" in error_str)):
                 raise DuplicateCodeError(
                     f"Vineyard with code '{data.code}' already exists for winery {winery_id}"
                 ) from e
@@ -148,7 +151,9 @@ class VineyardRepository(BaseRepository, IVineyardRepository):
         try:
             return await _update_operation()
         except IntegrityError as e:
-            if "uq_vineyards__code__winery_id" in str(e).lower():
+            error_str = str(e).lower()
+            if ("uq_vineyards__code__winery_id" in error_str or 
+                ("unique constraint" in error_str and "vineyards.code" in error_str)):
                 raise DuplicateCodeError(
                     f"Vineyard with code '{data.code}' already exists for winery {winery_id}"
                 ) from e
