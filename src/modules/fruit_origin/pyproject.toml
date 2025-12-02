@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "fruit-origin-module"
+version = "0.1.0"
+description = "Fruit Origin Management Module for Wine Fermentation Monitoring System"
+authors = ["Your Name <your.email@example.com>"]
+packages = [
+    { include = "repository_component", from = "src" },
+    { include = "domain", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+sqlalchemy = "^2.0.20"
+asyncpg = "^0.28.0"
+pydantic = "^2.3.0"
+psycopg2-binary = "^2.9.7"
+shared = {path = "../../shared/", develop = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.1"
+black = "^23.7.0"
+flake8 = "^6.1.0"
+mypy = "^1.5.1"
+pytest-cov = "^4.1.0"
+sqlalchemy = {extras = ["mypy"], version = "^2.0.43"}
+aiosqlite = "^0.21.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+markers = [
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests"
+]

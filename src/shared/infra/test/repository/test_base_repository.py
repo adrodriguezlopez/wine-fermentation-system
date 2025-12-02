@@ -53,7 +53,8 @@ class TestBaseRepository:
 
         mock_session_manager = Mock(spec=ISessionManager)
         mock_context_manager = Mock()
-        mock_session_manager.get_session = AsyncMock(return_value=mock_context_manager)
+        # get_session on session_manager is NOT async - it returns a context manager directly
+        mock_session_manager.get_session = Mock(return_value=mock_context_manager)
 
         repository = BaseRepository(session_manager=mock_session_manager)
         result = await repository.get_session()
@@ -69,7 +70,8 @@ class TestBaseRepository:
 
         mock_session_manager = Mock(spec=ISessionManager)
         mock_context_manager = Mock(spec=AsyncContextManager)
-        mock_session_manager.get_session = AsyncMock(return_value=mock_context_manager)
+        # get_session on session_manager is NOT async - it returns a context manager directly
+        mock_session_manager.get_session = Mock(return_value=mock_context_manager)
 
         repository = BaseRepository(session_manager=mock_session_manager)
         result = await repository.get_session()
