@@ -64,6 +64,20 @@ def map_database_error(error: Exception) -> RepositoryError:
     - 40001: serialization_failure
     - 40P01: deadlock_detected
     """
+    # If it's already a RepositoryError or subclass, don't wrap it again
+    # Check both fermentation and fruit_origin RepositoryError types
+    if isinstance(error, RepositoryError):
+        return error
+    
+    # Try to check for fruit_origin RepositoryError as well
+    try:
+        from src.modules.fruit_origin.src.repository_component.errors import RepositoryError as FruitOriginRepositoryError
+        if isinstance(error, FruitOriginRepositoryError):
+            # Wrap it in our RepositoryError to maintain compatibility
+            return RepositoryError(str(error), error)
+    except ImportError:
+        pass
+    
     error_str = str(error)
     
     # Import here to avoid circular dependencies

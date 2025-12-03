@@ -24,9 +24,8 @@ from src.modules.fruit_origin.src.domain.dtos.harvest_lot_dtos import (
     HarvestLotCreate,
     HarvestLotUpdate,
 )
-from src.modules.fruit_origin.src.repository_component.errors import (
-    NotFoundError,
-)
+# Import RepositoryError from fermentation since that's what map_database_error returns
+from src.modules.fermentation.src.repository_component.errors import RepositoryError
 
 # Mark all tests in this module as integration tests
 pytestmark = pytest.mark.integration
@@ -60,6 +59,8 @@ class TestHarvestLotRepositoryCRUD:
             clone="337",
             rootstock="101-14",
             pick_method="hand",
+            pick_start_time="08:00:00",
+            pick_end_time="12:30:00",
             bins_count=15,
             field_temp_c=22.5,
             notes="Excellent quality harvest"
@@ -138,7 +139,7 @@ class TestHarvestLotRepositoryCRUD:
         )
         
         # Act & Assert
-        with pytest.raises(NotFoundError, match="VineyardBlock 99999 not found or access denied"):
+        with pytest.raises(RepositoryError, match="VineyardBlock 99999 not found or access denied"):
             await harvest_lot_repository.create(
                 winery_id=test_winery.id,
                 data=harvest_lot_data
@@ -619,7 +620,7 @@ class TestHarvestLotRepositoryMultiTenant:
             grape_variety="Merlot"
         )
         
-        with pytest.raises(NotFoundError, match="VineyardBlock .* not found or access denied"):
+        with pytest.raises(RepositoryError, match="VineyardBlock .* not found or access denied"):
             await harvest_lot_repository.create(
                 winery_id=test_winery.id,
                 data=harvest_lot_data

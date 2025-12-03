@@ -18,13 +18,13 @@ class HarvestLot(BaseEntity):
     weight_kg: Mapped[float] = mapped_column(Numeric(10,2), nullable=False)
     brix_at_harvest: Mapped[Optional[float]] = mapped_column(Numeric(5,2), nullable=True)
     brix_method: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    brix_measured_at: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # e.g., 'field', 'receival'
+    brix_measured_at: Mapped[Optional[str]] = mapped_column(TIMESTAMP, nullable=True)  # Timestamp of brix measurement
     grape_variety: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     clone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     rootstock: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     pick_method: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # e.g., 'hand', 'machine'
-    pick_start_time: Mapped[Optional[str]] = mapped_column(TIMESTAMP, nullable=True)
-    pick_end_time: Mapped[Optional[str]] = mapped_column(TIMESTAMP, nullable=True)
+    pick_start_time: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # ISO time format 'HH:MM:SS'
+    pick_end_time: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # ISO time format 'HH:MM:SS'
     bins_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     field_temp_c: Mapped[Optional[float]] = mapped_column(Numeric(5,2), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)

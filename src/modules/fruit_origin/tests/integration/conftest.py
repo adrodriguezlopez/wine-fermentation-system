@@ -253,6 +253,8 @@ async def test_harvest_lot(db_session, test_winery, test_vineyard_block):
         clone="337",
         rootstock="101-14",
         pick_method="hand",
+        pick_start_time="08:00:00",
+        pick_end_time="12:30:00",
         bins_count=15,
         field_temp_c=22.5,
         notes="Test harvest lot",
