@@ -242,6 +242,47 @@ class TestHarvestLotRepository:
         assert all(lot.block_id == 10 for lot in result)
 
     @pytest.mark.asyncio
+    async def test_get_by_harvest_date_range_returns_lots_in_range(self, repository, mock_session_manager):
+        """Test that get_by_harvest_date_range returns lots within date range."""
+        manager, mock_session = mock_session_manager
+
+        # Mock harvest lots
+        mock_lot1 = Mock()
+        mock_lot1.id = 1
+        mock_lot1.harvest_date = date(2025, 3, 12)
+        
+        mock_lot2 = Mock()
+        mock_lot2.id = 2
+        mock_lot2.harvest_date = date(2025, 3, 15)
+
+        # Mock the query result
+        mock_result = Mock()
+        mock_result.scalars = Mock(return_value=Mock(all=Mock(return_value=[mock_lot1, mock_lot2])))
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        # Call the method
+        result = await repository.get_by_harvest_date_range(
+            winery_id=1,
+            start_date=date(2025, 3, 10),
+            end_date=date(2025, 3, 20)
+        )
+
+        # Verify result
+        assert isinstance(result, list)
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_get_by_harvest_date_range_raises_error_for_invalid_range(self, repository):
+        """Test that get_by_harvest_date_range raises ValueError for invalid date range."""
+        # Call the method with invalid range (start > end)
+        with pytest.raises(ValueError, match="start_date .* must be <= end_date"):
+            await repository.get_by_harvest_date_range(
+                winery_id=1,
+                start_date=date(2025, 3, 20),
+                end_date=date(2025, 3, 10)
+            )
+
+    @pytest.mark.asyncio
     async def test_update_returns_updated_entity(self, repository, mock_session_manager):
         """Test that update returns updated HarvestLot entity."""
         manager, mock_session = mock_session_manager

@@ -71,7 +71,7 @@ class HarvestLotRepository(BaseRepository, IHarvestLotRepository):
                 block = result.scalar_one_or_none()
                 
                 if not block:
-                    from src.shared.domain.exceptions import NotFoundError
+                    from src.modules.fruit_origin.src.repository_component.errors import NotFoundError
                     raise NotFoundError(f"VineyardBlock {data.block_id} not found or access denied")
 
                 # Create ORM entity with provided data
@@ -228,8 +228,6 @@ class HarvestLotRepository(BaseRepository, IHarvestLotRepository):
                 harvest_lots = result.scalars().all()
 
                 return list(harvest_lots)
-
-        return await self.execute_with_error_mapping(_get_operation)
 
         return await self.execute_with_error_mapping(_get_operation)
 

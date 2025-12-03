@@ -197,6 +197,13 @@ async def vineyard_block_repository(session_manager):
 
 
 @pytest_asyncio.fixture
+async def harvest_lot_repository(session_manager):
+    """Create HarvestLotRepository instance with test session manager."""
+    from src.modules.fruit_origin.src.repository_component.repositories.harvest_lot_repository import HarvestLotRepository
+    return HarvestLotRepository(session_manager)
+
+
+@pytest_asyncio.fixture
 async def test_vineyard(db_session, test_winery):
     """Create a test vineyard for integration tests."""
     Vineyard = TEST_MODELS['Vineyard']
@@ -226,3 +233,31 @@ async def test_vineyard_block(db_session, test_vineyard):
     db_session.add(block)
     await db_session.flush()
     return block
+
+
+@pytest_asyncio.fixture
+async def test_harvest_lot(db_session, test_winery, test_vineyard_block):
+    """Create a test harvest lot for integration tests."""
+    from datetime import date, datetime
+    HarvestLot = TEST_MODELS['HarvestLot']
+    harvest_lot = HarvestLot(
+        winery_id=test_winery.id,
+        block_id=test_vineyard_block.id,
+        code="HL-TEST-001",
+        harvest_date=date(2024, 3, 15),
+        weight_kg=1500.0,
+        brix_at_harvest=24.5,
+        brix_method="refractometer",
+        brix_measured_at=datetime(2024, 3, 15, 10, 30),
+        grape_variety="Cabernet Sauvignon",
+        clone="337",
+        rootstock="101-14",
+        pick_method="hand",
+        bins_count=15,
+        field_temp_c=22.5,
+        notes="Test harvest lot",
+        is_deleted=False
+    )
+    db_session.add(harvest_lot)
+    await db_session.flush()
+    return harvest_lot
