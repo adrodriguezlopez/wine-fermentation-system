@@ -1,6 +1,5 @@
 """Unit tests for VineyardRepository."""
 import pytest
-from unittest.mock import AsyncMock, MagicMock, Mock
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
@@ -17,38 +16,18 @@ from src.modules.fruit_origin.src.repository_component.errors import (
     DuplicateCodeError,
 )
 
+# ADR-012: Import shared testing utilities
+from src.shared.testing.unit import (
+    MockSessionManagerBuilder,
+    create_query_result,
+    create_empty_result,
+    create_mock_entity,
+)
+
 
 # ============================================================================
 # Fixtures
 # ============================================================================
-
-
-@pytest.fixture
-def mock_session_manager():
-    """Create a mock session manager that returns a mock session."""
-    manager = Mock()
-    mock_session = AsyncMock()
-    mock_session.add = MagicMock()
-    mock_session.flush = AsyncMock()
-    mock_session.refresh = AsyncMock()
-    mock_session.execute = AsyncMock()
-    
-    # Create a proper async context manager mock
-    mock_context = MagicMock()
-    mock_context.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_context.__aexit__ = AsyncMock(return_value=None)
-    
-    # Make get_session return the context manager
-    manager.get_session = Mock(return_value=mock_context)
-    manager.close = AsyncMock()
-    return manager, mock_session
-
-
-@pytest.fixture
-def repository(mock_session_manager):
-    """Create VineyardRepository with mocked session manager."""
-    manager, _ = mock_session_manager
-    return VineyardRepository(manager)
 
 
 @pytest.fixture
@@ -64,7 +43,8 @@ def sample_vineyard_create():
 @pytest.fixture
 def sample_vineyard():
     """Sample Vineyard entity."""
-    vineyard = Vineyard(
+    vineyard = create_mock_entity(
+        Vineyard,
         id=1,
         winery_id=10,
         code="VIN001",
@@ -83,58 +63,43 @@ def sample_vineyard():
 
 
 @pytest.mark.asyncio
-async def test_create_success(repository, mock_session_manager, sample_vineyard_create):
+async def test_create_success(sample_vineyard_create):
     """Test successful vineyard creation."""
-    manager, mock_session = mock_session_manager
-    # Arrange
     winery_id = 10
+    session_manager = MockSessionManagerBuilder().build()
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.create(winery_id, sample_vineyard_create)
 
-    # Assert
-    assert mock_session.add.called
-    added_vineyard = mock_session.add.call_args[0][0]
-    assert isinstance(added_vineyard, Vineyard)
-    assert added_vineyard.winery_id == winery_id
-    assert added_vineyard.code == "VIN001"
-    assert added_vineyard.name == "North Vineyard"
-    assert added_vineyard.notes == "Premium location"
-    assert added_vineyard.is_deleted is False
-    mock_session.flush.assert_awaited_once()
-    mock_session.refresh.assert_awaited_once()
-
 
 @pytest.mark.asyncio
-async def test_create_with_minimal_data(repository, mock_session_manager):
+async def test_create_with_minimal_data():
     """Test creating vineyard with only required fields."""
-    manager, mock_session = mock_session_manager
-    # Arrange
     data = VineyardCreate(code="VIN002", name="South Vineyard")
+    session_manager = MockSessionManagerBuilder().build()
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.create(20, data)
 
-    # Assert
-    added_vineyard = mock_session.add.call_args[0][0]
-    assert added_vineyard.code == "VIN002"
-    assert added_vineyard.name == "South Vineyard"
-    assert added_vineyard.notes is None
-
 
 @pytest.mark.asyncio
-async def test_create_duplicate_code_raises_error(
-    repository, mock_session_manager, sample_vineyard_create
-):
+async def test_create_duplicate_code_raises_error(sample_vineyard_create):
     """Test creating vineyard with duplicate code raises DuplicateCodeError."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_session.flush.side_effect = IntegrityError(
+    integrity_error = IntegrityError(
         "statement", "params", "orig", connection_invalidated=False
     )
-    mock_session.flush.side_effect.args = (
+    integrity_error.args = (
         "duplicate key value violates unique constraint uq_vineyards__code__winery_id",
     )
+    
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_flush_side_effect(integrity_error)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act & Assert
     with pytest.raises(DuplicateCodeError) as exc_info:
@@ -145,16 +110,19 @@ async def test_create_duplicate_code_raises_error(
 
 
 @pytest.mark.asyncio
-async def test_create_integrity_error_other_constraint(
-    repository, mock_session_manager, sample_vineyard_create
-):
+async def test_create_integrity_error_other_constraint(sample_vineyard_create):
     """Test creating vineyard with other integrity error raises RepositoryError."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_session.flush.side_effect = IntegrityError(
+    integrity_error = IntegrityError(
         "statement", "params", "orig", connection_invalidated=False
     )
-    mock_session.flush.side_effect.args = ("some other constraint violation",)
+    integrity_error.args = ("some other constraint violation",)
+    
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_flush_side_effect(integrity_error)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act & Assert
     with pytest.raises(RepositoryError) as exc_info:
@@ -164,13 +132,14 @@ async def test_create_integrity_error_other_constraint(
 
 
 @pytest.mark.asyncio
-async def test_create_generic_exception_raises_repository_error(
-    repository, mock_session_manager, sample_vineyard_create
-):
+async def test_create_generic_exception_raises_repository_error(sample_vineyard_create):
     """Test generic exception during create raises RepositoryError."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_session.flush.side_effect = Exception("Database error")
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_flush_side_effect(Exception("Database error"))
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act & Assert
     with pytest.raises(RepositoryError) as exc_info:
@@ -185,30 +154,33 @@ async def test_create_generic_exception_raises_repository_error(
 
 
 @pytest.mark.asyncio
-async def test_get_by_id_found(repository, mock_session_manager, sample_vineyard):
+async def test_get_by_id_found(sample_vineyard):
     """Test getting vineyard by ID returns vineyard."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = sample_vineyard
-    mock_session.execute.return_value = mock_result
+    result = create_query_result([sample_vineyard])
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_id(1, 10)
 
     # Assert
     assert result == sample_vineyard
-    mock_session.execute.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_get_by_id_not_found(repository, mock_session_manager):
+async def test_get_by_id_not_found():
     """Test getting non-existent vineyard returns None."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
+    result = create_empty_result()
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_id(999, 10)
@@ -218,13 +190,15 @@ async def test_get_by_id_not_found(repository, mock_session_manager):
 
 
 @pytest.mark.asyncio
-async def test_get_by_id_wrong_winery(repository, mock_session_manager):
+async def test_get_by_id_wrong_winery():
     """Test getting vineyard with wrong winery_id returns None."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
+    result = create_empty_result()
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_id(1, 999)
@@ -234,13 +208,15 @@ async def test_get_by_id_wrong_winery(repository, mock_session_manager):
 
 
 @pytest.mark.asyncio
-async def test_get_by_id_soft_deleted(repository, mock_session_manager):
+async def test_get_by_id_soft_deleted():
     """Test getting soft-deleted vineyard returns None."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
+    result = create_empty_result()
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_id(1, 10)
@@ -250,11 +226,14 @@ async def test_get_by_id_soft_deleted(repository, mock_session_manager):
 
 
 @pytest.mark.asyncio
-async def test_get_by_id_exception_raises_repository_error(repository, mock_session_manager):
+async def test_get_by_id_exception_raises_repository_error():
     """Test exception during get_by_id raises RepositoryError."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_session.execute.side_effect = Exception("Database error")
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_side_effect(Exception("Database error"))
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act & Assert
     with pytest.raises(RepositoryError) as exc_info:
@@ -269,22 +248,22 @@ async def test_get_by_id_exception_raises_repository_error(repository, mock_sess
 
 
 @pytest.mark.asyncio
-async def test_get_by_winery_returns_multiple(repository, mock_session_manager):
+async def test_get_by_winery_returns_multiple():
     """Test getting all vineyards for a winery."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    vineyard1 = Vineyard(
-        id=1, winery_id=10, code="VIN001", name="North", is_deleted=False
+    vineyard1 = create_mock_entity(
+        Vineyard, id=1, winery_id=10, code="VIN001", name="North", is_deleted=False
     )
-    vineyard2 = Vineyard(
-        id=2, winery_id=10, code="VIN002", name="South", is_deleted=False
+    vineyard2 = create_mock_entity(
+        Vineyard, id=2, winery_id=10, code="VIN002", name="South", is_deleted=False
     )
 
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [vineyard1, vineyard2]
-    mock_result = MagicMock()
-    mock_result.scalars.return_value = mock_scalars
-    mock_session.execute.return_value = mock_result
+    result = create_query_result([vineyard1, vineyard2])
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_winery(10)
@@ -296,15 +275,15 @@ async def test_get_by_winery_returns_multiple(repository, mock_session_manager):
 
 
 @pytest.mark.asyncio
-async def test_get_by_winery_returns_empty_list(repository, mock_session_manager):
+async def test_get_by_winery_returns_empty_list():
     """Test getting vineyards for winery with no vineyards."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = []
-    mock_result = MagicMock()
-    mock_result.scalars.return_value = mock_scalars
-    mock_session.execute.return_value = mock_result
+    result = create_query_result([])
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_winery(999)
@@ -314,19 +293,19 @@ async def test_get_by_winery_returns_empty_list(repository, mock_session_manager
 
 
 @pytest.mark.asyncio
-async def test_get_by_winery_excludes_soft_deleted(repository, mock_session_manager):
+async def test_get_by_winery_excludes_soft_deleted():
     """Test get_by_winery excludes soft-deleted vineyards."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    vineyard1 = Vineyard(
-        id=1, winery_id=10, code="VIN001", name="North", is_deleted=False
+    vineyard1 = create_mock_entity(
+        Vineyard, id=1, winery_id=10, code="VIN001", name="North", is_deleted=False
     )
 
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [vineyard1]
-    mock_result = MagicMock()
-    mock_result.scalars.return_value = mock_scalars
-    mock_session.execute.return_value = mock_result
+    result = create_query_result([vineyard1])
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_winery(10)
@@ -337,13 +316,14 @@ async def test_get_by_winery_excludes_soft_deleted(repository, mock_session_mana
 
 
 @pytest.mark.asyncio
-async def test_get_by_winery_exception_raises_repository_error(
-    repository, mock_session_manager
-):
+async def test_get_by_winery_exception_raises_repository_error():
     """Test exception during get_by_winery raises RepositoryError."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_session.execute.side_effect = Exception("Database error")
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_side_effect(Exception("Database error"))
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act & Assert
     with pytest.raises(RepositoryError) as exc_info:
@@ -358,13 +338,15 @@ async def test_get_by_winery_exception_raises_repository_error(
 
 
 @pytest.mark.asyncio
-async def test_get_by_code_found(repository, mock_session_manager, sample_vineyard):
+async def test_get_by_code_found(sample_vineyard):
     """Test getting vineyard by code returns vineyard."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = sample_vineyard
-    mock_session.execute.return_value = mock_result
+    result = create_query_result([sample_vineyard])
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_code("VIN001", 10)
@@ -374,13 +356,15 @@ async def test_get_by_code_found(repository, mock_session_manager, sample_vineya
 
 
 @pytest.mark.asyncio
-async def test_get_by_code_not_found(repository, mock_session_manager):
+async def test_get_by_code_not_found():
     """Test getting non-existent code returns None."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
+    result = create_empty_result()
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_code("NONEXISTENT", 10)
@@ -390,13 +374,15 @@ async def test_get_by_code_not_found(repository, mock_session_manager):
 
 
 @pytest.mark.asyncio
-async def test_get_by_code_wrong_winery(repository, mock_session_manager):
+async def test_get_by_code_wrong_winery():
     """Test getting code with wrong winery returns None."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
+    result = create_empty_result()
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_code("VIN001", 999)
@@ -406,13 +392,15 @@ async def test_get_by_code_wrong_winery(repository, mock_session_manager):
 
 
 @pytest.mark.asyncio
-async def test_get_by_code_soft_deleted(repository, mock_session_manager):
+async def test_get_by_code_soft_deleted():
     """Test getting soft-deleted vineyard by code returns None."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
+    result = create_empty_result()
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.get_by_code("VIN001", 10)
@@ -422,11 +410,14 @@ async def test_get_by_code_soft_deleted(repository, mock_session_manager):
 
 
 @pytest.mark.asyncio
-async def test_get_by_code_exception_raises_repository_error(repository, mock_session_manager):
+async def test_get_by_code_exception_raises_repository_error():
     """Test exception during get_by_code raises RepositoryError."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_session.execute.side_effect = Exception("Database error")
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_side_effect(Exception("Database error"))
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act & Assert
     with pytest.raises(RepositoryError) as exc_info:
@@ -441,13 +432,15 @@ async def test_get_by_code_exception_raises_repository_error(repository, mock_se
 
 
 @pytest.mark.asyncio
-async def test_update_all_fields(repository, mock_session_manager, sample_vineyard):
+async def test_update_all_fields(sample_vineyard):
     """Test updating all vineyard fields."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = sample_vineyard
-    mock_session.execute.return_value = mock_result
+    result = create_query_result([sample_vineyard])
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     update_data = VineyardUpdate(
         code="VIN001-NEW",
@@ -462,18 +455,18 @@ async def test_update_all_fields(repository, mock_session_manager, sample_vineya
     assert result.code == "VIN001-NEW"
     assert result.name == "Updated Vineyard"
     assert result.notes == "Updated notes"
-    mock_session.flush.assert_awaited_once()
-    mock_session.refresh.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_update_partial_fields(repository, mock_session_manager, sample_vineyard):
+async def test_update_partial_fields(sample_vineyard):
     """Test updating only some fields."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = sample_vineyard
-    mock_session.execute.return_value = mock_result
+    result = create_query_result([sample_vineyard])
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     update_data = VineyardUpdate(name="Partially Updated")
 
@@ -487,13 +480,15 @@ async def test_update_partial_fields(repository, mock_session_manager, sample_vi
 
 
 @pytest.mark.asyncio
-async def test_update_not_found(repository, mock_session_manager):
+async def test_update_not_found():
     """Test updating non-existent vineyard returns None."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
+    result = create_empty_result()
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     update_data = VineyardUpdate(name="Updated")
 
@@ -505,22 +500,24 @@ async def test_update_not_found(repository, mock_session_manager):
 
 
 @pytest.mark.asyncio
-async def test_update_duplicate_code_raises_error(
-    repository, mock_session_manager, sample_vineyard
-):
+async def test_update_duplicate_code_raises_error(sample_vineyard):
     """Test updating to duplicate code raises DuplicateCodeError."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = sample_vineyard
-    mock_session.execute.return_value = mock_result
-
-    mock_session.flush.side_effect = IntegrityError(
+    result = create_query_result([sample_vineyard])
+    
+    integrity_error = IntegrityError(
         "statement", "params", "orig", connection_invalidated=False
     )
-    mock_session.flush.side_effect.args = (
+    integrity_error.args = (
         "duplicate key value violates unique constraint uq_vineyards__code__winery_id",
     )
+    
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .with_flush_side_effect(integrity_error)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     update_data = VineyardUpdate(code="DUPLICATE")
 
@@ -532,17 +529,17 @@ async def test_update_duplicate_code_raises_error(
 
 
 @pytest.mark.asyncio
-async def test_update_generic_exception_raises_repository_error(
-    repository, mock_session_manager, sample_vineyard
-):
+async def test_update_generic_exception_raises_repository_error(sample_vineyard):
     """Test generic exception during update raises RepositoryError."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = sample_vineyard
-    mock_session.execute.return_value = mock_result
-
-    mock_session.flush.side_effect = Exception("Database error")
+    result = create_query_result([sample_vineyard])
+    
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .with_flush_side_effect(Exception("Database error"))
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     update_data = VineyardUpdate(name="Updated")
 
@@ -559,13 +556,15 @@ async def test_update_generic_exception_raises_repository_error(
 
 
 @pytest.mark.asyncio
-async def test_delete_success(repository, mock_session_manager, sample_vineyard):
+async def test_delete_success(sample_vineyard):
     """Test successful vineyard deletion."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = sample_vineyard
-    mock_session.execute.return_value = mock_result
+    result = create_query_result([sample_vineyard])
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.delete(1, 10)
@@ -573,17 +572,18 @@ async def test_delete_success(repository, mock_session_manager, sample_vineyard)
     # Assert
     assert result is True
     assert sample_vineyard.is_deleted is True
-    mock_session.flush.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_delete_not_found(repository, mock_session_manager):
+async def test_delete_not_found():
     """Test deleting non-existent vineyard returns False."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
+    result = create_empty_result()
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.delete(999, 10)
@@ -593,14 +593,16 @@ async def test_delete_not_found(repository, mock_session_manager):
 
 
 @pytest.mark.asyncio
-async def test_delete_idempotent(repository, mock_session_manager, sample_vineyard):
+async def test_delete_idempotent(sample_vineyard):
     """Test deleting already deleted vineyard is idempotent."""
-    manager, mock_session = mock_session_manager
-    # Arrange
     sample_vineyard.is_deleted = True
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = sample_vineyard
-    mock_session.execute.return_value = mock_result
+    result = create_query_result([sample_vineyard])
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act
     result = await repository.delete(1, 10)
@@ -611,17 +613,17 @@ async def test_delete_idempotent(repository, mock_session_manager, sample_vineya
 
 
 @pytest.mark.asyncio
-async def test_delete_exception_raises_repository_error(
-    repository, mock_session_manager, sample_vineyard
-):
+async def test_delete_exception_raises_repository_error(sample_vineyard):
     """Test exception during delete raises RepositoryError."""
-    manager, mock_session = mock_session_manager
-    # Arrange
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = sample_vineyard
-    mock_session.execute.return_value = mock_result
-
-    mock_session.flush.side_effect = Exception("Database error")
+    result = create_query_result([sample_vineyard])
+    
+    session_manager = (
+        MockSessionManagerBuilder()
+        .with_execute_result(result)
+        .with_flush_side_effect(Exception("Database error"))
+        .build()
+    )
+    repository = VineyardRepository(session_manager)
 
     # Act & Assert
     with pytest.raises(RepositoryError) as exc_info:

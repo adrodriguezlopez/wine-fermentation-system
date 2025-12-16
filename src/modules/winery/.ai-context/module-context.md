@@ -54,8 +54,9 @@ Winery (root)
 
 ## Implementation status
 
-**Status:** ✅ **Domain Entity Complete** | ⏳ **Repository Layer Pending**  
-**Last Updated:** 2025-10-26
+**Status:** ✅ **Domain & Repository Layer Complete** | 🎯 **Tests Passing (22 unit + 18 integration)**  
+**Last Updated:** December 15, 2025  
+**Reference:** ADR-009 (Missing Repositories), ADR-012 (Unit Testing Phase 3)
 
 ### Completed
 - ✅ Entity model with SQLAlchemy mapping
@@ -63,16 +64,18 @@ Winery (root)
   - Unique constraints: code (globally unique)
   - Indexed: code
 - ✅ Database table created (wineries)
-- ✅ Component structure: domain/ (only folder present, as expected for root module)
+- ✅ **Repository Layer (22 unit + 18 integration tests)**
+  - WineryRepository: Complete CRUD operations ✅
+  - 22 unit tests (Phase 3 migrated to ADR-012) ✅
+  - 18 integration tests ✅
+  - Multi-tenant ready (no winery_id filtering needed - root entity)
+  - Error handling (DuplicateNameError, RepositoryError)
+  - Soft-delete support
+- ✅ **ADR-012 Impact**: 1 repository test file migrated (22 tests using shared infrastructure)
 
 ### Pending
-- ⏭️ Test infrastructure (no tests/ folder yet)
-- ⏭️ Repository interface (IWineryRepository)
-- ⏭️ Repository implementation
 - ⏭️ Service layer (winery CRUD operations)
 - ⏭️ API endpoints
-
-**Note:** Test fixture (test_winery) is available in fermentation module's conftest.py for cross-module integration testing.
 
 ## Cross-module dependencies
 

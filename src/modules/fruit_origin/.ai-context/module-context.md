@@ -73,9 +73,9 @@ FermentationLotSource (fermentation module)
 
 ## Implementation status
 
-**Status:** ✅ **Domain Entities Complete** | ⏳ **Repository Layer Pending**  
-**Last Updated:** 2025-10-26  
-**Reference:** ADR-004 (Harvest Module Consolidation)
+**Status:** ✅ **Domain & Repository Layer Complete** | 🎯 **Tests Passing (113 unit + 43 integration)**  
+**Last Updated:** December 15, 2025  
+**Reference:** ADR-004 (Harvest Consolidation), ADR-009 (Missing Repositories), ADR-012 (Unit Testing Phase 3)
 
 ### Completed
 - ✅ Entity models with SQLAlchemy mappings
@@ -83,17 +83,19 @@ FermentationLotSource (fermentation module)
   - VineyardBlock: 11 fields (block details, technical specs)
   - HarvestLot: 19 fields (complete harvest traceability)
 - ✅ Relationships: vineyard ↔ blocks ↔ harvest_lots
-- ✅ Component structure: domain/, repository_component/, service_component/, api_component/ (folders exist, awaiting implementation)
 - ✅ Database tables created (verified in system schema)
+- ✅ **Repository Layer (113 unit + 43 integration tests)**
+  - VineyardRepository: 28 unit + 11 integration tests (Phase 3 migrated to ADR-012) ✅
+  - VineyardBlockRepository: 31 unit + 12 integration tests (Phase 3 migrated to ADR-012) ✅
+  - HarvestLotRepository: 12 unit + 20 integration tests (Phase 3 migrated to ADR-012) ✅
+  - Multi-tenant security patterns implemented
+  - Soft-delete support
+  - Error handling (DuplicateCodeError, EntityNotFoundError)
+- ✅ **ADR-012 Impact**: 3 repository test files migrated (71 tests using shared infrastructure)
 
 ### Pending
-- ⏭️ Test infrastructure (tests/ folder empty)
-- ⏭️ Repository interfaces (IVineyardRepository, IHarvestLotRepository)
-- ⏭️ Repository implementations
 - ⏭️ Service layer (vineyard management, harvest recording)
 - ⏭️ API endpoints
-
-**Note:** Test fixtures (test_vineyard, test_harvest_lot) are available in fermentation module's conftest.py for cross-module integration testing.
 
 ## Cross-module dependencies
 

@@ -74,10 +74,13 @@
 - IFermentationRepository: Interface validation
 - ISampleRepository: Interface validation
 
-**✅ Repository Layer (39 tests passing)**
-- FermentationRepository: 8 tests passing (5 methods implemented)
-- SampleRepository: 12 tests passing (11 methods implemented)
+**✅ Repository Layer (39 tests passing - Using ADR-012 Shared Utilities)**
+- FermentationRepository: 8 tests passing (Phase 2 migrated) ✅
+- SampleRepository: 12 tests passing (Phase 2 migrated) ✅
+- LotSourceRepository: 11 tests passing (Phase 2 migrated) ✅
+- FermentationNoteRepository: 19 tests passing (Phase 2 migrated) ✅
 - Error handling: 19 tests passing (error class hierarchy)
+- **ADR-012 Impact**: 4 files migrated, 50 tests using shared test infrastructure
 
 **✅ Integration Tests (9 tests passing)**
 - FermentationRepository integration: 8 tests with real PostgreSQL

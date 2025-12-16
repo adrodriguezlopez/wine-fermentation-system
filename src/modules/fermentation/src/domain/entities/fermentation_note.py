@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship, Mapped
 
 from src.shared.infra.orm.base_entity import BaseEntity
@@ -21,6 +21,9 @@ class FermentationNote(BaseEntity):
     # Note content
     note_text = Column(Text, nullable=False)
     action_taken = Column(String(255), nullable=False)
+    
+    # Soft delete flag
+    is_deleted = Column(Boolean, nullable=False, default=False, server_default="0")
 
     # Relationships - using fully qualified paths and Mapped types for consistency
     fermentation: Mapped["Fermentation"] = relationship(

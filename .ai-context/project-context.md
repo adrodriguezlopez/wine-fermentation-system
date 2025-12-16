@@ -48,40 +48,52 @@
 ## Current functional state
 
 ### Authentication Module (Auth)
-**Status:** ✅ COMPLETE WITH INTEGRATION TESTS (Nov 4, 2025)
-- ✅ Domain Layer: User entity, DTOs, Interfaces
-- ✅ Repository Layer: UserRepository with full CRUD
-- ✅ Service Layer: PasswordService, JwtService, AuthService
-- ✅ FastAPI Dependencies: OAuth2, role-based access control
-- ✅ Unit Tests: 163 passing (162 passed, 1 skipped)
-- ✅ Integration Tests: 24 passing (auth flows, multi-tenancy, RBAC)
-- ✅ **Total: 186 tests passing**
+**Status:** ✅ COMPLETE  
+**Last Updated:** November 4, 2025  
+**Total Tests:** 187 passing (163 unit + 24 integration)  
+**Details:** See [auth module-context.md](../src/shared/auth/.ai-context/module-context.md)
 
 ### Fermentation Management Module
-**Status:** ✅ COMPLETE THROUGH INTEGRATION TESTS (Nov 4, 2025)
-- ✅ Domain Layer: Entities, DTOs, Enums, Interfaces
-- ✅ Repository Layer: FermentationRepository, SampleRepository
-- ✅ Service Layer: FermentationService, SampleService, Validation Services
-- ✅ Unit Tests: 173 passing
-- ✅ Integration Tests: 9 passing (real PostgreSQL operations)
-- ✅ **Total: 182 tests passing**
-- ⏳ API Layer: Pending implementation
+**Status:** ✅ API LAYER COMPLETE  
+**Last Updated:** December 15, 2025  
+**Total Tests:** 272 passing (223 unit + 49 integration)  
+**Details:** See [fermentation module-context.md](../src/modules/fermentation/.ai-context/module-context.md)
 
-**Test Execution Note**: Due to SQLAlchemy mapper conflicts, unit and integration tests must run separately:
-```bash
-pytest tests/unit/         # 173 tests
-pytest tests/integration/  # 9 tests
-```
+### Fruit Origin Module  
+**Status:** ✅ REPOSITORY LAYER COMPLETE  
+**Last Updated:** December 15, 2025  
+**Total Tests:** 156 passing (113 unit + 43 integration)  
+**Details:** See [fruit_origin module-context.md](../src/modules/fruit_origin/.ai-context/module-context.md)
+
+### Winery Module
+**Status:** ✅ REPOSITORY LAYER COMPLETE  
+**Last Updated:** December 15, 2025  
+**Total Tests:** 40 passing (22 unit + 18 integration)  
+**Details:** See [winery module-context.md](../src/modules/winery/.ai-context/module-context.md)
+
+### Shared Testing Infrastructure
+**Status:** ✅ PRODUCTION READY  
+**Last Updated:** December 15, 2025  
+**Total Tests:** 138 passing (86 unit infrastructure + 52 integration infrastructure)  
+**Details:** See [testing module-context.md](../src/shared/testing/.ai-context/module-context.md)
 
 ### Project Totals
-**Tests:** 368 passing (349 unit + 19 integration)  
-**Modules Complete:** 2 (Auth, Fermentation)  
-**Next Phase:** Fermentation API Layer, then Historical Data Module
+**Tests:** **737 passing** (545+ unit + 192+ integration)  
+**Modules Complete:** 
+- ✅ Auth: Full implementation with API (187 tests)
+- ✅ Fermentation: Full implementation with API (272 tests)
+- ✅ Fruit Origin: Repository layer complete (156 tests)
+- ✅ Winery: Repository layer complete (40 tests)
+- ✅ Shared Testing: Infrastructure utilities (138 tests)
 
-### Next Steps
-1. Implement FastAPI endpoints for Fermentation module
-2. Wire Auth module with Fermentation for multi-tenancy
-3. Begin Historical Data module development
+**ADR Implementation Status:**
+All 11 architectural decisions (ADR-002 through ADR-013, excluding ADR-010) are fully implemented. See [ADR-INDEX.md](./.ai-context/adr/ADR-INDEX.md) for details.
+
+**Next Phase:** 
+1. Fruit Origin Service & API Layers
+2. Winery Service & API Layers
+3. Historical Data Module
+4. Analysis Engine Module
 
 ## How to restart work on this system
 Read the module-context.md for the specific module you need to work on:

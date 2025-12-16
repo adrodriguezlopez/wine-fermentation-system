@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADRs) - Index
 
 **Wine Fermentation System**  
-**Last Update:** November 25, 2025
+**Last Update:** December 13, 2025
 
 ---
 
@@ -17,7 +17,9 @@
 | **[ADR-006](./ADR-006-api-layer-design.md)** | API Layer Design & FastAPI Integration | ✅ Implemented | 2025-11-15 | High |
 | **[ADR-007](./ADR-007-auth-module-design.md)** | Authentication Module (Shared Infrastructure) | ✅ Implemented | 2025-11-04 | Critical |
 | **[ADR-008](./ADR-008-centralized-error-handling.md)** | Centralized Error Handling for API Layer | ✅ Implemented | 2025-11-15 | Medium |
-| **[ADR-009](./ADR-009-missing-repositories-implementation.md)** | Missing Repositories Implementation | 📋 Proposed | 2025-11-25 | High |
+| **[ADR-009](./ADR-009-missing-repositories-implementation.md)** | Missing Repositories Implementation | ✅ Implemented | 2025-11-25 | High |
+| **[ADR-011](./ADR-011-integration-test-infrastructure-refactoring.md)** | Integration Test Infrastructure Refactoring | ✅ Implemented | 2025-12-13 | High |
+| **[ADR-012](./ADR-012-unit-test-infrastructure-refactoring.md)** | Unit Test Infrastructure Refactoring | ✅ Implemented | 2025-12-15 | High |
 
 **Legend:**
 - ✅ **Implemented** - Fully implemented with tests passing
@@ -112,53 +114,118 @@
 - **Standardized mappings**: NotFoundError→404, ValidationError→422, DuplicateError→409, etc.
 - **Refactored**: 17/17 endpoints (100%)
 - **Tests**: All 90 API tests passing with new error handling
-- **Benefits**: DRY principle, single source of truth, easier maintenance  
+- **Benefits**: DRY principle, single source of truth, easier maintenance
+
+### ADR-009: Missing Repositories Implementation
+**Decision:** Implement 5 missing repositories with full test coverage  
+**Status:** ✅ **Implemented** (Dec 13, 2025)  
+**Impact:** Complete repository layer coverage  
 **Key Points:**
-- User entity with winery_id (multi-tenancy)
-- JWT tokens (15min access + 7 days refresh)
-- 4 roles: Admin, Winemaker, Operator, Viewer
-- FastAPI dependencies (get_current_user, require_role)
-- **Test Coverage**: 163 unit tests passing (100%)
-- PasswordService (bcrypt), JwtService (PyJWT), AuthService
-- Migration completed: User moved from fermentation to shared/auth
-- **Critical Fix (Nov 15)**: Removed circular dependencies
-  - User→Fermentation relationships commented out
-  - Auth module now testable independently
-- Successfully integrated in fermentation API endpoints ✅
+- **WineryRepository**: 22 unit + 18 integration tests ✅
+- **VineyardRepository**: 28 unit + 11 integration tests ✅
+- **VineyardBlockRepository**: 31 unit + 12 integration tests ✅
+- **HarvestLotRepository**: 13 unit + 20 integration tests ✅
+- **FermentationNoteRepository**: 19 unit + 20 integration tests ✅
+- **Total**: 194 new tests (113 unit + 81 integration)
+- Multi-tenant security patterns
+- Soft-delete support
+- Error handling (DuplicateNameError, EntityNotFoundError)
+
+### ADR-011: Integration Test Infrastructure Refactoring
+**Decision:** Create shared testing infrastructure, fix SQLAlchemy metadata conflicts  
+**Status:** ✅ **Implemented** (Dec 13, 2025)  
+**Impact:** Massive code reduction, metadata blocker eliminated  
+**Key Points:**
+- **Phase 1**: Shared utilities created (641 lines, 52/52 tests passing) ✅
+- **Phase 2**: 3 modules migrated (winery, fruit_origin, fermentation) ✅
+- **Code reduction**: 635 lines eliminated (79% reduction)
+  - Winery: 172 → 23 lines (87% reduction)
+  - Fruit Origin: 255 → 49 lines (81% reduction)
+  - Fermentation: 375 → 95 lines (75% reduction)
+- **Metadata fix**: Function-scoped db_engine resolves "index already exists" errors ✅
+- **Validation**: 61/61 tests passing when running modules together (2.25s) ✅
+- **Components**: TestSessionManager, IntegrationTestConfig, create_integration_fixtures(), EntityBuilder
+- **Known limitation**: Sample models with single-table inheritance still require separate execution
+
+### ADR-012: Unit Test Infrastructure Refactoring
+**Decision:** Create shared unit test utilities with builder pattern  
+**Status:** ✅ **Implemented - Phase 3 Complete** (Dec 15, 2025)  
+**Impact:** 800-1,000 lines eliminated, 50% faster test creation  
+**Key Points:**
+- **Phase 1**: Core utilities created (86 tests, 4 components) ✅
+- **Phase 2**: Pilot migration (4 fermentation files, 50 tests) ✅
+- **Phase 3**: Full migration (8 files total, 142+ tests migrated) ✅
+- **MockSessionManagerBuilder**: Eliminates session manager duplication
+- **QueryResultBuilder**: Standardizes SQLAlchemy result mocking
+- **EntityFactory**: Centralized mock entity creation with defaults
+- **ValidationResultFactory**: Consistent validation result mocking
+- **Code reduction**: ~800-1,000 lines across 8 repository test files
+- **Time savings**: 50% faster test creation (45min → 15min for repositories)
+- **Pattern consistency**: 100% adoption in migrated tests
 
 ---
 
-## 📊 Current Status (Nov 15, 2025)
+## 📊 Current Status (December 13, 2025)
 
 **Implementation Complete:**
 - ✅ Domain Layer (Entities, DTOs, Enums, Interfaces)
-- ✅ Repository Layer (FermentationRepository + SampleRepository)
+- ✅ **Repository Layer**: ALL repositories implemented (5 new repositories)
+  - FermentationRepository, SampleRepository, LotSourceRepository ✅
+  - HarvestLotRepository, VineyardRepository, VineyardBlockRepository ✅
+  - WineryRepository, FermentationNoteRepository ✅
+  - **Total**: 194 repository tests passing (113 unit + 81 integration)
 - ✅ Service Layer (FermentationService + SampleService + Validators)
 - ✅ Auth Module (shared/auth with JWT, RBAC, multi-tenancy)
 - ✅ **API Layer (All Phases)**: Complete endpoint suite with real database
 - ✅ **Error Handling Refactoring**: Centralized with decorator pattern
-- ✅ Total: **272 tests passing (100%)**
+- ✅ Total: **466+ tests passing (100%)**
   - Fermentation: 272 tests (173 unit + 9 integration + 90 API)
-  - Auth: 163 unit tests (separate module)
+  - Auth: 163 unit tests
+  - New Repositories: 194 tests (113 unit + 81 integration)
 
 **Current Phase:**
-- ✅ **ADR-006 Phase 4 COMPLETE**: All API endpoints implemented
-- ✅ **ADR-008 COMPLETE**: Error handling refactored with decorator pattern
-- Branch: feature/fermentation-api-layer (commit 6fa62d5)
+- ✅ **ADR-009 COMPLETE**: All missing repositories implemented (Dec 13, 2025)
+- ✅ **ADR-011 COMPLETE**: Integration test infrastructure refactoring (Dec 13, 2025)
+- ✅ **ADR-012 COMPLETE**: Unit test infrastructure refactoring Phase 3 (Dec 15, 2025)
 
-**Recent Achievements (Nov 15, 2025):**
-- ✅ Phase 4 Complete: All 18 endpoints implemented (10 fermentation + 8 sample)
-- ✅ Error Handling Refactored: ~410 lines eliminated via decorator pattern
-- ✅ All 90 API tests passing (100% coverage)
-- ✅ Code quality improved: DRY principle enforced
-- ✅ Documentation updated: ADR-006, ADR-008 (NEW), module-context.md
-- ✅ Router exports fixed: samples_router properly registered
+**Recent Achievements (December 2025):**
+- ✅ ADR-009 Complete: 5 new repositories implemented with full test coverage
+  - WineryRepository: 22 unit + 18 integration tests
+  - VineyardRepository: 28 unit + 11 integration tests
+  - VineyardBlockRepository: 31 unit + 12 integration tests
+  - HarvestLotRepository: 13 unit + 20 integration tests
+  - FermentationNoteRepository: 19 unit + 20 integration tests
+- ✅ ADR-011 Complete: Integration test infrastructure refactored (Dec 13, 2025)
+  - **635 lines eliminated** (79% reduction in test code duplication)
+  - **Shared testing utilities created** (641 lines, 52/52 tests passing)
+  - **3 modules migrated** to shared infrastructure (winery, fruit_origin, fermentation)
+  - **Metadata blocker fixed**: All tests run together without errors (61/61 passing)
+  - **Performance**: 2.25s for 61 tests (within target)
+- ✅ ADR-012 Complete: Unit test infrastructure refactored (Dec 15, 2025)
+  - **Phase 1-3 Complete**: All core utilities and migration finished
+  - **800-1,000 lines eliminated** across 8 repository test files
+  - **4 core utilities**: MockSessionManagerBuilder, QueryResultBuilder, EntityFactory, ValidationResultFactory
+  - **142+ tests migrated**: 50 fermentation + 93 fruit_origin/winery
+  - **50% time savings**: Test creation time reduced from 45min → 15min
+  - **100% pattern consistency**: All migrated tests use shared utilities
+- ✅ Multi-tenant security patterns validated across all repositories
+- ✅ Soft-delete support standardized
+- ✅ Error handling patterns (DuplicateNameError, EntityNotFoundError)
 
 **Code Metrics:**
-- API endpoints: 18/18 implemented (100%) ✅
-- Code reduction: ~410 lines eliminated via refactoring
-- Test coverage: 272/272 tests passing (100%)
-- Commits: 9 total (incremental commits with clear messages)
+- Repositories: 9/9 implemented (100%) ✅
+- Repository tests: 194/194 passing (100%) ✅
+- Integration test infrastructure: 52/52 utility tests passing ✅
+- Total test suite: 518+ tests passing (466 original + 52 new utility tests)
+- Test coverage: Comprehensive (unit + integration for all repositories)
+- Code reduction: 635 lines eliminated from integration tests ✅
+
+**Next Steps:**
+1. ✅ ~~Implement ADR-011 (Integration test infrastructure)~~ **COMPLETE**
+2. ✅ ~~Implement ADR-012 (Unit test infrastructure)~~ **COMPLETE Phase 3**
+3. Service layer refactoring to use new repositories
+4. API endpoints for new entities (Winery, Vineyard, HarvestLot)
+5. Continue ADR-012 Phase 4 (optional): Additional test file migrations
 
 ---
 

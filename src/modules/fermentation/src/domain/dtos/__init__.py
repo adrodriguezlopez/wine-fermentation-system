@@ -12,6 +12,7 @@ from .fermentation_dtos import (
     LotSourceData
 )
 from .sample_dtos import SampleCreate
+from .fermentation_note_dtos import FermentationNoteCreate, FermentationNoteUpdate
 
 __all__ = [
     "FermentationCreate",
@@ -19,4 +20,6 @@ __all__ = [
     "FermentationWithBlendCreate",
     "LotSourceData",
     "SampleCreate",
+    "FermentationNoteCreate",
+    "FermentationNoteUpdate",
 ]
