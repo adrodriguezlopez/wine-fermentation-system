@@ -7,8 +7,8 @@ that properly inject TestSessionManager.
 
 import pytest
 from unittest.mock import MagicMock, AsyncMock
-from shared.testing.integration.fixtures import create_repository_fixture
-from shared.testing.integration.session_manager import TestSessionManager
+from testing.integration.fixtures import create_repository_fixture
+from testing.integration.session_manager import TestSessionManager
 
 
 class MockRepository:
@@ -83,7 +83,7 @@ class TestCreateRepositoryFixture:
     def test_fixture_creates_repository_directly(self):
         """Test creating repository without pytest fixture mechanism."""
         # Instead of using the fixture, test the core functionality
-        from shared.testing.integration.session_manager import TestSessionManager
+        from testing.integration.session_manager import TestSessionManager
         
         mock_session = MagicMock()
         session_manager = TestSessionManager(mock_session)
@@ -96,7 +96,7 @@ class TestCreateRepositoryFixture:
     
     def test_fixture_with_additional_deps_directly(self):
         """Test repository creation with additional dependencies."""
-        from shared.testing.integration.session_manager import TestSessionManager
+        from testing.integration.session_manager import TestSessionManager
         
         mock_session = MagicMock()
         session_manager = TestSessionManager(mock_session)
@@ -108,7 +108,7 @@ class TestCreateRepositoryFixture:
     
     def test_fixture_with_multiple_deps_directly(self):
         """Test repository creation with multiple dependencies."""
-        from shared.testing.integration.session_manager import TestSessionManager
+        from testing.integration.session_manager import TestSessionManager
         
         mock_logger = MagicMock()
         mock_cache = MagicMock()

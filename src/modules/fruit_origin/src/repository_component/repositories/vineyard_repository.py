@@ -1,8 +1,18 @@
-"""Vineyard repository implementation."""
+"""Vineyard repository implementation.
+
+Implements ADR-027 Structured Logging:
+- LogTimer for database operation timing
+- Automatic context binding (winery_id, vineyard_id, vineyard_code)
+- Query performance metrics
+- Security audit trail for vineyard data access
+"""
 from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+
+# ADR-027: Structured logging
+from src.shared.wine_fermentator_logging import get_logger, LogTimer
 
 from src.modules.fruit_origin.src.domain.entities.vineyard import Vineyard
 from src.modules.fruit_origin.src.domain.repositories.vineyard_repository_interface import (
@@ -18,6 +28,8 @@ from src.modules.fruit_origin.src.repository_component.errors import (
     DuplicateCodeError,
 )
 
+logger = get_logger(__name__)
+
 
 class VineyardRepository(BaseRepository, IVineyardRepository):
     """Implementation of Vineyard repository."""
@@ -25,21 +37,36 @@ class VineyardRepository(BaseRepository, IVineyardRepository):
     async def create(self, winery_id: int, data: VineyardCreate) -> Vineyard:
         """Create a new vineyard."""
         async def _create_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                vineyard = Vineyard(
+            with LogTimer(logger, "create_vineyard"):
+                logger.info(
+                    "creating_vineyard",
                     winery_id=winery_id,
-                    code=data.code,
-                    name=data.name,
-                    notes=data.notes,
-                    is_deleted=False,
+                    vineyard_code=data.code,
+                    vineyard_name=data.name
                 )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    vineyard = Vineyard(
+                        winery_id=winery_id,
+                        code=data.code,
+                        name=data.name,
+                        notes=data.notes,
+                        is_deleted=False,
+                    )
 
-                session.add(vineyard)
-                await session.flush()
-                await session.refresh(vineyard)
+                    session.add(vineyard)
+                    await session.flush()
+                    await session.refresh(vineyard)
+                    
+                    logger.info(
+                        "vineyard_created",
+                        vineyard_id=vineyard.id,
+                        winery_id=winery_id,
+                        vineyard_code=data.code
+                    )
 
-                return vineyard
+                    return vineyard
 
         try:
             return await _create_operation()
@@ -48,30 +75,72 @@ class VineyardRepository(BaseRepository, IVineyardRepository):
             # Check for unique constraint on code+winery_id (works for both PostgreSQL and SQLite)
             if ("uq_vineyards__code__winery_id" in error_str or 
                 ("unique constraint" in error_str and "vineyards.code" in error_str)):
+                logger.warning(
+                    "duplicate_vineyard_code",
+                    winery_id=winery_id,
+                    vineyard_code=data.code,
+                    error_type="DuplicateCodeError"
+                )
                 raise DuplicateCodeError(
                     f"Vineyard with code '{data.code}' already exists for winery {winery_id}"
                 ) from e
             raise RepositoryError(f"Failed to create vineyard: {str(e)}") from e
         except Exception as e:
+            logger.error(
+                "vineyard_creation_failed",
+                winery_id=winery_id,
+                vineyard_code=data.code,
+                error=str(e),
+                error_type=type(e).__name__
+            )
             raise RepositoryError(f"Failed to create vineyard: {str(e)}") from e
 
     async def get_by_id(self, vineyard_id: int, winery_id: int) -> Optional[Vineyard]:
         """Get a vineyard by ID with winery scoping."""
         async def _get_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                query = select(Vineyard).where(
-                    Vineyard.id == vineyard_id,
-                    Vineyard.winery_id == winery_id,
-                    Vineyard.is_deleted == False,
+            with LogTimer(logger, "get_vineyard_by_id"):
+                logger.debug(
+                    "fetching_vineyard",
+                    vineyard_id=vineyard_id,
+                    winery_id=winery_id
                 )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    query = select(Vineyard).where(
+                        Vineyard.id == vineyard_id,
+                        Vineyard.winery_id == winery_id,
+                        Vineyard.is_deleted == False,
+                    )
 
-                result = await session.execute(query)
-                return result.scalar_one_or_none()
+                    result = await session.execute(query)
+                    vineyard = result.scalar_one_or_none()
+                    
+                    if vineyard:
+                        logger.debug(
+                            "vineyard_found",
+                            vineyard_id=vineyard_id,
+                            vineyard_code=vineyard.code
+                        )
+                    else:
+                        logger.warning(
+                            "vineyard_not_found",
+                            vineyard_id=vineyard_id,
+                            winery_id=winery_id
+                        )
+                    
+                    return vineyard
 
         try:
             return await _get_operation()
         except Exception as e:
+            logger.error(
+                "vineyard_fetch_failed",
+                vineyard_id=vineyard_id,
+                winery_id=winery_id,
+                error=str(e),
+                error_type=type(e).__name__
+            )
             raise RepositoryError(f"Failed to get vineyard: {str(e)}") from e
 
     async def get_by_winery(self, winery_id: int) -> List[Vineyard]:

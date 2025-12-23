@@ -20,6 +20,9 @@ Production Ready: Yes
 from typing import Optional, List
 from datetime import datetime
 
+# ADR-027: Structured logging
+from src.shared.wine_fermentator_logging import get_logger, LogTimer
+
 from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
 from src.modules.fermentation.src.service_component.interfaces.validation_orchestrator_interface import IValidationOrchestrator
 from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
@@ -28,6 +31,8 @@ from src.modules.fermentation.src.domain.entities.samples.base_sample import Bas
 from src.modules.fermentation.src.domain.dtos.sample_dtos import SampleCreate
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
+
+logger = get_logger(__name__)
 
 
 class SampleService(ISampleService):
@@ -149,10 +154,27 @@ class SampleService(ISampleService):
                 errors=validation_result.errors
             )
         
-        # Step 5: Persist via repository (may raise RepositoryError)
-        created_sample = await self._sample_repo.upsert_sample(sample)
-        
-        return created_sample
+        with LogTimer(logger, "add_sample_service"):
+            logger.info(
+                "adding_sample",
+                fermentation_id=fermentation_id,
+                winery_id=winery_id,
+                user_id=user_id,
+                sample_type=data.sample_type.value,
+                value=float(data.value)
+            )
+            
+            # Step 5: Persist via repository (may raise RepositoryError)
+            created_sample = await self._sample_repo.upsert_sample(sample)
+            
+            logger.info(
+                "sample_added_success",
+                sample_id=created_sample.id,
+                fermentation_id=fermentation_id,
+                sample_type=data.sample_type.value
+            )
+            
+            return created_sample
     
     def _create_sample_entity(
         self,
@@ -253,6 +275,12 @@ class SampleService(ISampleService):
         """
         from src.modules.fermentation.src.service_component.errors import NotFoundError
         
+        logger.debug(
+            "fetching_samples_by_fermentation",
+            fermentation_id=fermentation_id,
+            winery_id=winery_id
+        )
+        
         # Step 1: Verify fermentation exists and belongs to winery
         fermentation = await self._fermentation_repo.get_by_id(
             fermentation_id=fermentation_id,
@@ -260,6 +288,11 @@ class SampleService(ISampleService):
         )
         
         if fermentation is None:
+            logger.warning(
+                "fermentation_not_found_for_samples",
+                fermentation_id=fermentation_id,
+                winery_id=winery_id
+            )
             raise NotFoundError(
                 f"Fermentation {fermentation_id} not found or access denied"
             )
@@ -267,6 +300,12 @@ class SampleService(ISampleService):
         # Step 2: Get samples via repository (already ordered chronologically)
         samples = await self._sample_repo.get_samples_by_fermentation_id(
             fermentation_id=fermentation_id
+        )
+        
+        logger.info(
+            "samples_retrieved_by_fermentation_service",
+            fermentation_id=fermentation_id,
+            count=len(samples)
         )
         
         return samples

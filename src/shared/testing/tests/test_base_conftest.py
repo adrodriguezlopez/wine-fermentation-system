@@ -7,7 +7,7 @@ work correctly and produce proper pytest fixtures.
 
 import pytest
 from dataclasses import FrozenInstanceError
-from shared.testing.integration.base_conftest import (
+from testing.integration.base_conftest import (
     IntegrationTestConfig,
     create_integration_fixtures
 )

@@ -7,7 +7,7 @@ Verifies EntityDefaults, EntityBuilder, and create_test_entity work correctly.
 import pytest
 from datetime import datetime
 from unittest.mock import MagicMock, AsyncMock
-from shared.testing.integration.entity_builders import (
+from testing.integration.entity_builders import (
     EntityDefaults,
     EntityBuilder,
     create_test_entity

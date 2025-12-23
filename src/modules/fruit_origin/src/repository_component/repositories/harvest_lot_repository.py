@@ -10,12 +10,21 @@ Following Domain-Driven Design (ADR-009):
 - Multi-tenant scoping via winery_id
 - Error mapping via BaseRepository
 - Returns ORM entities directly (no dataclass mapping needed)
+
+Implements ADR-027 Structured Logging:
+- LogTimer for database operation timing
+- Automatic context binding (winery_id, harvest_lot_id)
+- Query performance metrics
+- Security audit trail for harvest lot data access
 """
 
 from typing import List, Optional
 from datetime import date
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
+
+# ADR-027: Structured logging
+from src.shared.wine_fermentator_logging import get_logger, LogTimer
 
 # Import domain definitions from their canonical locations
 from src.modules.fruit_origin.src.domain.repositories.harvest_lot_repository_interface import IHarvestLotRepository
@@ -27,6 +36,8 @@ from src.modules.fruit_origin.src.domain.entities.vineyard_block import Vineyard
 from src.modules.fruit_origin.src.domain.entities.vineyard import Vineyard
 
 from src.shared.infra.repository.base_repository import BaseRepository
+
+logger = get_logger(__name__)
 
 
 class HarvestLotRepository(BaseRepository, IHarvestLotRepository):
@@ -56,51 +67,72 @@ class HarvestLotRepository(BaseRepository, IHarvestLotRepository):
             NotFoundError: If block_id does not exist
         """
         async def _create_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                # Verify block exists and belongs to winery (multi-tenant security)
-                block_query = (
-                    select(VineyardBlock)
-                    .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
-                    .where(
-                        VineyardBlock.id == data.block_id,
-                        Vineyard.winery_id == winery_id
-                    )
-                )
-                result = await session.execute(block_query)
-                block = result.scalar_one_or_none()
-                
-                if not block:
-                    from src.modules.fruit_origin.src.repository_component.errors import NotFoundError
-                    raise NotFoundError(f"VineyardBlock {data.block_id} not found or access denied")
-
-                # Create ORM entity with provided data
-                harvest_lot = HarvestLot(
+            with LogTimer(logger, "create_harvest_lot"):
+                logger.info(
+                    "creating_harvest_lot",
                     winery_id=winery_id,
                     block_id=data.block_id,
-                    code=data.code,
-                    harvest_date=data.harvest_date,
-                    weight_kg=data.weight_kg,
-                    brix_at_harvest=data.brix_at_harvest,
-                    brix_method=data.brix_method,
-                    brix_measured_at=data.brix_measured_at,
-                    grape_variety=data.grape_variety,
-                    clone=data.clone,
-                    rootstock=data.rootstock,
-                    pick_method=data.pick_method,
-                    pick_start_time=data.pick_start_time,
-                    pick_end_time=data.pick_end_time,
-                    bins_count=data.bins_count,
-                    field_temp_c=data.field_temp_c,
-                    notes=data.notes
+                    lot_code=data.code,
+                    harvest_date=str(data.harvest_date)
                 )
-
-                session.add(harvest_lot)
-                await session.flush()  # Write to DB to get generated values
-                await session.refresh(harvest_lot)  # Load relationships if needed
                 
-                # Return ORM entity directly (no mapping needed)
-                return harvest_lot
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    # Verify block exists and belongs to winery (multi-tenant security)
+                    block_query = (
+                        select(VineyardBlock)
+                        .join(Vineyard, VineyardBlock.vineyard_id == Vineyard.id)
+                        .where(
+                            VineyardBlock.id == data.block_id,
+                            Vineyard.winery_id == winery_id
+                        )
+                    )
+                    result = await session.execute(block_query)
+                    block = result.scalar_one_or_none()
+                    
+                    if not block:
+                        from src.modules.fruit_origin.src.repository_component.errors import NotFoundError
+                        logger.warning(
+                            "vineyard_block_not_found_or_access_denied",
+                            block_id=data.block_id,
+                            winery_id=winery_id
+                        )
+                        raise NotFoundError(f"VineyardBlock {data.block_id} not found or access denied")
+
+                    # Create ORM entity with provided data
+                    harvest_lot = HarvestLot(
+                        winery_id=winery_id,
+                        block_id=data.block_id,
+                        code=data.code,
+                        harvest_date=data.harvest_date,
+                        weight_kg=data.weight_kg,
+                        brix_at_harvest=data.brix_at_harvest,
+                        brix_method=data.brix_method,
+                        brix_measured_at=data.brix_measured_at,
+                        grape_variety=data.grape_variety,
+                        clone=data.clone,
+                        rootstock=data.rootstock,
+                        pick_method=data.pick_method,
+                        pick_start_time=data.pick_start_time,
+                        pick_end_time=data.pick_end_time,
+                        bins_count=data.bins_count,
+                        field_temp_c=data.field_temp_c,
+                        notes=data.notes
+                    )
+
+                    session.add(harvest_lot)
+                    await session.flush()  # Write to DB to get generated values
+                    await session.refresh(harvest_lot)  # Load relationships if needed
+                    
+                    logger.info(
+                        "harvest_lot_created",
+                        harvest_lot_id=harvest_lot.id,
+                        winery_id=winery_id,
+                        lot_code=data.code
+                    )
+                    
+                    # Return ORM entity directly (no mapping needed)
+                    return harvest_lot
 
         return await self.execute_with_error_mapping(_create_operation)
 
@@ -116,16 +148,36 @@ class HarvestLotRepository(BaseRepository, IHarvestLotRepository):
             Optional[HarvestLot]: Harvest lot entity or None if not found
         """
         async def _get_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                query = select(HarvestLot).where(
-                    HarvestLot.id == lot_id,
-                    HarvestLot.winery_id == winery_id,
-                    HarvestLot.is_deleted == False
+            with LogTimer(logger, "get_harvest_lot_by_id"):
+                logger.debug(
+                    "fetching_harvest_lot",
+                    harvest_lot_id=lot_id,
+                    winery_id=winery_id
                 )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    query = select(HarvestLot).where(
+                        HarvestLot.id == lot_id,
+                        HarvestLot.winery_id == winery_id,
+                        HarvestLot.is_deleted == False
+                    )
 
-                result = await session.execute(query)
-                harvest_lot = result.scalar_one_or_none()
+                    result = await session.execute(query)
+                    harvest_lot = result.scalar_one_or_none()
+                    
+                    if harvest_lot:
+                        logger.debug(
+                            "harvest_lot_found",
+                            harvest_lot_id=lot_id,
+                            lot_code=harvest_lot.code
+                        )
+                    else:
+                        logger.warning(
+                            "harvest_lot_not_found",
+                            harvest_lot_id=lot_id,
+                            winery_id=winery_id
+                        )
 
                 # Return ORM entity directly (no mapping needed)
                 return harvest_lot

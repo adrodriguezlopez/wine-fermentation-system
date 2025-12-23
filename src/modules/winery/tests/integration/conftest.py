@@ -5,8 +5,8 @@ Uses shared testing infrastructure from src/shared/testing/integration.
 """
 
 import pytest_asyncio
-from shared.testing.integration import create_integration_fixtures, IntegrationTestConfig
-from shared.testing.integration.fixtures import create_repository_fixture
+from src.shared.testing.integration import create_integration_fixtures, IntegrationTestConfig
+from src.shared.testing.integration.fixtures import create_repository_fixture
 from src.modules.winery.src.domain.entities.winery import Winery
 from src.modules.winery.src.repository_component.repositories.winery_repository import WineryRepository
 

@@ -1,8 +1,18 @@
-"""Winery repository implementation."""
+"""Winery repository implementation.
+
+Implements ADR-027 Structured Logging:
+- LogTimer for database operation timing
+- Automatic context binding (winery_id, winery_name)
+- Query performance metrics
+- Security audit trail for winery data access
+"""
 from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+
+# ADR-027: Structured logging
+from src.shared.wine_fermentator_logging import get_logger, LogTimer
 
 from src.modules.winery.src.domain.entities.winery import Winery
 from src.modules.winery.src.domain.repositories.winery_repository_interface import (
@@ -13,6 +23,8 @@ from src.modules.winery.src.domain.dtos.winery_dtos import (
     WineryUpdate,
 )
 from src.shared.infra.repository.base_repository import BaseRepository
+
+logger = get_logger(__name__)
 
 
 class RepositoryError(Exception):
@@ -48,19 +60,32 @@ class WineryRepository(BaseRepository, IWineryRepository):
             RepositoryError: If creation fails
         """
         async def _create_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                winery = Winery(
-                    name=data.name,
-                    region=data.region,
-                    is_deleted=False,
+            with LogTimer(logger, "create_winery"):
+                logger.info(
+                    "creating_winery",
+                    winery_name=data.name,
+                    region=data.region
                 )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    winery = Winery(
+                        name=data.name,
+                        region=data.region,
+                        is_deleted=False,
+                    )
 
-                session.add(winery)
-                await session.flush()
-                await session.refresh(winery)
+                    session.add(winery)
+                    await session.flush()
+                    await session.refresh(winery)
+                    
+                    logger.info(
+                        "winery_created",
+                        winery_id=winery.id,
+                        winery_name=winery.name
+                    )
 
-                return winery
+                    return winery
 
         try:
             return await _create_operation()
@@ -69,11 +94,22 @@ class WineryRepository(BaseRepository, IWineryRepository):
             # Check for unique constraint on name (works for both PostgreSQL and SQLite)
             if ("uq_wineries__name" in error_str or 
                 ("unique constraint" in error_str and "wineries.name" in error_str)):
+                logger.warning(
+                    "duplicate_winery_name",
+                    winery_name=data.name,
+                    error_type="DuplicateNameError"
+                )
                 raise DuplicateNameError(
                     f"Winery with name '{data.name}' already exists"
                 ) from e
             raise RepositoryError(f"Failed to create winery: {str(e)}") from e
         except Exception as e:
+            logger.error(
+                "winery_creation_failed",
+                winery_name=data.name,
+                error=str(e),
+                error_type=type(e).__name__
+            )
             raise RepositoryError(f"Failed to create winery: {str(e)}") from e
 
     async def get_by_id(self, winery_id: int) -> Optional[Winery]:
@@ -87,15 +123,29 @@ class WineryRepository(BaseRepository, IWineryRepository):
             Optional[Winery]: Winery entity or None if not found
         """
         async def _get_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                query = select(Winery).where(
-                    Winery.id == winery_id,
-                    Winery.is_deleted == False,
-                )
+            with LogTimer(logger, "get_winery_by_id"):
+                logger.debug("fetching_winery", winery_id=winery_id)
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    query = select(Winery).where(
+                        Winery.id == winery_id,
+                        Winery.is_deleted == False,
+                    )
 
-                result = await session.execute(query)
-                return result.scalar_one_or_none()
+                    result = await session.execute(query)
+                    winery = result.scalar_one_or_none()
+                    
+                    if winery:
+                        logger.debug(
+                            "winery_found",
+                            winery_id=winery_id,
+                            winery_name=winery.name
+                        )
+                    else:
+                        logger.warning("winery_not_found", winery_id=winery_id)
+                    
+                    return winery
 
         try:
             return await _get_operation()

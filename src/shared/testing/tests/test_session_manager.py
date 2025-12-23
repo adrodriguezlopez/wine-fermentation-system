@@ -7,7 +7,7 @@ repository-compatible session manager.
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from shared.testing.integration.session_manager import TestSessionManager
+from testing.integration.session_manager import TestSessionManager
 
 
 class TestTestSessionManager:

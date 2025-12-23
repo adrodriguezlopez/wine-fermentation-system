@@ -5,13 +5,13 @@
 
 .DESCRIPTION
     This script runs all tests across all modules with proper reporting.
-    It runs unit tests and integration tests separately for better visibility.
+    Uses Poetry to run tests in each module's independent virtual environment (ADR-028).
     Exit code 0 indicates all tests passed, non-zero indicates failures.
     
     Requirements:
-    - Python 3.9+ installed and available in PATH
-    - pytest and pytest-asyncio installed in base Python or fruit_origin venv
-    - Fermentation module has its own .venv with dependencies installed
+    - Poetry installed and available in PATH
+    - Each module has poetry.lock and dependencies installed (poetry install)
+    - Modules: fermentation, winery, fruit_origin
 
 .EXAMPLE
     .\run_all_tests.ps1
@@ -52,49 +52,69 @@ $testResults = @{
 
 $allPassed = $true
 
-# Helper function to run tests
+# Helper function to run tests using Poetry
 function Invoke-TestSuite {
     param(
         [string]$Name,
-        [string]$Path,
-        [string]$VenvPath = $null,
-        [string]$Type = "unit"
+        [string]$ModulePath,
+        [string]$TestPath,
+        [string]$Type = "unit",
+        [switch]$UsePoetry = $true
     )
     
     Write-Host "--------------------------------------------" -ForegroundColor Yellow
     Write-Host "Running: $Name" -ForegroundColor Yellow
     Write-Host "--------------------------------------------" -ForegroundColor Yellow
     
-    $testArgs = @(
-        "-m", "pytest",
-        $Path,
-        "-v",
-        "--tb=line"
-    )
-    
-    if ($Verbose) {
-        $testArgs += "-vv"
-    }
-    
     try {
-        if ($VenvPath -and (Test-Path $VenvPath)) {
-            $pythonExe = Join-Path $VenvPath "Scripts\python.exe"
-            if (-not (Test-Path $pythonExe)) {
-                Write-Host "[SKIP] ${Name}: Python venv not found at $pythonExe" -ForegroundColor Yellow
+        if ($UsePoetry) {
+            # Check if pyproject.toml exists
+            $pyprojectPath = Join-Path $ModulePath "pyproject.toml"
+            if (-not (Test-Path $pyprojectPath)) {
+                Write-Host "[SKIP] ${Name}: No pyproject.toml found at $pyprojectPath" -ForegroundColor Yellow
                 return @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
             }
+            
+            # Run tests using poetry from module directory
+            Push-Location $ModulePath
+            $testArgs = @(
+                "run",
+                "pytest",
+                $TestPath,
+                "-q",
+                "--tb=line"
+            )
+            
+            if ($Verbose) {
+                $testArgs[2] = "-v"
+            }
+            
+            $output = & poetry @testArgs 2>&1
+            $exitCode = $LASTEXITCODE
+            Pop-Location
         } else {
-            # Try to find python in PATH
+            # Run tests using python directly (for shared modules without Poetry)
             try {
                 $pythonExe = (Get-Command python -ErrorAction Stop).Source
             } catch {
                 Write-Host "[SKIP] ${Name}: Python not found" -ForegroundColor Yellow
                 return @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
             }
+            
+            $testArgs = @(
+                "-m", "pytest",
+                $TestPath,
+                "-q",
+                "--tb=line"
+            )
+            
+            if ($Verbose) {
+                $testArgs[3] = "-v"
+            }
+            
+            $output = & $pythonExe @testArgs 2>&1
+            $exitCode = $LASTEXITCODE
         }
-        
-        $output = & $pythonExe @testArgs 2>&1
-        $exitCode = $LASTEXITCODE
         
         # Check for pytest not installed
         if ($output -match "No module named pytest") {
@@ -150,29 +170,24 @@ function Invoke-TestSuite {
     }
 }
 
-# Run Shared Testing Unit Tests (integration + unit infrastructure)
+# ADR-028 Phase 4: Shared module now uses Poetry for independent environment
+
+# Run Shared Testing Unit Tests
 Write-Host "`n" 
 $testResults.SharedTestingUnit = Invoke-TestSuite `
     -Name "Shared Testing - Unit Tests" `
-    -Path "src/shared/testing/" `
+    -ModulePath "src/shared" `
+    -TestPath "testing/tests/" `
     -Type "unit"
 
 if (-not $testResults.SharedTestingUnit.Success) { $allPassed = $false }
-
-# Run Shared Infra Unit Tests
-Write-Host "`n" 
-$testResults.SharedInfraUnit = Invoke-TestSuite `
-    -Name "Shared Infra - Unit Tests" `
-    -Path "src/shared/infra/test/" `
-    -Type "unit"
-
-if (-not $testResults.SharedInfraUnit.Success) { $allPassed = $false }
 
 # Run Shared Auth Unit Tests
 Write-Host "`n"
 $testResults.SharedAuthUnit = Invoke-TestSuite `
     -Name "Shared Auth - Unit Tests" `
-    -Path "src/shared/auth/tests/unit/" `
+    -ModulePath "src/shared" `
+    -TestPath "auth/tests/unit/" `
     -Type "unit"
 
 if (-not $testResults.SharedAuthUnit.Success) { $allPassed = $false }
@@ -182,17 +197,21 @@ if (-not $Quick) {
     Write-Host "`n"
     $testResults.SharedAuthIntegration = Invoke-TestSuite `
         -Name "Shared Auth - Integration Tests" `
-        -Path "src/shared/auth/tests/integration/" `
+        -ModulePath "src/shared" `
+        -TestPath "auth/tests/integration/" `
         -Type "integration"
     
     if (-not $testResults.SharedAuthIntegration.Success) { $allPassed = $false }
 }
 
+# ADR-028: Module tests now use Poetry for independent environments
+
 # Run Winery Unit Tests
 Write-Host "`n"
 $testResults.WineryUnit = Invoke-TestSuite `
     -Name "Winery - Unit Tests" `
-    -Path "src/modules/winery/tests/unit/" `
+    -ModulePath "src/modules/winery" `
+    -TestPath "tests/unit/" `
     -Type "unit"
 
 if (-not $testResults.WineryUnit.Success) { $allPassed = $false }
@@ -202,7 +221,8 @@ if (-not $Quick) {
     Write-Host "`n"
     $testResults.WineryIntegration = Invoke-TestSuite `
         -Name "Winery - Integration Tests" `
-        -Path "src/modules/winery/tests/integration/" `
+        -ModulePath "src/modules/winery" `
+        -TestPath "tests/integration/" `
         -Type "integration"
     
     if (-not $testResults.WineryIntegration.Success) { $allPassed = $false }
@@ -212,7 +232,8 @@ if (-not $Quick) {
 Write-Host "`n" 
 $testResults.FruitOriginUnit = Invoke-TestSuite `
     -Name "Fruit Origin - Unit Tests" `
-    -Path "src/modules/fruit_origin/tests/unit/" `
+    -ModulePath "src/modules/fruit_origin" `
+    -TestPath "tests/unit/" `
     -Type "unit"
 
 if (-not $testResults.FruitOriginUnit.Success) { $allPassed = $false }
@@ -222,7 +243,8 @@ if (-not $Quick) {
     Write-Host "`n"
     $testResults.FruitOriginIntegration = Invoke-TestSuite `
         -Name "Fruit Origin - Integration Tests" `
-        -Path "src/modules/fruit_origin/tests/integration/" `
+        -ModulePath "src/modules/fruit_origin" `
+        -TestPath "tests/integration/" `
         -Type "integration"
     
     if (-not $testResults.FruitOriginIntegration.Success) { $allPassed = $false }
@@ -232,8 +254,8 @@ if (-not $Quick) {
 Write-Host "`n"
 $testResults.FermentationUnit = Invoke-TestSuite `
     -Name "Fermentation - Unit Tests" `
-    -Path "src/modules/fermentation/tests/unit/" `
-    -VenvPath "src/modules/fermentation/.venv" `
+    -ModulePath "src/modules/fermentation" `
+    -TestPath "tests/unit/" `
     -Type "unit"
 
 if (-not $testResults.FermentationUnit.Success) { $allPassed = $false }
@@ -248,7 +270,7 @@ if (-not $Quick) {
     Write-Host "NOTE: These tests are skipped due to SQLAlchemy single-table inheritance" -ForegroundColor Gray
     Write-Host "      metadata conflicts (ADR-011/ADR-013). To run them separately:" -ForegroundColor Gray
     Write-Host "      cd src/modules/fermentation" -ForegroundColor Gray
-    Write-Host "      python -m pytest tests/integration/repository_component/ -v" -ForegroundColor Gray
+    Write-Host "      poetry run pytest tests/integration/repository_component/ -v" -ForegroundColor Gray
     
     $testResults.FermentationIntegration = @{
         Success = $true

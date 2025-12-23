@@ -1,13 +1,11 @@
 [tool.poetry]
-name = "shared"
+name = "wine-winery-module"
 version = "0.1.0"
-description = "Shared components for Wine Fermentation Monitoring System"
+description = "Winery Module for Wine Fermentation Monitoring System"
 authors = ["Your Name <your.email@example.com>"]
 packages = [
-    { include = "infra" },
-    { include = "auth" },
-    { include = "wine_fermentator_logging" },
-    { include = "testing" }
+    { include = "domain", from = "src" },
+    { include = "repository_component", from = "src" }
 ]
 
 [tool.poetry.dependencies]
@@ -18,10 +16,6 @@ pydantic = "^2.3.0"
 psycopg2-binary = "^2.9.7"
 structlog = "^25.5.0"
 colorama = "^0.4.6"
-pyjwt = "^2.8.0"
-passlib = "^1.7.4"
-bcrypt = "^4.0.1"
-fastapi = "^0.103.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
@@ -32,13 +26,25 @@ mypy = "^1.5.0"
 flake8 = "^6.1.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
-testpaths = ["testing/tests", "infra/test", "auth/tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
 addopts = "-v --tb=short"
+pythonpath = [".", "../../.."]
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+include = '\.pyi?$'
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

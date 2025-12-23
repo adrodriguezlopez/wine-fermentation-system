@@ -19,6 +19,10 @@ Production Ready: Yes
 """
 
 from typing import Optional, List
+
+# ADR-027: Structured logging
+from src.shared.wine_fermentator_logging import get_logger, LogTimer
+
 from src.modules.fermentation.src.service_component.interfaces.fermentation_service_interface import IFermentationService
 from src.modules.fermentation.src.service_component.interfaces.fermentation_validator_interface import IFermentationValidator
 from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import IFermentationRepository
@@ -26,6 +30,8 @@ from src.modules.fermentation.src.domain.entities.fermentation import Fermentati
 from src.modules.fermentation.src.domain.dtos import FermentationCreate, FermentationUpdate, FermentationWithBlendCreate
 from src.modules.fermentation.src.service_component.errors import NotFoundError
 from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import IUnitOfWork
+
+logger = get_logger(__name__)
 
 
 class FermentationService(IFermentationService):
@@ -95,14 +101,30 @@ class FermentationService(IFermentationService):
             )
             raise ValueError(f"Fermentation validation failed:\n{error_messages}")
         
-        # Persist via repository (may raise DuplicateEntityError, RepositoryError)
-        fermentation = await self._fermentation_repo.create(
-            winery_id=winery_id,
-            data=data
-        )
-        
-        # Return complete entity
-        return fermentation
+        with LogTimer(logger, "create_fermentation_service"):
+            logger.info(
+                "creating_fermentation",
+                winery_id=winery_id,
+                user_id=user_id,
+                vintage_year=data.vintage_year,
+                vessel_code=data.vessel_code
+            )
+            
+            # Persist via repository (may raise DuplicateEntityError, RepositoryError)
+            fermentation = await self._fermentation_repo.create(
+                winery_id=winery_id,
+                data=data
+            )
+            
+            logger.info(
+                "fermentation_created_success",
+                fermentation_id=fermentation.id,
+                winery_id=winery_id,
+                user_id=user_id
+            )
+            
+            # Return complete entity
+            return fermentation
     
     async def create_fermentation_with_blend(
         self,
@@ -142,32 +164,53 @@ class FermentationService(IFermentationService):
             )
             raise ValueError(f"Fermentation validation failed:\n{error_messages}")
         
-        # TODO: Add blend-specific validation
-        # - Validate lot sources exist and belong to winery
-        # - Validate mass consistency (sum of lots == fermentation mass)
-        # - Validate lot availability
-        # For now, we demonstrate UnitOfWork pattern with basic creation
-        
-        # Use UnitOfWork for atomic operation
-        async with uow:
-            # Create fermentation
-            fermentation = await uow.fermentation_repo.create(
+        with LogTimer(logger, "create_fermentation_with_blend"):
+            logger.info(
+                "creating_fermentation_with_blend",
                 winery_id=winery_id,
-                data=data.fermentation_data
+                user_id=user_id,
+                lot_sources_count=len(data.lot_sources)
             )
             
-            # Create lot source records
-            for lot_source in data.lot_sources:
-                await uow.lot_source_repo.create(
+            # TODO: Add blend-specific validation
+            # - Validate lot sources exist and belong to winery
+            # - Validate mass consistency (sum of lots == fermentation mass)
+            # - Validate lot availability
+            # For now, we demonstrate UnitOfWork pattern with basic creation
+            
+            # Use UnitOfWork for atomic operation
+            async with uow:
+                # Create fermentation
+                fermentation = await uow.fermentation_repo.create(
+                    winery_id=winery_id,
+                    data=data.fermentation_data
+                )
+                
+                logger.debug(
+                    "fermentation_created_creating_lot_sources",
+                    fermentation_id=fermentation.id,
+                    lot_sources_count=len(data.lot_sources)
+                )
+                
+                # Create lot source records
+                for lot_source in data.lot_sources:
+                    await uow.lot_source_repo.create(
+                        fermentation_id=fermentation.id,
+                        winery_id=winery_id,
+                        data=lot_source
+                    )
+                
+                # Commit transaction - all or nothing
+                await uow.commit()
+                
+                logger.info(
+                    "fermentation_with_blend_created_success",
                     fermentation_id=fermentation.id,
                     winery_id=winery_id,
-                    data=lot_source
+                    lot_sources_count=len(data.lot_sources)
                 )
             
-            # Commit transaction - all or nothing
-            await uow.commit()
-        
-        return fermentation
+            return fermentation
     
     async def get_fermentation(
         self,
@@ -237,6 +280,13 @@ class FermentationService(IFermentationService):
         
         Status: ✅ Implemented via TDD (2025-10-18)
         """
+        logger.debug(
+            "fetching_fermentations_by_winery",
+            winery_id=winery_id,
+            status_filter=status,
+            include_completed=include_completed
+        )
+        
         # Fetch from repository with base filters
         fermentations = await self._fermentation_repo.get_by_winery(
             winery_id=winery_id,
@@ -246,6 +296,13 @@ class FermentationService(IFermentationService):
         # Apply status filter if provided (in-memory filtering)
         if status is not None:
             fermentations = [f for f in fermentations if f.status == status]
+        
+        logger.info(
+            "fermentations_retrieved_by_winery",
+            winery_id=winery_id,
+            count=len(fermentations),
+            status_filter=status
+        )
         
         return fermentations
     
@@ -373,56 +430,89 @@ class FermentationService(IFermentationService):
         """
         from src.modules.fermentation.src.service_component.errors import NotFoundError, ValidationError as ServiceValidationError
         
-        # Step 1: Fetch fermentation (verify existence + ownership)
-        fermentation = await self._fermentation_repo.get_by_id(
-            fermentation_id=fermentation_id,
-            winery_id=winery_id
-        )
-        
-        if fermentation is None:
-            raise NotFoundError(
-                f"Fermentation {fermentation_id} not found or access denied"
+        with LogTimer(logger, "update_status_service"):
+            logger.info(
+                "updating_fermentation_status",
+                fermentation_id=fermentation_id,
+                winery_id=winery_id,
+                new_status=new_status,
+                user_id=user_id
             )
-        
-        # Step 1.5: Convert string to enum and validate it's a valid status value
-        from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
-        
-        try:
-            status_enum = FermentationStatus(new_status)
-        except ValueError:
-            # Invalid status value
-            raise ServiceValidationError(
-                f"Invalid status value: {new_status}. Must be one of: {', '.join([s.value for s in FermentationStatus])}"
+            
+            # Step 1: Fetch fermentation (verify existence + ownership)
+            fermentation = await self._fermentation_repo.get_by_id(
+                fermentation_id=fermentation_id,
+                winery_id=winery_id
             )
-        
-        # Step 2: Validate status transition using validator
-        validation_result = self._validator.validate_status_transition(
-            current_status=fermentation.status,
-            new_status=new_status
-        )
-        
-        if not validation_result.is_valid:
-            # Convert validation errors to service error
-            error_messages = [error.message for error in validation_result.errors]
-            raise ServiceValidationError(
-                "; ".join(error_messages),
-                errors=validation_result.errors
+            
+            if fermentation is None:
+                logger.warning(
+                    "fermentation_not_found_for_status_update",
+                    fermentation_id=fermentation_id,
+                    winery_id=winery_id
+                )
+                raise NotFoundError(
+                    f"Fermentation {fermentation_id} not found or access denied"
+                )
+            
+            # Step 1.5: Convert string to enum and validate it's a valid status value
+            from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
+            
+            try:
+                status_enum = FermentationStatus(new_status)
+            except ValueError:
+                # Invalid status value
+                logger.warning(
+                    "invalid_status_value",
+                    fermentation_id=fermentation_id,
+                    new_status=new_status
+                )
+                raise ServiceValidationError(
+                    f"Invalid status value: {new_status}. Must be one of: {', '.join([s.value for s in FermentationStatus])}"
+                )
+            
+            # Step 2: Validate status transition using validator
+            validation_result = self._validator.validate_status_transition(
+                current_status=fermentation.status,
+                new_status=new_status
             )
-        
-        # Step 3: Delegate to repository with metadata
-        # status_enum already converted above
-        updated_fermentation = await self._fermentation_repo.update_status(
-            fermentation_id=fermentation_id,
-            winery_id=winery_id,
-            new_status=status_enum,
-            metadata={'updated_by': user_id}
-        )
-        
-        # Return the updated fermentation entity
-        if updated_fermentation is None:
-            raise NotFoundError(f"Fermentation {fermentation_id} not found after update")
-        
-        return updated_fermentation
+            
+            if not validation_result.is_valid:
+                # Convert validation errors to service error
+                error_messages = [error.message for error in validation_result.errors]
+                logger.warning(
+                    "status_transition_validation_failed",
+                    fermentation_id=fermentation_id,
+                    current_status=fermentation.status,
+                    new_status=new_status,
+                    errors=error_messages
+                )
+                raise ServiceValidationError(
+                    "; ".join(error_messages),
+                    errors=validation_result.errors
+                )
+            
+            # Step 3: Delegate to repository with metadata
+            # status_enum already converted above
+            updated_fermentation = await self._fermentation_repo.update_status(
+                fermentation_id=fermentation_id,
+                winery_id=winery_id,
+                new_status=status_enum,
+                metadata={'updated_by': user_id}
+            )
+            
+            # Return the updated fermentation entity
+            if updated_fermentation is None:
+                raise NotFoundError(f"Fermentation {fermentation_id} not found after update")
+            
+            logger.info(
+                "fermentation_status_updated_success",
+                fermentation_id=fermentation_id,
+                old_status=fermentation.status,
+                new_status=new_status
+            )
+            
+            return updated_fermentation
     
     async def complete_fermentation(
         self,

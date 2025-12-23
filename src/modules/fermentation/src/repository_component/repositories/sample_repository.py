@@ -12,11 +12,20 @@ Following ADR-003 Separation of Concerns:
 - Soft delete support
 - Error mapping via BaseRepository
 - Returns domain entities (BaseSample)
+
+Implements ADR-027 Structured Logging:
+- LogTimer for database operation timing
+- Automatic context binding (fermentation_id, sample_type)
+- Query performance metrics
+- Security audit trail (WHO recorded WHAT WHEN)
 """
 
 from datetime import datetime
 from typing import List, Optional
 from decimal import Decimal
+
+# ADR-027: Structured logging
+from src.shared.wine_fermentator_logging import get_logger, LogTimer
 
 # Import domain definitions
 from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
@@ -24,6 +33,8 @@ from src.modules.fermentation.src.domain.entities.samples.base_sample import Bas
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 
 from src.shared.infra.repository.base_repository import BaseRepository
+
+logger = get_logger(__name__)
 
 # NOTE: Sample entity classes (SugarSample, DensitySample, CelsiusTemperatureSample)
 # are imported INSIDE methods to avoid SQLAlchemy table registration conflicts
@@ -57,62 +68,77 @@ class SampleRepository(BaseRepository, ISampleRepository):
             IntegrityError: If constraints are violated
         """
         async def _create_operation():
-            # Import SQLAlchemy entities inside method
-            from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample as SQLSugarSample
-            from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample as SQLDensitySample
-            from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample as SQLCelsiusTemperatureSample
+            with LogTimer(logger, "create_sample"):
+                # Import SQLAlchemy entities inside method
+                from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample as SQLSugarSample
+                from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample as SQLDensitySample
+                from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample as SQLCelsiusTemperatureSample
 
-            session_cm = await self.get_session()
-            async with session_cm as session:
                 # Map domain entity to SQLAlchemy entity based on type
-                # Note: sample.sample_type is already a string value, not an enum
                 sample_type_value = sample.sample_type if isinstance(sample.sample_type, str) else sample.sample_type.value
                 
-                if sample_type_value == SampleType.SUGAR.value or sample.sample_type == SampleType.SUGAR:
-                    sql_sample = SQLSugarSample(
+                logger.info(
+                    "creating_sample",
+                    fermentation_id=sample.fermentation_id,
+                    sample_type=sample_type_value,
+                    recorded_by_user_id=sample.recorded_by_user_id,
+                    value=float(sample.value) if sample.value else None
+                )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    if sample_type_value == SampleType.SUGAR.value or sample.sample_type == SampleType.SUGAR:
+                        sql_sample = SQLSugarSample(
+                            fermentation_id=sample.fermentation_id,
+                            recorded_by_user_id=sample.recorded_by_user_id,
+                            sample_type=sample_type_value,
+                            value=sample.value,
+                            units=sample.units,
+                            recorded_at=sample.recorded_at,
+                        )
+                    elif sample_type_value == SampleType.DENSITY.value or sample.sample_type == SampleType.DENSITY:
+                        sql_sample = SQLDensitySample(
+                            fermentation_id=sample.fermentation_id,
+                            recorded_by_user_id=sample.recorded_by_user_id,
+                            sample_type=sample_type_value,
+                            value=sample.value,
+                            units=sample.units,
+                            recorded_at=sample.recorded_at,
+                        )
+                    elif sample_type_value == SampleType.TEMPERATURE.value or sample.sample_type == SampleType.TEMPERATURE:
+                        sql_sample = SQLCelsiusTemperatureSample(
+                            fermentation_id=sample.fermentation_id,
+                            recorded_by_user_id=sample.recorded_by_user_id,
+                            sample_type=sample_type_value,
+                            value=sample.value,
+                            units=sample.units,
+                            recorded_at=sample.recorded_at,
+                        )
+                    else:
+                        # Generic BaseSample for other types
+                        from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample as SQLBaseSample
+                        sql_sample = SQLBaseSample(
+                            fermentation_id=sample.fermentation_id,
+                            recorded_by_user_id=sample.recorded_by_user_id,
+                            sample_type=sample_type_value,
+                            value=sample.value,
+                            units=sample.units,
+                            recorded_at=sample.recorded_at,
+                        )
+
+                    session.add(sql_sample)
+                    await session.flush()
+                    await session.refresh(sql_sample)
+                    
+                    logger.info(
+                        "sample_created",
+                        sample_id=sql_sample.id,
                         fermentation_id=sample.fermentation_id,
-                        recorded_by_user_id=sample.recorded_by_user_id,
-                        sample_type=sample_type_value,
-                        value=sample.value,
-                        units=sample.units,
-                        recorded_at=sample.recorded_at,
-                    )
-                elif sample_type_value == SampleType.DENSITY.value or sample.sample_type == SampleType.DENSITY:
-                    sql_sample = SQLDensitySample(
-                        fermentation_id=sample.fermentation_id,
-                        recorded_by_user_id=sample.recorded_by_user_id,
-                        sample_type=sample_type_value,
-                        value=sample.value,
-                        units=sample.units,
-                        recorded_at=sample.recorded_at,
-                    )
-                elif sample_type_value == SampleType.TEMPERATURE.value or sample.sample_type == SampleType.TEMPERATURE:
-                    sql_sample = SQLCelsiusTemperatureSample(
-                        fermentation_id=sample.fermentation_id,
-                        recorded_by_user_id=sample.recorded_by_user_id,
-                        sample_type=sample_type_value,
-                        value=sample.value,
-                        units=sample.units,
-                        recorded_at=sample.recorded_at,
-                    )
-                else:
-                    # Generic BaseSample for other types
-                    from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample as SQLBaseSample
-                    sql_sample = SQLBaseSample(
-                        fermentation_id=sample.fermentation_id,
-                        recorded_by_user_id=sample.recorded_by_user_id,
-                        sample_type=sample_type_value,
-                        value=sample.value,
-                        units=sample.units,
-                        recorded_at=sample.recorded_at,
+                        sample_type=sample_type_value
                     )
 
-                session.add(sql_sample)
-                await session.flush()
-                await session.refresh(sql_sample)
-
-                # Map back to domain entity
-                return self._map_to_domain(sql_sample)
+                    # Map back to domain entity
+                    return self._map_to_domain(sql_sample)
 
         return await self.execute_with_error_mapping(_create_operation)
 
@@ -212,16 +238,23 @@ class SampleRepository(BaseRepository, ISampleRepository):
         Raises:
             NotFoundError: If sample doesn't exist
         """
-        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
-        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
-        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
-        from sqlalchemy import select
-        
-        session_cm = await self.get_session()
-        async with session_cm as session:
-            # Query all sample types
-            for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
-                stmt = select(sample_class).where(sample_class.id == sample_id)
+        with LogTimer(logger, "get_sample_by_id"):
+            logger.debug(
+                "fetching_sample",
+                sample_id=sample_id,
+                fermentation_id=fermentation_id
+            )
+            
+            from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+            from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+            from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+            from sqlalchemy import select
+            
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                # Query all sample types
+                for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
+                    stmt = select(sample_class).where(sample_class.id == sample_id)
                 
                 if fermentation_id is not None:
                     stmt = stmt.where(sample_class.fermentation_id == fermentation_id)
@@ -230,9 +263,19 @@ class SampleRepository(BaseRepository, ISampleRepository):
                 sample = result.scalar_one_or_none()
                 
                 if sample is not None:
+                    logger.debug(
+                        "sample_found",
+                        sample_id=sample_id,
+                        sample_type=sample.sample_type
+                    )
                     return sample
             
             # Not found in any table
+            logger.warning(
+                "sample_not_found",
+                sample_id=sample_id,
+                fermentation_id=fermentation_id
+            )
             return None
 
     async def get_samples_by_fermentation_id(self, fermentation_id: int) -> List[BaseSample]:
@@ -245,26 +288,39 @@ class SampleRepository(BaseRepository, ISampleRepository):
         Returns:
             List of samples in chronological order
         """
-        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
-        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
-        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
-        from sqlalchemy import select
-        
-        session_cm = await self.get_session()
-        async with session_cm as session:
-            samples = []
+        with LogTimer(logger, "get_samples_by_fermentation"):
+            logger.debug(
+                "querying_samples_by_fermentation",
+                fermentation_id=fermentation_id
+            )
+            from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+            from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+            from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+            from sqlalchemy import select
             
-            # Collect samples from all types
-            for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
-                stmt = select(sample_class).where(
-                    sample_class.fermentation_id == fermentation_id
-                ).order_by(sample_class.recorded_at.asc())
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                samples = []
                 
-                result = await session.execute(stmt)
-                samples.extend(result.scalars().all())
-            
-            # Sort all samples chronologically
-            samples.sort(key=lambda s: s.recorded_at)
+                # Collect samples from all types
+                for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
+                    stmt = select(sample_class).where(
+                        sample_class.fermentation_id == fermentation_id
+                    ).order_by(sample_class.recorded_at.asc())
+                    
+                    result = await session.execute(stmt)
+                    samples.extend(result.scalars().all())
+                
+                # Sort all samples chronologically
+                samples.sort(key=lambda s: s.recorded_at)
+                
+                logger.info(
+                    "samples_retrieved_by_fermentation",
+                    fermentation_id=fermentation_id,
+                    count=len(samples)
+                )
+                
+                return samples
             
             return samples
 

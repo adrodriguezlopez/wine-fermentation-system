@@ -12,11 +12,20 @@ Following ADR-003 Separation of Concerns:
 - Soft delete support
 - Error mapping via BaseRepository
 - Returns ORM entities directly (no dataclass mapping needed)
+
+Implements ADR-027 Structured Logging:
+- LogTimer for database operation timing
+- Automatic context binding (winery_id, fermentation_id)
+- Query performance metrics
+- Security audit trail (WHO accessed WHAT)
 """
 
 from datetime import datetime
 from typing import List, Optional
 from sqlalchemy import select
+
+# ADR-027: Structured logging
+from src.shared.wine_fermentator_logging import get_logger, LogTimer
 
 # Import domain definitions from their canonical locations
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
@@ -27,6 +36,9 @@ from src.modules.fermentation.src.domain.dtos import FermentationCreate
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 
 from src.shared.infra.repository.base_repository import BaseRepository
+
+logger = get_logger(__name__)
+
 
 class FermentationRepository(BaseRepository, IFermentationRepository):
     """
@@ -54,28 +66,44 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
             IntegrityError: If constraints are violated
         """
         async def _create_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                # Create ORM entity with provided data
-                fermentation = Fermentation(
+            with LogTimer(logger, "create_fermentation"):
+                logger.info(
+                    "creating_fermentation",
                     winery_id=winery_id,
-                    fermented_by_user_id=data.fermented_by_user_id,
                     vintage_year=data.vintage_year,
-                    yeast_strain=data.yeast_strain,
                     vessel_code=data.vessel_code,
-                    input_mass_kg=data.input_mass_kg,
-                    initial_sugar_brix=data.initial_sugar_brix,
-                    initial_density=data.initial_density,
-                    start_date=data.start_date or datetime.now(),
-                    status=FermentationStatus.ACTIVE.value,
+                    fermented_by_user_id=data.fermented_by_user_id
                 )
-
-                session.add(fermentation)
-                await session.flush()  # Write to DB to get generated values
                 
-                # Return ORM entity directly (no mapping needed)
-                # Note: No commit here - BaseRepository/test fixtures handle transaction lifecycle
-                return fermentation
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    # Create ORM entity with provided data
+                    fermentation = Fermentation(
+                        winery_id=winery_id,
+                        fermented_by_user_id=data.fermented_by_user_id,
+                        vintage_year=data.vintage_year,
+                        yeast_strain=data.yeast_strain,
+                        vessel_code=data.vessel_code,
+                        input_mass_kg=data.input_mass_kg,
+                        initial_sugar_brix=data.initial_sugar_brix,
+                        initial_density=data.initial_density,
+                        start_date=data.start_date or datetime.now(),
+                        status=FermentationStatus.ACTIVE.value,
+                    )
+
+                    session.add(fermentation)
+                    await session.flush()  # Write to DB to get generated values
+                    
+                    logger.info(
+                        "fermentation_created",
+                        fermentation_id=fermentation.id,
+                        winery_id=winery_id,
+                        status=fermentation.status
+                    )
+                    
+                    # Return ORM entity directly (no mapping needed)
+                    # Note: No commit here - BaseRepository/test fixtures handle transaction lifecycle
+                    return fermentation
 
         return await self.execute_with_error_mapping(_create_operation)
 
@@ -91,19 +119,39 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
             Optional[Fermentation]: Fermentation entity or None if not found
         """
         async def _get_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                query = select(Fermentation).where(
-                    Fermentation.id == fermentation_id,
-                    Fermentation.winery_id == winery_id,
-                    Fermentation.is_deleted == False
+            with LogTimer(logger, "get_fermentation_by_id"):
+                logger.debug(
+                    "fetching_fermentation",
+                    fermentation_id=fermentation_id,
+                    winery_id=winery_id
                 )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    query = select(Fermentation).where(
+                        Fermentation.id == fermentation_id,
+                        Fermentation.winery_id == winery_id,
+                        Fermentation.is_deleted == False
+                    )
 
-                result = await session.execute(query)
-                fermentation = result.scalar_one_or_none()
+                    result = await session.execute(query)
+                    fermentation = result.scalar_one_or_none()
+                    
+                    if fermentation:
+                        logger.debug(
+                            "fermentation_found",
+                            fermentation_id=fermentation_id,
+                            status=fermentation.status
+                        )
+                    else:
+                        logger.warning(
+                            "fermentation_not_found",
+                            fermentation_id=fermentation_id,
+                            winery_id=winery_id
+                        )
 
-                # Return ORM entity directly (no mapping needed)
-                return fermentation
+                    # Return ORM entity directly (no mapping needed)
+                    return fermentation
 
         return await self.execute_with_error_mapping(_get_operation)
 
@@ -127,31 +175,61 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
             Optional[Fermentation]: Updated fermentation or None if not found
         """
         async def _update_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                query = select(Fermentation).where(
-                    Fermentation.id == fermentation_id,
-                    Fermentation.winery_id == winery_id,
-                    Fermentation.is_deleted == False
-                )
-
-                result = await session.execute(query)
-                fermentation = result.scalar_one_or_none()
-
-                if fermentation is None:
-                    return None
-
-                # Check if this is a soft delete operation
-                if metadata and metadata.get('soft_delete'):
-                    fermentation.is_deleted = True
-                    # Note: deleted_at would be set here if the model had that field
-                else:
-                    fermentation.status = new_status.value
+            with LogTimer(logger, "update_fermentation_status"):
+                is_soft_delete = metadata and metadata.get('soft_delete', False)
                 
-                # TODO: Use metadata for full audit trail
-                await session.flush()
-                await session.refresh(fermentation)
-                return fermentation
+                logger.info(
+                    "updating_fermentation_status",
+                    fermentation_id=fermentation_id,
+                    winery_id=winery_id,
+                    new_status=new_status.value if not is_soft_delete else "DELETED",
+                    is_soft_delete=is_soft_delete
+                )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    query = select(Fermentation).where(
+                        Fermentation.id == fermentation_id,
+                        Fermentation.winery_id == winery_id,
+                        Fermentation.is_deleted == False
+                    )
+
+                    result = await session.execute(query)
+                    fermentation = result.scalar_one_or_none()
+
+                    if fermentation is None:
+                        logger.warning(
+                            "fermentation_not_found_for_update",
+                            fermentation_id=fermentation_id,
+                            winery_id=winery_id
+                        )
+                        return None
+
+                    old_status = fermentation.status
+                    
+                    # Check if this is a soft delete operation
+                    if is_soft_delete:
+                        fermentation.is_deleted = True
+                        logger.info(
+                            "fermentation_soft_deleted",
+                            fermentation_id=fermentation_id,
+                            winery_id=winery_id,
+                            previous_status=old_status
+                        )
+                    else:
+                        fermentation.status = new_status.value
+                        logger.info(
+                            "fermentation_status_updated",
+                            fermentation_id=fermentation_id,
+                            winery_id=winery_id,
+                            old_status=old_status,
+                            new_status=new_status.value
+                        )
+                    
+                    # TODO: Use metadata for full audit trail
+                    await session.flush()
+                    await session.refresh(fermentation)
+                    return fermentation
 
         return await self.execute_with_error_mapping(_update_operation)
 
@@ -186,19 +264,33 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
             List[Fermentation]: List of fermentations with the specified status
         """
         async def _get_by_status_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                query = select(Fermentation).where(
-                    Fermentation.status == status.value,
-                    Fermentation.winery_id == winery_id,
-                    Fermentation.is_deleted == False
+            with LogTimer(logger, "get_fermentations_by_status"):
+                logger.debug(
+                    "querying_fermentations_by_status",
+                    status=status.value,
+                    winery_id=winery_id
                 )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    query = select(Fermentation).where(
+                        Fermentation.status == status.value,
+                        Fermentation.winery_id == winery_id,
+                        Fermentation.is_deleted == False
+                    )
 
-                result = await session.execute(query)
-                fermentations = result.scalars().all()
+                    result = await session.execute(query)
+                    fermentations = result.scalars().all()
+                    
+                    logger.info(
+                        "fermentations_retrieved_by_status",
+                        status=status.value,
+                        winery_id=winery_id,
+                        count=len(fermentations)
+                    )
 
-                # Return ORM entities directly
-                return list(fermentations)
+                    # Return ORM entities directly
+                    return list(fermentations)
 
         return await self.execute_with_error_mapping(_get_by_status_operation)
 
@@ -217,22 +309,38 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
             List[Fermentation]: List of fermentations for the winery (ORM entities)
         """
         async def _get_by_winery_operation():
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                # Build query with direct column filtering
-                conditions = [Fermentation.winery_id == winery_id]
+            with LogTimer(logger, "get_fermentations_by_winery"):
+                logger.debug(
+                    "querying_fermentations_by_winery",
+                    winery_id=winery_id,
+                    include_completed=include_completed,
+                    include_deleted=include_deleted
+                )
                 
-                if not include_deleted:
-                    conditions.append(Fermentation.is_deleted == False)
-                
-                if not include_completed:
-                    conditions.append(Fermentation.status != FermentationStatus.COMPLETED.value)
-                
-                query = select(Fermentation).where(*conditions)
-                result = await session.execute(query)
-                fermentations = result.scalars().all()
-                
-                return list(fermentations)
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    # Build query with direct column filtering
+                    conditions = [Fermentation.winery_id == winery_id]
+                    
+                    if not include_deleted:
+                        conditions.append(Fermentation.is_deleted == False)
+                    
+                    if not include_completed:
+                        conditions.append(Fermentation.status != FermentationStatus.COMPLETED.value)
+                    
+                    query = select(Fermentation).where(*conditions)
+                    result = await session.execute(query)
+                    fermentations = result.scalars().all()
+                    
+                    logger.info(
+                        "fermentations_retrieved_by_winery",
+                        winery_id=winery_id,
+                        count=len(fermentations),
+                        include_completed=include_completed,
+                        include_deleted=include_deleted
+                    )
+                    
+                    return list(fermentations)
 
         return await self.execute_with_error_mapping(_get_by_winery_operation)
 
