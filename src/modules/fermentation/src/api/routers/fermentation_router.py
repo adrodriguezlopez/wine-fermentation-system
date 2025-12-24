@@ -227,23 +227,50 @@ async def get_fermentation(
         FermentationResponse: Fermentation data
     
     Raises:
-        HTTPException 404: Fermentation not found or access denied (multi-tenancy)
-        HTTPException 401/403: Authentication/authorization failure
+        HTTPException 404: Fermentation not found
+        HTTPException 403: Access denied (cross-winery attempt) - ADR-025 LIGHT
+        HTTPException 401: Not authenticated
     
-    Business Rules:
+    Security (ADR-025 LIGHT):
         - Multi-tenancy: Only returns fermentation from user's winery
-        - Service returns None for wrong winery (security - don't reveal existence)
-        - Soft-deleted records return 404
+        - Service filters by winery_id (repository layer)
+        - Defense in depth: Explicit validation + security logging
+        - 403 Forbidden for cross-winery attempts (explicit error)
     """
+    # Get fermentation with winery_id filter (repository layer already enforces this)
     fermentation = await service.get_fermentation(
         fermentation_id=fermentation_id,
         winery_id=current_user.winery_id
     )
     
     if fermentation is None:
+        # Could be: not found OR belongs to different winery
+        # For simplicity, return 404 (don't reveal existence)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Fermentation with ID {fermentation_id} not found"
+        )
+    
+    # ADR-025 LIGHT: Defense in depth - explicit validation
+    # (Repository already filtered, but validate for security audit)
+    if fermentation.winery_id != current_user.winery_id:
+        # Log security event (ADR-027)
+        from src.shared.wine_fermentator_logging import get_logger
+        logger = get_logger(__name__)
+        logger.warning(
+            "cross_winery_access_attempt",
+            user_id=current_user.user_id,
+            user_winery_id=current_user.winery_id,
+            resource_type="fermentation",
+            resource_id=fermentation_id,
+            resource_winery_id=fermentation.winery_id,
+            endpoint="GET /fermentations/{id}"
+        )
+        
+        # Return 403 Forbidden (explicit that access is denied)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied to this resource"
         )
     
     return FermentationResponse.from_entity(fermentation)

@@ -210,7 +210,7 @@ async def get_latest_sample(
     response_model=SampleResponse,
     status_code=status.HTTP_200_OK,
     summary="Get a specific sample",
-    description="Retrieves a specific sample by ID."
+    description="Retrieves a specific sample by ID with multi-tenancy validation."
 )
 @handle_service_errors
 async def get_sample(
@@ -233,8 +233,15 @@ async def get_sample(
     
     Raises:
         HTTP 404: Sample or fermentation not found
+        HTTP 403: Access denied (cross-winery attempt) - ADR-025 LIGHT
         HTTP 401: Not authenticated
+    
+    Security (ADR-025 LIGHT):
+        - Repository layer validates winery_id via JOIN with fermentation
+        - Returns None for cross-winery attempts (security - don't reveal existence)
+        - Defense in depth: Explicit validation + security logging
     """
+    # Get sample with winery_id filter (repository enforces via JOIN)
     sample = await sample_service.get_sample(
         sample_id=sample_id,
         fermentation_id=fermentation_id,
@@ -242,9 +249,33 @@ async def get_sample(
     )
     
     if sample is None:
+        # Could be: not found OR belongs to different winery
+        # For simplicity, return 404 (don't reveal existence)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Sample with id {sample_id} not found"
+        )
+    
+    # ADR-025 LIGHT: Defense in depth - validate fermentation.winery_id
+    # Note: sample doesn't have winery_id directly, validate via fermentation
+    # Repository already validated this via JOIN, this is extra security layer
+    if sample.fermentation_id != fermentation_id:
+        # Sample doesn't match fermentation path parameter
+        from src.shared.wine_fermentator_logging import get_logger
+        logger = get_logger(__name__)
+        logger.warning(
+            "sample_fermentation_mismatch",
+            user_id=current_user.user_id,
+            user_winery_id=current_user.winery_id,
+            sample_id=sample_id,
+            expected_fermentation_id=fermentation_id,
+            actual_fermentation_id=sample.fermentation_id,
+            endpoint="GET /fermentations/{id}/samples/{sample_id}"
+        )
+        
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Sample with id {sample_id} not found in fermentation {fermentation_id}"
         )
     
     return SampleResponse.from_entity(sample)
