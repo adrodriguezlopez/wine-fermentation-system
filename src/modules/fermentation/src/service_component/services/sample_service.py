@@ -236,10 +236,11 @@ class SampleService(ISampleService):
         from src.modules.fermentation.src.repository_component.errors import EntityNotFoundError
         
         try:
-            # Delegate to repository - it handles fermentation scoping
+            # ADR-025 LIGHT: Pass winery_id for multi-tenant security
             sample = await self._sample_repo.get_sample_by_id(
                 sample_id=sample_id,
-                fermentation_id=fermentation_id
+                fermentation_id=fermentation_id,
+                winery_id=winery_id  # ← ADR-025: Required for access control
             )
             return sample
         except EntityNotFoundError:
@@ -530,14 +531,16 @@ class SampleService(ISampleService):
             )
         
         # Step 2: Verify sample exists and belongs to fermentation
+        # ADR-025 LIGHT: Pass winery_id for multi-tenant security
         sample = await self._sample_repo.get_sample_by_id(
             sample_id=sample_id,
-            fermentation_id=fermentation_id
+            fermentation_id=fermentation_id,
+            winery_id=winery_id  # ← ADR-025: Required for access control
         )
         
         if sample is None:
             raise NotFoundError(
-                f"Sample {sample_id} not found"
+                f"Sample {sample_id} not found or access denied"
             )
         
         # Step 3: Soft delete the sample

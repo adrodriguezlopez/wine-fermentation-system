@@ -50,21 +50,23 @@ class ISampleRepository(ABC):
     async def get_sample_by_id(
         self, 
         sample_id: int, 
-        fermentation_id: Optional[int] = None
-    ) -> BaseSample:
+        fermentation_id: int,
+        winery_id: int
+    ) -> Optional[BaseSample]:
         """
-        Retrieves a sample by its ID as BaseSample entity.
+        Retrieves a sample by its ID with winery access control (ADR-025).
 
         Args:
             sample_id: ID of the sample to retrieve
-            fermentation_id: Optional fermentation ID for access control
+            fermentation_id: Fermentation ID for access control
+            winery_id: Winery ID for multi-tenant security (REQUIRED)
 
         Returns:
-            BaseSample: Sample entity with all properties
+            Optional[BaseSample]: Sample entity or None if not found or access denied
 
-        Raises:
-            NotFoundError: If sample_id doesn't exist
-            UnauthorizedError: If fermentation_id doesn't match the sample
+        Security:
+            ADR-025 LIGHT: Validates that sample belongs to fermentation 
+            AND fermentation belongs to winery. Returns None for cross-winery attempts.
         """
         pass
 

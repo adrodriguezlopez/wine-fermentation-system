@@ -347,9 +347,11 @@ class TestGetSample:
         
         # Assert
         assert result == sample_entity
+        # ADR-025 LIGHT: Updated assertion to include winery_id parameter
         mock_sample_repo.get_sample_by_id.assert_awaited_once_with(
             sample_id=1,
-            fermentation_id=1
+            fermentation_id=1,
+            winery_id=100  # ← ADR-025: Now required for multi-tenancy
         )
     
     @pytest.mark.asyncio

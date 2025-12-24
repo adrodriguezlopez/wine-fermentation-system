@@ -223,60 +223,80 @@ class SampleRepository(BaseRepository, ISampleRepository):
     async def get_sample_by_id(
         self, 
         sample_id: int,
-        fermentation_id: Optional[int] = None
-    ) -> BaseSample:
+        fermentation_id: int,
+        winery_id: int
+    ) -> Optional[BaseSample]:
         """
-        Retrieves a sample by its ID.
+        Retrieves a sample by its ID with winery access control.
         
         Args:
             sample_id: ID of the sample to retrieve
-            fermentation_id: Optional fermentation ID for access control
+            fermentation_id: Fermentation ID for access control
+            winery_id: Winery ID for multi-tenant security (REQUIRED per ADR-025)
             
         Returns:
-            BaseSample entity
+            Optional[BaseSample]: Sample entity or None if not found or access denied
             
-        Raises:
-            NotFoundError: If sample doesn't exist
+        Security:
+            Validates that sample belongs to fermentation AND fermentation belongs to winery.
+            Returns None if access denied (cross-winery attempt).
         """
-        with LogTimer(logger, "get_sample_by_id"):
-            logger.debug(
-                "fetching_sample",
-                sample_id=sample_id,
-                fermentation_id=fermentation_id
-            )
-            
-            from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
-            from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
-            from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
-            from sqlalchemy import select
-            
-            session_cm = await self.get_session()
-            async with session_cm as session:
-                # Query all sample types
-                for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
-                    stmt = select(sample_class).where(sample_class.id == sample_id)
+        # ADR-025 LIGHT: Validate winery_id parameter
+        if not winery_id or winery_id <= 0:
+            raise ValueError(f"winery_id is REQUIRED for multi-tenancy security, got: {winery_id}")
+        
+        async def _get_operation():
+            with LogTimer(logger, "get_sample_by_id"):
+                logger.debug(
+                    "fetching_sample",
+                    sample_id=sample_id,
+                    fermentation_id=fermentation_id,
+                    winery_id=winery_id
+                )
                 
-                if fermentation_id is not None:
-                    stmt = stmt.where(sample_class.fermentation_id == fermentation_id)
+                from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+                from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+                from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+                from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
+                from sqlalchemy import select
                 
-                result = await session.execute(stmt)
-                sample = result.scalar_one_or_none()
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    # Query all sample types with JOIN to fermentation for winery_id validation
+                    for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
+                        stmt = (
+                            select(sample_class)
+                            .join(Fermentation, sample_class.fermentation_id == Fermentation.id)
+                            .where(
+                                sample_class.id == sample_id,
+                                sample_class.fermentation_id == fermentation_id,
+                                Fermentation.winery_id == winery_id  # ADR-025: winery_id validation
+                            )
+                        )
+                        
+                        result = await session.execute(stmt)
+                        sample = result.scalar_one_or_none()
+                        
+                        if sample is not None:
+                            logger.debug(
+                                "sample_found",
+                                sample_id=sample_id,
+                                fermentation_id=fermentation_id,
+                                winery_id=winery_id,
+                                sample_type=sample.sample_type
+                            )
+                            return sample
                 
-                if sample is not None:
-                    logger.debug(
-                        "sample_found",
+                    # Not found or access denied (cross-winery attempt)
+                    logger.warning(
+                        "sample_not_found_or_access_denied",
                         sample_id=sample_id,
-                        sample_type=sample.sample_type
+                        fermentation_id=fermentation_id,
+                        winery_id=winery_id
                     )
-                    return sample
-            
-            # Not found in any table
-            logger.warning(
-                "sample_not_found",
-                sample_id=sample_id,
-                fermentation_id=fermentation_id
-            )
-            return None
+                    return None
+        
+        return await self.execute_with_error_mapping(_get_operation)
 
     async def get_samples_by_fermentation_id(self, fermentation_id: int) -> List[BaseSample]:
         """
