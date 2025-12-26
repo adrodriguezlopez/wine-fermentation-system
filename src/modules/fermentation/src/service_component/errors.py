@@ -1,54 +1,44 @@
 """
 Service layer exceptions for fermentation module.
 
-These exceptions represent business logic violations and are thrown
-by service methods when operations cannot be completed.
+ADR-026: These exceptions now inherit from the shared domain error hierarchy
+for consistent error handling across all modules with RFC 7807 format.
+
+Legacy exceptions are aliased for backward compatibility during migration.
 """
 
+# Import shared domain errors (ADR-026)
+from domain.errors import (
+    FermentationError,
+    FermentationNotFound,
+    InvalidFermentationState,
+    FermentationAlreadyCompleted,
+    SampleNotFound,
+    InvalidSampleDate,
+    InvalidSampleValue
+)
 
-class ServiceError(Exception):
-    """Base exception for all service layer errors."""
-    pass
+# Backward compatibility aliases (DEPRECATED - will be removed in Phase 4)
+ServiceError = FermentationError
+NotFoundError = FermentationNotFound  # Generic not found -> specific fermentation not found
+ValidationError = InvalidFermentationState  # Validation errors -> invalid state
+DuplicateError = FermentationAlreadyCompleted  # For now, conflicts map to "already completed"
+BusinessRuleViolation = InvalidFermentationState  # Business rules -> invalid state
 
-
-class ValidationError(ServiceError):
-    """
-    Raised when validation fails for an operation.
-    
-    This wraps validation errors from the validator layer and
-    provides a service-specific exception type.
-    """
-    def __init__(self, message: str, errors: list = None):
-        super().__init__(message)
-        self.errors = errors or []
-
-
-class NotFoundError(ServiceError):
-    """
-    Raised when a requested resource cannot be found.
-    
-    This can occur due to:
-    - Resource doesn't exist
-    - Multi-tenant access violation (wrong winery)
-    - Resource is soft-deleted
-    """
-    pass
-
-
-class DuplicateError(ServiceError):
-    """
-    Raised when attempting to create a resource that already exists.
-    
-    Example: Creating a fermentation in a vessel that's already in use.
-    """
-    pass
-
-
-class BusinessRuleViolation(ServiceError):
-    """
-    Raised when a business rule is violated.
-    
-    This is distinct from validation errors - validation checks data format,
-    while business rules check domain logic constraints.
-    """
-    pass
+# Re-export new errors for direct use
+__all__ = [
+    # New ADR-026 errors (preferred)
+    'FermentationError',
+    'FermentationNotFound',
+    'InvalidFermentationState',
+    'FermentationAlreadyCompleted',
+    'SampleNotFound',
+    'InvalidSampleDate',
+    'InvalidSampleValue',
+    # Legacy aliases (deprecated)
+    'ServiceError',
+    'NotFoundError',
+    'ValidationError',
+    'DuplicateError',
+    'BusinessRuleViolation',
+]

@@ -28,6 +28,9 @@ from src.shared.wine_fermentator_logging.middleware import (
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.infra.api.dependencies import get_current_user, require_winemaker
 
+# ADR-026: Domain error handlers
+from api.error_handlers import register_error_handlers
+
 # Fermentation routers
 from src.modules.fermentation.src.api.routers.fermentation_router import router as fermentation_router
 from src.modules.fermentation.src.api.routers.sample_router import router as sample_router, samples_router
@@ -57,6 +60,9 @@ def create_app() -> FastAPI:
     # Order matters: LoggingMiddleware should be outermost to capture all requests
     app.add_middleware(LoggingMiddleware)
     app.add_middleware(UserContextMiddleware)
+    
+    # ADR-026: Register global error handlers for RFC 7807 format
+    register_error_handlers(app)
     
     # CORS middleware (configure for production)
     app.add_middleware(

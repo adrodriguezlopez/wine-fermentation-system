@@ -23,6 +23,7 @@ python-multipart = "^0.0.6"
 uvicorn = {extras = ["standard"], version = "^0.23.2"}
 structlog = "^25.5.0"
 colorama = "^0.4.6"
+shared = {path = "../../shared", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

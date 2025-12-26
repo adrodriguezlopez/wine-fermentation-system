@@ -7,7 +7,9 @@ packages = [
     { include = "infra" },
     { include = "auth" },
     { include = "wine_fermentator_logging" },
-    { include = "testing" }
+    { include = "testing" },
+    { include = "domain" },
+    { include = "api" }
 ]
 
 [tool.poetry.dependencies]

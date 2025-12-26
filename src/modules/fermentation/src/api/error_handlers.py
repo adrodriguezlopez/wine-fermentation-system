@@ -1,6 +1,7 @@
 """
 Error Handlers for FastAPI endpoints
 
+ADR-026: Updated to use shared domain exception hierarchy with RFC 7807 format.
 Centralizes exception handling for API endpoints to reduce code duplication
 and ensure consistent error responses.
 
@@ -19,6 +20,19 @@ from functools import wraps
 # ADR-027: Structured logging
 from src.shared.wine_fermentator_logging import get_logger
 
+# ADR-026: Import shared domain errors (preferred over legacy errors)
+from domain.errors import (
+    DomainError,
+    FermentationError,
+    FermentationNotFound,
+    InvalidFermentationState,
+    FermentationAlreadyCompleted,
+    SampleNotFound,
+    InvalidSampleDate,
+    InvalidSampleValue
+)
+
+# Legacy imports for backward compatibility
 from src.modules.fermentation.src.service_component.errors import (
     ValidationError,
     NotFoundError,
@@ -36,7 +50,11 @@ def handle_service_errors(func: Callable[..., T]) -> Callable[..., T]:
     """
     Decorator to handle common service layer exceptions in API endpoints.
     
-    Converts service layer exceptions to appropriate HTTP responses:
+    ADR-026: Now handles DomainError exceptions with RFC 7807 format.
+    The error handler will be automatically invoked by FastAPI's global
+    exception handler (registered in main.py).
+    
+    For backward compatibility, also handles legacy service layer exceptions:
     - ValidationError -> 400 Bad Request / 422 Unprocessable Entity
     - NotFoundError -> 404 Not Found
     - DuplicateError -> 409 Conflict
@@ -49,14 +67,18 @@ def handle_service_errors(func: Callable[..., T]) -> Callable[..., T]:
         async def get_item(id: int):
             return await service.get_item(id)
     
-    Note: HTTPException is re-raised as-is to preserve custom HTTP responses.
+    Note: DomainError exceptions are re-raised to be handled by global handler.
+          HTTPException is also re-raised as-is to preserve custom responses.
     
-    Status: ✅ Implemented (2025-11-15)
+    Status: ✅ Updated for ADR-026 (2025-12-26)
     """
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> T:
         try:
             return await func(*args, **kwargs)
+        except DomainError:
+            # Re-raise DomainError to be handled by global RFC 7807 handler
+            raise
         except HTTPException:
             # Re-raise FastAPI HTTPException as-is
             raise
