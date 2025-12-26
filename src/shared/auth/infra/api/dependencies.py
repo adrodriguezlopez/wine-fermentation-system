@@ -11,7 +11,12 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.domain.enums import UserRole
-from src.shared.auth.domain.errors import InvalidTokenError, TokenExpiredError
+from src.shared.auth.domain.errors import (
+    InvalidTokenError,
+    TokenExpiredError,
+    UserInactiveError,
+    InsufficientPermissions,
+)
 from src.shared.auth.domain.interfaces import IAuthService
 
 
@@ -51,11 +56,7 @@ async def get_current_user(
         ```
     """
     if not credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise InvalidTokenError("Could not validate credentials")
     
     try:
         # Extract token and validate
@@ -64,17 +65,11 @@ async def get_current_user(
         return user_context
         
     except (InvalidTokenError, TokenExpiredError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        # Re-raise domain errors for global handler (ADR-026)
+        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        # Wrap unexpected errors as InvalidToken
+        raise InvalidTokenError("Could not validate credentials")
 
 
 async def get_current_active_user(
@@ -108,10 +103,7 @@ async def get_current_active_user(
     user = await auth_service.get_user(current_user.user_id)
     
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user",
-        )
+        raise UserInactiveError()
     
     return current_user
 
@@ -152,9 +144,10 @@ def require_role(*allowed_roles: UserRole):
     ) -> UserContext:
         """Check if user has one of the required roles."""
         if current_user.role not in allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Insufficient permissions. Required roles: {[role.value for role in allowed_roles]}",
+            raise InsufficientPermissions(
+                f"Required roles: {[role.value for role in allowed_roles]}",
+                required_roles=[role.value for role in allowed_roles],
+                user_role=current_user.role.value
             )
         return current_user
     

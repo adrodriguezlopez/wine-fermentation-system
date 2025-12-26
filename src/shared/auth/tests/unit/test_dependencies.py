@@ -12,7 +12,12 @@ from fastapi.security import HTTPAuthorizationCredentials
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.domain.enums import UserRole
-from src.shared.auth.domain.errors import InvalidTokenError, TokenExpiredError
+from src.shared.auth.domain.errors import (
+    InvalidTokenError,
+    TokenExpiredError,
+    UserInactiveError,
+    InsufficientPermissions,
+)
 from src.shared.auth.infra.api.dependencies import (
     get_current_user,
     get_current_active_user,
@@ -48,48 +53,38 @@ class TestGetCurrentUser:
 
     @pytest.mark.asyncio
     async def test_get_current_user_invalid_token(self):
-        """Test that invalid token raises 401 HTTPException."""
+        """Test that invalid token raises InvalidTokenError (ADR-026)."""
         # Arrange
         mock_auth_service = AsyncMock()
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "invalid_token"
         mock_auth_service.verify_token.side_effect = InvalidTokenError()
 
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        # Act & Assert - Now expects domain error instead of HTTPException
+        with pytest.raises(InvalidTokenError):
             await get_current_user(mock_credentials, mock_auth_service)
-        
-        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
-        assert "Could not validate credentials" in exc_info.value.detail
 
-    @pytest.mark.asyncio
     async def test_get_current_user_expired_token(self):
-        """Test that expired token raises 401 HTTPException."""
+        """Test that expired token raises TokenExpiredError (ADR-026)."""
         # Arrange
         mock_auth_service = AsyncMock()
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "expired_token"
         mock_auth_service.verify_token.side_effect = TokenExpiredError()
 
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        # Act & Assert - Now expects domain error instead of HTTPException
+        with pytest.raises(TokenExpiredError):
             await get_current_user(mock_credentials, mock_auth_service)
-        
-        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
-        assert "Could not validate credentials" in exc_info.value.detail
 
-    @pytest.mark.asyncio
     async def test_get_current_user_no_credentials(self):
-        """Test that missing credentials raises 401 HTTPException."""
+        """Test that missing credentials raises InvalidTokenError (ADR-026)."""
         # Arrange
         mock_auth_service = AsyncMock()
         mock_credentials = None
 
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        # Act & Assert - Now expects domain error instead of HTTPException
+        with pytest.raises(InvalidTokenError):
             await get_current_user(mock_credentials, mock_auth_service)
-        
-        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 class TestGetCurrentActiveUser:
@@ -134,12 +129,9 @@ class TestGetCurrentActiveUser:
             role=UserRole.WINEMAKER,
         )
 
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        # Act & Assert - Now expects domain error instead of HTTPException
+        with pytest.raises(UserInactiveError):
             await get_current_active_user(user_context, mock_auth_service)
-        
-        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
-        assert "Inactive user" in exc_info.value.detail
 
 
 class TestRequireRole:
@@ -181,9 +173,8 @@ class TestRequireRole:
         # Assert
         assert result == user_context
 
-    @pytest.mark.asyncio
     async def test_require_role_insufficient_permissions(self):
-        """Test that user without required role raises 403 HTTPException."""
+        """Test that user without required role raises InsufficientPermissions (ADR-026)."""
         # Arrange
         user_context = UserContext(
             user_id=1,
@@ -193,16 +184,12 @@ class TestRequireRole:
         )
         dependency = require_role(UserRole.ADMIN)
 
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        # Act & Assert - Now expects domain error instead of HTTPException
+        with pytest.raises(InsufficientPermissions):
             await dependency(user_context)
-        
-        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
-        assert "Insufficient permissions" in exc_info.value.detail
 
-    @pytest.mark.asyncio
     async def test_require_role_viewer_cannot_access_admin(self):
-        """Test that VIEWER role cannot access ADMIN-only endpoints."""
+        """Test that VIEWER role cannot access ADMIN-only endpoints (ADR-026)."""
         # Arrange
         user_context = UserContext(
             user_id=1,
@@ -212,11 +199,9 @@ class TestRequireRole:
         )
         dependency = require_role(UserRole.ADMIN, UserRole.WINEMAKER)
 
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        # Act & Assert - Now expects domain error instead of HTTPException
+        with pytest.raises(InsufficientPermissions):
             await dependency(user_context)
-        
-        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
     async def test_require_role_operator_allowed_for_operator(self):

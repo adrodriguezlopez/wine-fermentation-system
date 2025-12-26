@@ -23,18 +23,13 @@ from src.modules.winery.src.domain.dtos.winery_dtos import (
     WineryUpdate,
 )
 from src.shared.infra.repository.base_repository import BaseRepository
+from shared.domain.errors import WineryError, WineryNotFound, WineryNameAlreadyExists, InvalidWineryData
 
 logger = get_logger(__name__)
 
-
-class RepositoryError(Exception):
-    """Base exception for repository errors."""
-    pass
-
-
-class DuplicateNameError(RepositoryError):
-    """Raised when attempting to create/update winery with duplicate name."""
-    pass
+# Backward compatibility aliases (DEPRECATED - use shared.domain.errors directly)
+RepositoryError = WineryError
+DuplicateNameError = WineryNameAlreadyExists
 
 
 class WineryRepository(BaseRepository, IWineryRepository):

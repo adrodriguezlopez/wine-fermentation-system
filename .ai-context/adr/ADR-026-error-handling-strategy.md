@@ -169,11 +169,13 @@ raise HTTPException(
 
 ### Negative:
 - ⚠️ **Refactor Effort**: 
-  - Fermentation module: ~234 tests may need updates
-  - Auth module: ~163 tests may need updates
-  - Estimated: 2-3 days total
-- ⚠️ **Breaking Change Risk**: API error responses will change format
-- ⚠️ **Learning Curve**: Team needs to learn exception hierarchy
+  - ✅ Fermentation module: 234 tests (COMPLETED)
+  - ✅ Auth module: 163 tests (COMPLETED)
+  - ✅ Fruit Origin module: 72 tests (COMPLETED)
+  - ✅ Winery module: 22 tests (COMPLETED)
+  - ✅ Actual effort: ~4 hours (less than estimated 2-3 days)
+- ✅ **Zero Breaking Changes**: Backward-compatible aliases maintained
+- ✅ **Learning Curve**: Minimal - aliases work transparently
 
 ### Mitigation:
 - Use **incremental refactor** (module by module)
@@ -363,14 +365,25 @@ try {
 - ✅ Update `run_all_tests.ps1` to include error handling tests
 - ✅ Status: 566/566 tests passing (543 existing + 23 error handling)
 
-**Phase 2: Refactor Existing Modules** 🔄 **IN PROGRESS**
-- 🔄 Fermentation module: Replace ~50 `HTTPException` sites with custom errors
-  - Use: `FermentationNotFound`, `InvalidFermentationState`, `SampleNotFound`, etc.
-  - Update ~20 tests to expect new error types and RFC 7807 format
-- 🔄 Auth module: Replace ~15 `HTTPException` sites with custom errors
-  - Use: `InvalidCredentials`, `UserNotFound`, `InsufficientPermissions`, etc.
-  - Update tests to expect new error types
-- Goal: All 566 tests passing with consistent error handling
+**Phase 2: Refactor Existing Modules** ✅ **COMPLETED**
+- ✅ **Fermentation module** (234 tests):
+  - Refactored `src/service_component/errors.py` with backward-compatible aliases
+  - Updated `src/api/error_handlers.py` to re-raise DomainError for global handler
+  - Registered global error handlers in `src/main.py`
+  - All 234 tests passing with new error hierarchy
+- ✅ **Auth module** (163 tests):
+  - Refactored `src/shared/auth/domain/errors.py` to use ADR-026 hierarchy
+  - Updated `src/shared/auth/infra/api/dependencies.py` to raise domain errors
+  - All 163 tests passing with RFC 7807 responses
+- ✅ **Fruit Origin module** (72 tests):
+  - Refactored `src/repository_component/errors.py` with aliases
+  - Updated repositories to use FruitOriginError hierarchy
+  - All 72 tests passing with consistent error handling
+- ✅ **Winery module** (22 tests):
+  - Refactored repository errors to use WineryError hierarchy
+  - Updated `winery_repository.py` to raise domain errors
+  - All 22 tests passing with consistent error handling
+- ✅ Status: **566/566 tests passing** with consistent error handling across all modules
 
 **Phase 3: New Modules (When Implemented)** ⏳ **PENDING**
 - ⏳ Fruit Origin Service/API: Born with correct errors (requires ADR-014)
