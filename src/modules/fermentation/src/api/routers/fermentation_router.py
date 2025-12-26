@@ -41,6 +41,7 @@ from src.modules.fermentation.src.service_component.errors import (
     DuplicateError,
     BusinessRuleViolation
 )
+from shared.domain.errors import CrossWineryAccessDenied
 from src.modules.fermentation.src.api.dependencies import get_fermentation_service, get_sample_service, get_unit_of_work
 from src.modules.fermentation.src.api.error_handlers import handle_service_errors
 
@@ -246,9 +247,8 @@ async def get_fermentation(
     if fermentation is None:
         # Could be: not found OR belongs to different winery
         # For simplicity, return 404 (don't reveal existence)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fermentation with ID {fermentation_id} not found"
+        raise NotFoundError(
+            f"Fermentation with ID {fermentation_id} not found"
         )
     
     # ADR-025 LIGHT: Defense in depth - explicit validation
@@ -267,10 +267,13 @@ async def get_fermentation(
             endpoint="GET /fermentations/{id}"
         )
         
-        # Return 403 Forbidden (explicit that access is denied)
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied to this resource"
+        # Return 403 Forbidden (explicit that access is denied) - ADR-026
+        raise CrossWineryAccessDenied(
+            "Access denied to this resource",
+            user_winery_id=current_user.winery_id,
+            resource_winery_id=fermentation.winery_id,
+            resource_type="fermentation",
+            resource_id=fermentation_id
         )
     
     return FermentationResponse.from_entity(fermentation)
@@ -600,9 +603,8 @@ async def delete_fermentation(
     )
     
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fermentation with id {fermentation_id} not found"
+        raise NotFoundError(
+            f"Fermentation with id {fermentation_id} not found"
         )
 
 
@@ -753,9 +755,8 @@ async def get_fermentation_timeline(
     )
     
     if fermentation is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fermentation {fermentation_id} not found"
+        raise NotFoundError(
+            f"Fermentation {fermentation_id} not found"
         )
     
     # Step 2: Get all samples for fermentation (chronologically ordered)
@@ -859,9 +860,8 @@ async def get_fermentation_statistics(
     )
     
     if fermentation is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fermentation {fermentation_id} not found"
+        raise NotFoundError(
+            f"Fermentation {fermentation_id} not found"
         )
     
     # Step 2: Get all samples

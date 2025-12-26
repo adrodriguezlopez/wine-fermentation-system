@@ -37,6 +37,7 @@ from src.modules.fermentation.src.service_component.errors import (
     ValidationError,
     NotFoundError
 )
+from shared.domain.errors import SampleNotFound
 
 # Import dependencies
 from src.modules.fermentation.src.api.dependencies import get_sample_service
@@ -181,9 +182,10 @@ async def get_latest_sample(
         try:
             sample_type_enum = SampleType(sample_type.lower())
         except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Invalid sample type: {sample_type}"
+            raise ValidationError(
+                f"Invalid sample type: {sample_type}",
+                field="sample_type",
+                value=sample_type
             )
     
     sample = await sample_service.get_latest_sample(
@@ -193,9 +195,10 @@ async def get_latest_sample(
     )
     
     if sample is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No samples found"
+        raise SampleNotFound(
+            "No samples found for this fermentation",
+            fermentation_id=fermentation_id,
+            sample_type=sample_type
         )
     
     return SampleResponse.from_entity(sample)
@@ -251,9 +254,10 @@ async def get_sample(
     if sample is None:
         # Could be: not found OR belongs to different winery
         # For simplicity, return 404 (don't reveal existence)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Sample with id {sample_id} not found"
+        raise SampleNotFound(
+            f"Sample with id {sample_id} not found",
+            sample_id=sample_id,
+            fermentation_id=fermentation_id
         )
     
     # ADR-025 LIGHT: Defense in depth - validate fermentation.winery_id
@@ -273,9 +277,12 @@ async def get_sample(
             endpoint="GET /fermentations/{id}/samples/{sample_id}"
         )
         
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Sample with id {sample_id} not found in fermentation {fermentation_id}"
+        raise SampleNotFound(
+            f"Sample with id {sample_id} not found in fermentation {fermentation_id}",
+            sample_id=sample_id,
+            fermentation_id=fermentation_id,
+            expected_fermentation_id=fermentation_id,
+            actual_fermentation_id=sample.fermentation_id
         )
     
     return SampleResponse.from_entity(sample)

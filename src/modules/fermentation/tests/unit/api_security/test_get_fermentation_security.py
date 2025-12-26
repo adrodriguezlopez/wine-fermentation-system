@@ -22,6 +22,9 @@ from fastapi import HTTPException
 from src.modules.fermentation.src.api.routers.fermentation_router import get_fermentation
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 from src.shared.auth.domain.dtos import UserContext
+# ADR-026: Import domain errors
+from src.modules.fermentation.src.service_component.errors import NotFoundError
+from shared.domain.errors import CrossWineryAccessDenied
 
 
 # ==================================================================================
@@ -149,15 +152,14 @@ class TestGetFermentationSecurity:
         service.get_fermentation.return_value = None  # Filtered by repository
         
         # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(NotFoundError) as exc_info:
             await get_fermentation(
                 fermentation_id=999,
                 current_user=user_context_winery_100,
                 service=service
             )
         
-        assert exc_info.value.status_code == 404
-        assert "not found" in exc_info.value.detail.lower()
+        assert "not found" in str(exc_info.value).lower()
     
     @pytest.mark.asyncio
     async def test_get_fermentation_cross_winery_defense_in_depth(
@@ -184,7 +186,7 @@ class TestGetFermentationSecurity:
             logger_instance = Mock()
             mock_logger.return_value = logger_instance
             
-            with pytest.raises(HTTPException) as exc_info:
+            with pytest.raises(CrossWineryAccessDenied) as exc_info:
                 await get_fermentation(
                     fermentation_id=1,
                     current_user=user_context_winery_100,
@@ -192,8 +194,8 @@ class TestGetFermentationSecurity:
                 )
             
             # Assert 403 Forbidden (not 404)
-            assert exc_info.value.status_code == 403
-            assert "access denied" in exc_info.value.detail.lower()
+            assert exc_info.value.http_status == 403
+            assert "access denied" in exc_info.value.message.lower()
             
             # Assert security event logged (ADR-027)
             logger_instance.warning.assert_called_once()
@@ -225,16 +227,17 @@ class TestGetFermentationSecurity:
         service.get_fermentation.return_value = None
         
         # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        # Act & Assert
+        with pytest.raises(NotFoundError) as exc_info:
             await get_fermentation(
                 fermentation_id=999,
                 current_user=user_context_winery_100,
                 service=service
             )
         
-        assert exc_info.value.status_code == 404
+        assert exc_info.value.http_status == 404
         # Don't distinguish between "not found" vs "wrong winery"
-        assert "not found" in exc_info.value.detail.lower()
+        assert "not found" in exc_info.value.message.lower()
     
     @pytest.mark.asyncio
     async def test_get_fermentation_security_logging_format(
@@ -264,7 +267,7 @@ class TestGetFermentationSecurity:
                     current_user=user_context_winery_100,
                     service=service
                 )
-            except HTTPException:
+            except CrossWineryAccessDenied:
                 pass  # Expected
             
             # Assert logging format

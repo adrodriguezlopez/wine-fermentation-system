@@ -24,8 +24,8 @@ from fastapi import HTTPException
 
 from src.modules.fermentation.src.api.routers.sample_router import get_sample
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
-from src.shared.auth.domain.dtos import UserContext
-
+from src.shared.auth.domain.dtos import UserContext# ADR-026: Import domain errors
+from shared.domain.errors import SampleNotFound
 
 # ==================================================================================
 # FIXTURES
@@ -133,7 +133,7 @@ class TestGetSampleSecurity:
         service.get_sample.return_value = None  # Filtered by repository
         
         # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(SampleNotFound) as exc_info:
             await get_sample(
                 fermentation_id=999,
                 sample_id=888,
@@ -141,8 +141,8 @@ class TestGetSampleSecurity:
                 sample_service=service
             )
         
-        assert exc_info.value.status_code == 404
-        assert "not found" in exc_info.value.detail.lower()
+        assert exc_info.value.http_status == 404
+        assert "not found" in exc_info.value.message.lower()
     
     @pytest.mark.asyncio
     async def test_get_sample_fermentation_id_mismatch(
@@ -168,7 +168,7 @@ class TestGetSampleSecurity:
             logger_instance = Mock()
             mock_logger.return_value = logger_instance
             
-            with pytest.raises(HTTPException) as exc_info:
+            with pytest.raises(SampleNotFound) as exc_info:
                 await get_sample(
                     fermentation_id=1,  # Request from fermentation 1
                     sample_id=10,
@@ -177,9 +177,9 @@ class TestGetSampleSecurity:
                 )
             
             # Assert 404 (don't reveal sample exists in other fermentation)
-            assert exc_info.value.status_code == 404
-            assert "not found" in exc_info.value.detail.lower()
-            assert "fermentation 1" in exc_info.value.detail.lower()
+            assert exc_info.value.http_status == 404
+            assert "not found" in exc_info.value.message.lower()
+            assert "fermentation 1" in exc_info.value.message.lower()
             
             # Assert security event logged (ADR-027)
             logger_instance.warning.assert_called_once()
@@ -221,7 +221,7 @@ class TestGetSampleSecurity:
                     current_user=user_context_winery_100,
                     sample_service=service
                 )
-            except HTTPException:
+            except SampleNotFound:
                 pass  # Expected
             
             # Assert logging format
@@ -303,7 +303,7 @@ class TestGetSampleSecurity:
         service.get_sample.return_value = None  # Repository filtered out
         
         # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(SampleNotFound) as exc_info:
             await get_sample(
                 fermentation_id=999,  # Different winery
                 sample_id=10,
@@ -312,7 +312,7 @@ class TestGetSampleSecurity:
             )
         
         # Repository filtered it out → 404
-        assert exc_info.value.status_code == 404
+        assert exc_info.value.http_status == 404
         
         # Service was called with correct winery_id filter
         service.get_sample.assert_awaited_once_with(
