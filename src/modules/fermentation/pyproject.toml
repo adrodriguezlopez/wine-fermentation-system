@@ -58,7 +58,7 @@ disallow_incomplete_defs = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src", "../../../"]
+pythonpath = ["src", "../../../", "../../shared"]
 addopts = "--tb=short -v"
 markers = [
     "unit: Unit tests (fast, no database)",

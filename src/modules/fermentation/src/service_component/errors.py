@@ -8,7 +8,7 @@ Legacy exceptions are aliased for backward compatibility during migration.
 """
 
 # Import shared domain errors (ADR-026)
-from domain.errors import (
+from shared.domain.errors import (
     FermentationError,
     FermentationNotFound,
     InvalidFermentationState,
