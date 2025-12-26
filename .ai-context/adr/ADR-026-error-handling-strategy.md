@@ -356,27 +356,33 @@ try {
 
 ### 5. Incremental Refactor Strategy
 
-**Phase 1 (Week 1): Infrastructure**
-- ✅ Create `src/shared/domain/errors.py` with base hierarchy
+**Phase 1: Infrastructure** ✅ **COMPLETED**
+- ✅ Create `src/shared/domain/errors.py` with base hierarchy (20+ error types)
 - ✅ Create `src/shared/api/error_handlers.py` with FastAPI handlers
-- ✅ Register handlers in `main.py`
-- ✅ Write 10 base tests
+- ✅ Write 23 comprehensive tests (hierarchy, HTTP codes, RFC 7807 format)
+- ✅ Update `run_all_tests.ps1` to include error handling tests
+- ✅ Status: 566/566 tests passing (543 existing + 23 error handling)
 
-**Phase 2 (Week 1-2): New Modules First**
-- ✅ Fruit Origin Service/API: Born with correct errors (+10 tests)
-- ✅ Winery Service/API: Born with correct errors (+5 tests)
-- ✅ No refactor needed (greenfield)
+**Phase 2: Refactor Existing Modules** 🔄 **IN PROGRESS**
+- 🔄 Fermentation module: Replace ~50 `HTTPException` sites with custom errors
+  - Use: `FermentationNotFound`, `InvalidFermentationState`, `SampleNotFound`, etc.
+  - Update ~20 tests to expect new error types and RFC 7807 format
+- 🔄 Auth module: Replace ~15 `HTTPException` sites with custom errors
+  - Use: `InvalidCredentials`, `UserNotFound`, `InsufficientPermissions`, etc.
+  - Update tests to expect new error types
+- Goal: All 566 tests passing with consistent error handling
 
-**Phase 3 (Week 2-3): Refactor Existing**
-- ✅ Fermentation module: Replace HTTPException with custom errors
-- ✅ Update ~50 error raise sites
-- ✅ Update ~20 tests to expect new format
-- ✅ Auth module: Similar updates
+**Phase 3: New Modules (When Implemented)** ⏳ **PENDING**
+- ⏳ Fruit Origin Service/API: Born with correct errors (requires ADR-014)
+- ⏳ Winery Service/API: Born with correct errors (requires separate ADR)
+- ⏳ No refactor needed (greenfield code starts correct)
+- ⏳ Expected: +15 new tests
 
-**Phase 4 (Week 3): Validation**
-- ✅ All 543 + 30 tests passing
-- ✅ API documentation updated
-- ✅ Frontend integration tested
+**Phase 4: Final Validation** ⏳ **PENDING**
+- ⏳ All tests passing (566 + new module tests)
+- ⏳ API documentation updated with error codes catalog
+- ⏳ Frontend integration examples tested
+- ⏳ Update ADR status: Proposed → Implemented
 
 ---
 
