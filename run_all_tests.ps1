@@ -41,9 +41,12 @@ Write-Host "Started: $($startTime.ToString('yyyy-MM-dd HH:mm:ss'))" -ForegroundC
 Write-Host ""
 
 $testResults = @{
-    SharedInfraUnit = $null
+    SharedTestingUnit = $null
+    SharedErrorHandlingUnit = $null
     SharedAuthUnit = $null
     SharedAuthIntegration = $null
+    WineryUnit = $null
+    WineryIntegration = $null
     FruitOriginUnit = $null
     FruitOriginIntegration = $null
     FermentationUnit = $null
@@ -122,8 +125,8 @@ function Invoke-TestSuite {
             return @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
         }
         
-        # Parse output for test results
-        $resultLine = $output | Select-String -Pattern "=+ (\d+) passed" | Select-Object -Last 1
+        # Parse output for test results (flexible regex for both verbose and quiet modes)
+        $resultLine = $output | Select-String -Pattern "(\d+) passed" | Select-Object -Last 1
         
         if ($resultLine) {
             $passed = [int]($resultLine -replace '.*?(\d+) passed.*', '$1')
@@ -181,6 +184,16 @@ $testResults.SharedTestingUnit = Invoke-TestSuite `
     -Type "unit"
 
 if (-not $testResults.SharedTestingUnit.Success) { $allPassed = $false }
+
+# Run Shared Error Handling Unit Tests (ADR-026)
+Write-Host "`n"
+$testResults.SharedErrorHandlingUnit = Invoke-TestSuite `
+    -Name "Shared Error Handling - Unit Tests" `
+    -ModulePath "src/shared" `
+    -TestPath "../../tests/shared/test_error_handling.py" `
+    -Type "unit"
+
+if (-not $testResults.SharedErrorHandlingUnit.Success) { $allPassed = $false }
 
 # Run Shared Auth Unit Tests
 Write-Host "`n"
