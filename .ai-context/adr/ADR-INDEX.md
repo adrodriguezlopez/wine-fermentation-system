@@ -20,8 +20,9 @@
 | **[ADR-009](./ADR-009-missing-repositories-implementation.md)** | Missing Repositories Implementation | ✅ Implemented | 2025-11-25 | High |
 | **[ADR-011](./ADR-011-integration-test-infrastructure-refactoring.md)** | Integration Test Infrastructure Refactoring | ✅ Implemented | 2025-12-13 | High |
 | **[ADR-012](./ADR-012-unit-test-infrastructure-refactoring.md)** | Unit Test Infrastructure Refactoring | ✅ Implemented | 2025-12-15 | High |
+| **[ADR-014](./ADR-014-fruit-origin-service-layer.md)** | Fruit Origin Service Layer Architecture | ✅ Implemented | 2025-12-27 | High |
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
-| **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | 📋 Proposed | 2025-12-22 | Medium |
+| **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 
 **Legend:**
 - ✅ **Implemented** - Fully implemented with tests passing
@@ -215,6 +216,23 @@
 - **API Ready**: main.py created, middleware integrated, error handlers enhanced
 - **Manual Test**: 4/4 tests passed (correlation IDs, user context, error logging, timing)
 
+### ADR-014: Fruit Origin Service Layer Architecture
+**Decision:** Unified FruitOriginService for vineyard and harvest lot operations  
+**Status:** ✅ **Implemented** (Dec 27, 2025)  
+**Impact:** Complete Fruit Origin module service layer  
+**Key Points:**
+- **Architecture**: Unified service (like FermentationService)
+- **Operations**: 8 methods (vineyard CRUD + harvest lot CRUD)
+- **Business Rules**: Harvest date validation, cascade delete validation
+- **Security**: ADR-025 integrated (winery_id enforcement)
+- **Error Handling**: ADR-026 domain errors (5 new error types)
+- **Logging**: ADR-027 structured logging with LogTimer
+- **Testing**: 28 service tests (15 vineyard + 13 harvest lot)
+- **Total Tests**: 100/100 passing (72 repo + 28 service)
+- **Full Suite**: 590/590 tests passing (zero regressions)
+- **Grape Model**: Single variety per harvest lot (MVP simplification)
+- **Cross-winery**: Allowed (buying grapes scenario)
+
 ### ADR-028: Module Dependency Management Standardization
 **Decision:** Standardize all modules with independent Poetry-managed environments  
 **Status:** ✅ **FULLY IMPLEMENTED** (All 4 Phases - Dec 23, 2025)  
@@ -222,27 +240,39 @@
 **Key Points:**
 - **Problem**: Inconsistent dependency management across modules
 - **Solution**: Each module gets independent Poetry environment with explicit dependencies
-- **Implementation**: All 4 phases complete
-  - ✅ Phase 1: Winery module (22 tests passing)
-  - ✅ Phase 2: Fruit Origin module (72 tests passing)
-  - ✅ Phase 3: Documentation (module-setup-guide.md)
-  - ✅ Phase 4: Shared module (212 tests, 163 auth + 49 testing)
-- **Final Results**: 692+ tests passing across all modules ✅
-  - Fermentation: 223 tests
-  - Winery: 22 tests
-  - Fruit Origin: 72 tests
-  - Shared Auth: 163 tests
-  - Shared Testing: 49 tests
-  - Total: All modules now run independently
-- **Documentation**: Complete module-setup-guide.md with developer best practices
-- **Related**: ADR-011 (integration tests), ADR-027 (logging)
-
----
-
-## 📊 Current Status (December 22, 2025)
+- **Implementation**: All 4 phas7, 2025)
 
 **Implementation Complete:**
 - ✅ Domain Layer (Entities, DTOs, Enums, Interfaces)
+- ✅ **Repository Layer**: ALL repositories implemented (5 new repositories)
+  - FermentationRepository, SampleRepository, LotSourceRepository ✅
+  - HarvestLotRepository, VineyardRepository, VineyardBlockRepository ✅
+  - WineryRepository, FermentationNoteRepository ✅
+  - **Total**: 194 repository tests passing (113 unit + 81 integration)
+- ✅ Service Layer (FermentationService + SampleService + Validators)
+- ✅ **Fruit Origin Service Layer**: FruitOriginService implemented (ADR-014)
+  - 28 service tests (15 vineyard + 13 harvest lot)
+  - 100/100 total tests (72 repo + 28 service)
+- ✅ Auth Module (shared/auth with JWT, RBAC, multi-tenancy)
+- ✅ **API Layer (All Phases)**: Complete endpoint suite with real database
+- ✅ **Error Handling Refactoring**: Centralized with decorator pattern
+- ✅ Total: **590/590 tests passing (100%)**
+  - Fermentation: 234 tests
+  - Fruit Origin: 100 tests (72 repo + 28 service)
+  - Winery:14 COMPLETE**: Fruit Origin Service Layer (Dec 27, 2025)
+  - FruitOriginService implemented with 8 methods
+  - 28 service tests passing (15 vineyard + 13 harvest lot)
+  - Business rules: harvest date validation, cascade delete
+  - Security (ADR-025), error handling (ADR-026), logging (ADR-027) integrated
+  - 100/100 tests passing (72 repo + 28 service)
+  - Full test suite: 590/590 passing (zero regressions)
+- ✅ **ADR-027 COMPLETE**: Structured Logging & Observability (Dec 22, 2025)
+  - All 5 phases complete: Infrastructure, Repository, Service, API, Documentation
+  - 150/150 tests passing (84 repository + 66 service)
+  - Production ready with logging best practices and deployment checklist
+- ✅ **ADR-028 COMPLETE**: Module Dependency Management Standardization (Dec 23, 2025)
+  - All 4 phases complete: Winery, Fruit Origin, Documentation, Shared
+  - 692+ unit tests passing across all modules
 - ✅ **Repository Layer**: ALL repositories implemented (5 new repositories)
   - FermentationRepository, SampleRepository, LotSourceRepository ✅
   - HarvestLotRepository, VineyardRepository, VineyardBlockRepository ✅
@@ -262,7 +292,15 @@
   - All 5 phases complete: Infrastructure, Repository, Service, API, Documentation
   - 150/150 tests passing (84 repository + 66 service)
   - Production ready with logging best practices and deployment checklist
-- ✅ **ADR-028 COMPLETE**: Module Dependency Management Standardization (Dec 22, 2025)
+- ✅ **ADR14 Complete: Fruit Origin Service Layer implemented (Dec 27, 2025)
+  - FruitOriginService: 8 methods (vineyard CRUD + harvest lot CRUD)
+  - 28 service tests passing (15 vineyard + 13 harvest lot)
+  - Business rules: harvest date validation, cascade delete validation
+  - 5 new domain errors (VineyardHasActiveLotsError, etc.)
+  - Full integration: ADR-025 (security), ADR-026 (errors), ADR-027 (logging)
+  - 100/100 tests passing (72 repo + 28 service)
+  - Zero regressions (590/590 full test suite)
+- ✅ ADR-0-028 COMPLETE**: Module Dependency Management Standardization (Dec 22, 2025)
   - All 3 phases complete: Winery, Fruit Origin, Documentation
   - 317/317 unit tests passing across all modules (fermentation, winery, fruit_origin)
   - Comprehensive module-setup-guide.md created

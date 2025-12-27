@@ -6,24 +6,29 @@
 
 ---
 
-## Estado Actual del Proyecto: 50-55% Completo
+## Estado Actual del Proyecto: 55-60% Completo ✅
 
 ### Módulos Completados ✅
-1. **Authentication Module** - 100% (187 tests)
-2. **Fermentation Management Module** - 100% (272 tests)
+1. **Authentication Module** - 100% (159 tests)
+2. **Fermentation Management Module** - 100% (234 tests)
 3. **Structured Logging Infrastructure** - 100% (ADR-027 ✅)
 4. **Module Dependency Management** - 100% (ADR-028 ✅)
+5. **Error Handling Strategy** - 100% (ADR-026 ✅) - December 26, 2025
+6. **Multi-Tenancy Security (LIGHT)** - 100% (ADR-025 ✅) - December 23, 2025
 
 ### Módulos Parcialmente Completados 🟡
-5. **Fruit Origin Module** - 70% (72 tests) - Repository + Poetry env ✅, Falta Service + API
-6. **Winery Module** - 70% (22 tests) - Repository + Poetry env ✅, Falta Service + API
-7. **Shared Module** - 100% (215 tests) - Auth + Testing utilities ✅
+7. **Fruit Origin Module** - 70% (72 tests) - Repository + Poetry env ✅, Falta Service + API
+8. **Winery Module** - 70% (22 tests) - Repository + Poetry env ✅, Falta Service + API
+9. **Shared Module** - 100% (52 tests) - Testing utilities ✅
 
 ### Módulos Pendientes ⏳
-5. **Historical Data Module** - 0%
-6. **Analysis Engine Module** - 0%
-7. **Action Tracking Module** - 0%
-8. **Frontend Module** - 0%
+10. **Historical Data Module** - 0%
+11. **Analysis Engine Module** - 0%
+12. **Action Tracking Module** - 0%
+13. **Frontend Module** - 0%
+
+**Tests Passing:** 562/562 (100%) ✅  
+**Last Update:** December 26, 2025
 
 ---
 
@@ -477,88 +482,69 @@ class SecureRepository:
 
 ---
 
-### ADR-026: Error Handling & Exception Hierarchy Strategy
-**Decisión a tomar:** Estrategia unificada de manejo de errores y excepciones custom
+### ADR-026: Error Handling & Exception Hierarchy Strategy ✅ COMPLETADO
+**Estado:** ✅ **IMPLEMENTADO** (December 26, 2025)
 
-**Contexto:**
-- Actualmente no hay jerarquía consistente de excepciones de dominio
-- Errores de negocio se mezclan con errores técnicos
-- API devuelve errores genéricos (500) en vez de específicos (404, 400, 409)
-- Debugging es difícil sin errores descriptivos
+**Decisión tomada:** Estrategia unificada de manejo de errores y excepciones custom
 
-**Aspectos a decidir:**
+**Lo que se implementó:**
 
-**1. Jerarquía de Excepciones:**
+**1. Jerarquía de Excepciones (3 niveles):**
 ```python
-# Propuesta de estructura:
-class DomainError(Exception):
-    """Base para todos los errores de dominio"""
-    pass
-
-class FermentationDomainError(DomainError):
-    """Errores del módulo de fermentación"""
-    pass
-
-class FermentationNotFound(FermentationDomainError):
-    """Fermentación no existe o no pertenece al winery"""
-    http_status = 404
-    error_code = "FERMENTATION_NOT_FOUND"
-
-class InvalidFermentationState(FermentationDomainError):
-    """Operación inválida en estado actual"""
-    http_status = 400
-    error_code = "INVALID_STATE_TRANSITION"
-
-class FermentationAlreadyCompleted(InvalidFermentationState):
-    """No se pueden añadir samples a fermentación terminada"""
-    http_status = 409
-    error_code = "FERMENTATION_COMPLETED"
+Exception
+└── DomainError (http_status=400, error_code="DOMAIN_ERROR")
+    ├── FermentationError
+    │   ├── FermentationNotFound (404)
+    │   ├── InvalidFermentationState (400)
+    │   ├── SampleNotFound (404)
+    │   └── ValidationError (422)
+    ├── FruitOriginError
+    │   ├── VineyardNotFound (404)
+    │   └── HarvestLotAlreadyUsed (409)
+    ├── WineryError
+    │   ├── WineryNotFound (404)
+    │   └── WineryNameAlreadyExists (409)
+    ├── AuthError
+    │   ├── InvalidCredentials (401)
+    │   ├── TokenExpired (401)
+    │   └── InsufficientPermissions (403)
+    └── CrossWineryAccessDenied (403)
 ```
 
-**2. Error Response Format (RFC 7807 - Problem Details):**
-```json
-{
-  "type": "https://api.wine-system.com/errors/fermentation-not-found",
-  "title": "Fermentation Not Found",
-  "status": 404,
-  "detail": "Fermentation with ID 123e4567 not found",
-  "instance": "/api/v1/fermentations/123e4567",
-  "error_code": "FERMENTATION_NOT_FOUND",
-  "winery_id": "abc123"
-}
-```
+**2. RFC 7807 Format (Problem Details):**
+- Global exception handler convierte DomainError a RFC 7807
+- Estructura: type, title, status, detail, instance, code
+- Context data serializado automáticamente
 
-**3. Exception Handler Middleware:**
-```python
-@app.exception_handler(DomainError)
-async def domain_error_handler(request, exc):
-    return JSONResponse(
-        status_code=exc.http_status,
-        content=exc.to_problem_details()
-    )
-```
+**3. Backward Compatibility:**
+- Legacy error names mantienen aliases (NotFoundError = FermentationNotFound)
+- Zero breaking changes en tests existentes
+- Wrappers en Auth module para compatibilidad dual context
 
-**4. Logging Strategy:**
-- Errores de dominio: INFO/WARN (esperados)
-- Errores técnicos: ERROR (no esperados)
-- Incluir correlation_id en todos los logs
+**4. Módulos Refactorizados:**
+- ✅ Fermentation (234 tests) - All HTTPException → domain errors
+- ✅ Auth (159 tests) - Wrappers inherit from base errors
+- ✅ Fruit Origin (72 tests) - Aliases for backward compatibility
+- ✅ Winery (22 tests) - Inline imports and aliases
 
-**5. Testing:**
-- Tests específicos para cada excepción
-- Validar HTTP status codes correctos
-- Validar formato de error response
+**5. API Routers Updated:**
+- ✅ fermentation_router.py: 5 replacements (404→NotFoundError, 403→CrossWineryAccessDenied)
+- ✅ sample_router.py: 4 replacements (422→ValidationError, 404→SampleNotFound)
+- ✅ 11 security tests updated to expect domain errors
 
-**Por Módulo:**
-- Fermentation: FermentationDomainError, SampleDomainError
-- Fruit Origin: VineyardDomainError, HarvestLotDomainError
-- Winery: WineryDomainError
-- Historical Data: ETLError, InvalidHistoricalDataError
-- Analysis: AnalysisEngineError, InsufficientDataError
+**Resultados:**
+- ✅ 562/562 tests passing (100%)
+- ✅ Zero HTTPException in business logic
+- ✅ Complete ADR-026 compliance
+- ✅ Error handler flow works end-to-end
+- ✅ RFC 7807 format applied automatically
 
-**Impacto:**
-- Debugging más fácil
-- API más usable (errores claros)
-- Mejor UX (frontend puede mostrar mensajes específicos)
+**Impacto conseguido:**
+- Consistent error handling across entire codebase
+- Type-safe error catching (except FermentationError)
+- Better UX (clear error messages with error_code)
+- Structured logging integration (ADR-027)
+- Frontend can parse and display specific error codes
 
 ---
 
@@ -1033,33 +1019,23 @@ jobs:
 
 ---
 
-### 🟡 Fase 3: CALIDAD & HARDENING ✅ PARCIALMENTE COMPLETO
-**Justificación:** Con logging infrastructure completa, ahora continuar con Security y Error Handling.
+### 🟡 Fase 3: CALIDAD & HARDENING ✅ COMPLETADO
+**Justificación:** Con logging, error handling y security implementados, la infraestructura cross-cutting está completa.
 
 **Estado actual:**
 ✅ **ADR-027**: Observability & Monitoring - **COMPLETADO** (Diciembre 23, 2025)
 ✅ **ADR-028**: Module Dependency Management - **COMPLETADO** (Diciembre 23, 2025)
+✅ **ADR-026**: Error Handling & Exception Hierarchy - **COMPLETADO** (Diciembre 26, 2025)
+✅ **ADR-025**: Multi-Tenancy Security (LIGHT) - **COMPLETADO** (Diciembre 23, 2025)
 
-**Restante:**
-9. **ADR-025**: Multi-Tenancy Security & Data Isolation 🔴 CRÍTICO
-   - **PRÓXIMO A IMPLEMENTAR**
-   - Refactorizar módulos existentes para garantizar aislamiento
-   - Row-level security en TODOS los repositorios
-   - Estimación: 1 semana (refactor + testing exhaustivo)
-
-10. **ADR-026**: Error Handling & Exception Hierarchy ⭐⭐⭐⭐
-    - Estandariza errores en todos los módulos
-    - Mejor UX (errores claros)
-    - Estimación: 2-3 días
-
-**Resultado esperado:** Proyecto al ~60%, infraestructura cross-cutting completa
+**Resultado alcanzado:** Proyecto al ~60%, infraestructura cross-cutting 100% completa ✅
 
 ---
 
-### 🔵 Fase 4: COMPLETAR MÓDULOS PARCIALES (Momentum)
-**Justificación:** Fruit Origin y Winery están al 70% (Repository + Poetry done). Completarlos da consistencia arquitectónica.
+### 🔵 Fase 4: COMPLETAR MÓDULOS PARCIALES (Siguiente - Momentum) ⭐ RECOMENDADO
+**Justificación:** Fruit Origin y Winery están al 70% (Repository + Poetry done). Completarlos da consistencia arquitectónica y permite avanzar al core MVP.
 
-**Semana siguiente:**
+**Próximos pasos (1-2 semanas):**
 11. **ADR-014**: Fruit Origin Service Layer ⭐⭐⭐⭐⭐
    - Repository ya existe (72 tests)
    - Patrón claro de ADR-007 (Fermentation Service)
@@ -1197,28 +1173,26 @@ Checkpoint: 55-60% - 4 módulos completos
     ↓
 Semana 3-5: Historical Data + Analysis Engine + Alerting
     ↓
-## Roadmap Visual ACTUALIZADO (Diciembre 23, 2025)
+## Roadmap Visual ACTUALIZADO (Diciembre 26, 2025)
 
 ```
-COMPLETADO (50-55%) ✅
+COMPLETADO (55-60%) ✅
 ├── ADR-027: Structured Logging ✅
 ├── ADR-028: Module Dependency Management ✅
-├── 532 tests passing
-└── Logging + Poetry en todos los módulos
+├── ADR-026: Error Handling Strategy ✅
+├── ADR-025: Multi-Tenancy Security (LIGHT) ✅
+├── 562 tests passing
+└── Infraestructura cross-cutting 100% completa
     ↓
-SIGUIENTE: Semana 1-2 (ADR-025 + ADR-026)
-├── ADR-025: Multi-Tenancy Security (CRÍTICO)
-└── ADR-026: Error Handling
-    ↓
-Checkpoint: 60% - Infraestructura cross-cutting completa
-    ↓
-Semana 2-3: Fruit Origin + Winery Service/API
-├── ADR-014 y ADR-015 (Fruit Origin)
-└── ADR-016 y ADR-017 (Winery)
+SIGUIENTE: Semana 1-2 (Fruit Origin + Winery Services) ⭐ RECOMENDADO
+├── ADR-014: Fruit Origin Service Layer (2-3 días)
+├── ADR-015: Fruit Origin API (2-3 días)
+├── ADR-016: Winery Service Layer (1-2 días)
+└── ADR-017: Winery API (1-2 días)
     ↓
 Checkpoint: 65-70% - 4 módulos business completos
     ↓
-Semana 4-6: Historical Data + Analysis Engine + Alerting
+Semana 3-6: Historical Data + Analysis Engine + Alerting
 ├── ADR-018 y ADR-019 (Historical Data + ETL)
 ├── ADR-020 (Analysis Engine)
 └── ADR-021 (Alerting)
@@ -1243,11 +1217,20 @@ PRODUCCIÓN: Bodega piloto 🎉
 
 ---
 
-## Recomendación Final ACTUALIZADA (Diciembre 23, 2025)
+## Recomendación Final ACTUALIZADA (Diciembre 26, 2025)
 
-### 🎯 El siguiente ADR debe ser: **ADR-025 (Multi-Tenancy Security)** 🔴 CRÍTICO
+### 🎯 El siguiente ADR debe ser: **ADR-014 (Fruit Origin Service Layer)** ⭐ RECOMENDADO
 
 **Razones objetivas:**
+
+1. **✅ Infraestructura completa**: ADR-025, ADR-026, ADR-027, ADR-028 listos
+2. **✅ Repository layer exists**: 72 tests passing, solo falta Service + API
+3. **✅ Security desde día 1**: Nace con ADR-025 implementado (no refactoring futuro)
+4. **✅ Error handling ready**: Nace con ADR-026 implementado (domain errors desde inicio)
+5. **✅ Logging infrastructure**: ADR-027 lista para service layer events
+6. **✅ Pattern establecido**: ADR-007 (Fermentation Service) como referencia clara
+7. **✅ Momentum positivo**: Completar módulo parcial da sensación de progreso
+8. **✅ Dependency para Fermentation**: harvest_lot_id será fully functional
 
 1. **Logging infrastructure completa**: Con ADR-027, ahora podemos logear todos los security events (intentos de acceso cross-winery)
 
@@ -1300,30 +1283,47 @@ PRODUCCIÓN: Bodega piloto 🎉
 
 ---
 
-## Análisis: ¿Por qué Security ES el siguiente ADR?
+## Análisis: ¿Por qué Fruit Origin Service ES el siguiente ADR? ⭐
 
-### ✅ A favor de hacer ADR-025 AHORA (nueva evidencia):
+### ✅ A favor de hacer ADR-014 AHORA (evidencia actualizada):
 
-1. **ADR-027 completado**: Logging estructurado permite auditoría de security events
-2. **ADR-028 completado**: Module independence facilita security layer injection
-3. **Nuevos servicios por venir**: Fruit Origin y Winery Services se benefician si security ya está
-4. **Pattern para futuros ADRs**: Todos heredan security desde día 1
-5. **Test infrastructure robusta**: 532 tests + logging = perfect para security testing
+1. **✅ ADR-025 completado**: Multi-tenancy security implementado (Dec 23)
+2. **✅ ADR-026 completado**: Error handling hierarchy implementado (Dec 26)
+3. **✅ ADR-027 completado**: Structured logging infrastructure lista
+4. **✅ ADR-028 completado**: Module independence establecido
+5. **✅ Repository layer existe**: 72 tests passing, momentum existente
+6. **✅ Security desde día 1**: Nace con winery_id enforcement (no refactoring futuro)
+7. **✅ Error handling desde día 1**: Nace con domain errors (no refactoring futuro)
+8. **✅ Pattern establecido**: Fermentation Service como referencia (copy-paste-adapt)
 
-### ❌ Contra hacerlo después (argumento original refutado):
+### ❌ Contra hacer otros ADRs primero:
 
-1. **"Refactorizar 6 módulos es más eficiente"** → FALSO con nueva evidencia
-   - Refactor 2 existentes (Fermentation, Auth) = 2 días
-   - 4 nuevos nacen seguros (Fruit Origin, Winery, Historical, Analysis) = 0 días refactor
-   - **Total: 2 días refactor vs 6 días refactor (ahorro de 4 días)**
+1. **Historical Data Module (ADR-018)** → Requiere 4 módulos business completos
+   - Necesita datos de Fermentation, Fruit Origin, Winery
+   - Sin Service layers completos, no hay datos para importar
+   - **Conclusión**: Muy pronto, mejor después de completar módulos parciales
 
-2. **"No bloqueante para desarrollo"** → CIERTO, pero es bloqueante para CALIDAD
-   - Cada día sin security = código nuevo potencialmente vulnerable
-   - Better safe than sorry
+2. **Analysis Engine (ADR-020)** → Requiere Historical Data + módulos business
+   - Depende de ADR-018 (Historical Data)
+   - Necesita patrones históricos para análisis
+   - **Conclusión**: Muy pronto, bloquea MVP core
+
+3. **Frontend (ADR-023)** → Mejor con backend completo
+   - Sin APIs de Fruit Origin/Winery, frontend incompleto
+   - **Conclusión**: Mejor esperar 4 módulos business listos
+
+### 💡 Ventajas Estratégicas de ADR-014 AHORA:
+
+- ✅ **Momentum**: Completar módulo al 70% → 100% da sensación de progreso
+- ✅ **Testing end-to-end**: Viñedos → Lotes → Fermentaciones funcionando completamente
+- ✅ **Zero refactoring futuro**: Nace con ADR-025 + ADR-026 + ADR-027
+- ✅ **Pattern reusable**: Winery Service puede copiar el patrón (ADR-016)
+- ✅ **Business value**: Fruit Origin es parte del core business (trazabilidad)
+- ✅ **Time estimate**: 2-3 días (vs 1-2 semanas para Historical Data)
 
 ---
 
-## Timeline Actualizado
+## Timeline Actualizado (Post-Infraestructura)
 
 **Diciembre 23-30, 2025 (Semana 1):**
 - ADR-025: Multi-Tenancy Security (5 días)
@@ -1351,60 +1351,69 @@ PRODUCCIÓN: Bodega piloto 🎉
 
 ---
 
-## Resumen Ejecutivo ACTUALIZADO
+## Resumen Ejecutivo ACTUALIZADO (Diciembre 26, 2025)
 
 ### 📊 Estado Actual
-- **Completitud:** 50-55% (↑ desde 40-45%)
-- **Nuevo desde última actualización:**
-  - ✅ ADR-027: Structured Logging (150 tests)
-  - ✅ ADR-028: Module Dependency Management (532 total tests)
-  - ✅ Logging en 6 repositories + 3 services
-  - ✅ Poetry environments en 4 módulos
+- **Completitud:** 55-60% (↑ desde 50-55%)
+- **Tests:** 562/562 passing (100%) ✅
+- **Completado desde última actualización:**
+  - ✅ ADR-025: Multi-Tenancy Security LIGHT (Dec 23, 2025)
+  - ✅ ADR-026: Error Handling & Exception Hierarchy (Dec 26, 2025)
+  - ✅ Infraestructura cross-cutting 100% completa
+  - ✅ Zero HTTPException en business logic
+  - ✅ Security winery_id enforcement en repositories + API
 
-### 🎯 Siguiente ADR: **ADR-025 (Multi-Tenancy Security)** 🔴
+### 🎯 Siguiente ADR: **ADR-014 (Fruit Origin Service Layer)** ⭐ RECOMENDADO
 
-**Justificación del cambio de estrategia:**
-Con logging y module independence listos, implementar security AHORA significa que los próximos 4 módulos (Fruit Origin Service, Winery Service, Historical Data, Analysis Engine) nacen seguros. Ahorro neto: 4 días de refactoring.
+**Justificación estratégica:**
+Con infraestructura cross-cutting completa (ADR-025, 026, 027, 028), ahora es el momento perfecto para completar módulos parciales. Fruit Origin Service nacerá con security, error handling y logging desde día 1. Repository ya existe (72 tests), solo falta Service + API.
 
-### ⏱️ Timeline Estimado Actualizado
-- **Esta semana:** ADR-025 + ADR-026 (Security + Error Handling)
-- **Próximas 2 semanas:** Fruit Origin + Winery Services
-- **Enero-Febrero:** Historical + Analysis (core value)
-- **Febrero:** Frontend + UX
-- **Marzo:** Production deployment
-- **TOTAL:** ~10-11 semanas (2.5 meses) hasta bodega piloto
+### ⏱️ Timeline Estimado
+- **Próximas 1-2 semanas:** ADR-014/015/016/017 (Fruit Origin + Winery Service/API)
+- **Semanas 3-6:** Historical Data + Analysis Engine (core MVP)
+- **Semanas 7-9:** Frontend + Visualizations
+- **Semanas 10-11:** Production readiness
+- **TOTAL:** ~10-11 semanas hasta bodega piloto
 
 ### 🔥 Cambios Clave vs Plan Original
-1. **Security movido hacia adelante** (de Fase 3 → Fase Inmediata)
-2. **Justificación:** Nuevos servicios heredan security vs refactorizar después
-3. **Ahorro:** 4 días de refactoring work
+1. **ADR-025 y ADR-026 COMPLETADOS** (antes de nuevos servicios)
+2. **Justificación**: Nuevos servicios nacen con infraestructura completa (zero refactoring)
+3. **Ahorro**: 4-5 días de refactoring evitados
+4. **Estado**: Proyecto al 60%, listo para fase de módulos business
 
 ---
 
-**Última actualización:** 23 de diciembre de 2025  
-**Próxima revisión:** Post-implementación de ADR-025 y ADR-026 (Security + Error Handling)
+**Última actualización:** 26 de diciembre de 2025  
+**Próxima revisión:** Post-implementación de ADR-014 (Fruit Origin Service Layer)
 
-### Estimación
-- **Tiempo estimado:** X horas/días
-- **Complejidad:** Baja/Media/Alta
+### ⏱️ Timeline Estimado
+- **Próximas 1-2 semanas:** ADR-014/015/016/017 (Fruit Origin + Winery Service/API)
+- **Semanas 3-6:** Historical Data + Analysis Engine (core MVP)
+- **Semanas 7-9:** Frontend + Visualizations
+- **Semanas 10-11:** Production readiness
+- **TOTAL:** ~10-11 semanas hasta bodega piloto
 
-## Referencias
-- [ADR-XXX]: [Título relacionado]
-- [Documentación externa]
+---
 
-## Notas de Implementación
-### 🔴 PRIORIDAD MÁXIMA (Antes de continuar con features)
+**Última actualización:** 26 de diciembre de 2025  
+**Próxima revisión:** Post-implementación de ADR-014 (Fruit Origin Service Layer)
+
+### 🔴 PRIORIDAD MÁXIMA (Siguiente trabajo)
 **Esta semana:**
-1. ✅ **ADR-025**: Multi-Tenancy Security (1-2 días)
-   - Refactorizar repositorios para inyectar winery_id
-   - Añadir middleware de seguridad
-   - Tests de aislamiento cross-winery
-   - **BLOQUEANTE para producción**
+1. ⭐ **ADR-014**: Fruit Origin Service Layer (2-3 días)
+   - FruitOriginService con operaciones CRUD
+   - Validaciones de negocio (harvest date, grape percentages)
+   - Orquestación entre múltiples repositorios
+   - Logging con ADR-027
+   - Security con ADR-025 (winery_id enforcement)
+   - Error handling con ADR-026 (domain errors)
 
-2. ✅ **ADR-026**: Error Handling (1-2 días)
-   - Crear jerarquía de excepciones
-   - Implementar exception handlers
-   - Estandarizar error responses
+2. ⭐ **ADR-015**: Fruit Origin API Design & DTOs (2-3 días)
+   - Endpoints REST: viñedos, variedades, lotes de cosecha
+   - Pydantic DTOs (Request/Response)
+   - Paginación y filtrado
+   - Multi-tenancy enforcement
+   - OpenAPI documentation
 
 ### Fase 1: Completar módulos (Semana próxima)
 3. ✅ ADR-014 y ADR-015 (Fruit Origin Service + API)

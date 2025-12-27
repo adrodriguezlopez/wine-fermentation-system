@@ -132,6 +132,30 @@ class InvalidGrapePercentage(FruitOriginError):
     error_code = "INVALID_GRAPE_PERCENTAGE"
 
 
+class VineyardHasActiveLotsError(FruitOriginError):
+    """Raised when attempting to delete vineyard with active harvest lots"""
+    http_status = 409  # Conflict
+    error_code = "VINEYARD_HAS_ACTIVE_LOTS"
+
+
+class VineyardBlockNotFound(FruitOriginError):
+    """Raised when a vineyard block is not found"""
+    http_status = 404
+    error_code = "VINEYARD_BLOCK_NOT_FOUND"
+
+
+class HarvestLotNotFound(FruitOriginError):
+    """Raised when a harvest lot is not found"""
+    http_status = 404
+    error_code = "HARVEST_LOT_NOT_FOUND"
+
+
+class DuplicateCodeError(FruitOriginError):
+    """Raised when code already exists for the winery"""
+    http_status = 409  # Conflict
+    error_code = "DUPLICATE_CODE"
+
+
 # ============================================
 # Winery-specific errors
 # ============================================
