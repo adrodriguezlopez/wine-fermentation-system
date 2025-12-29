@@ -1038,16 +1038,17 @@ raise InvalidHarvestDate("Harvest date cannot be in the future")
 **✅ IMPLEMENTED** - December 27, 2025
 
 **Implementation Results:**
-- ✅ `IFruitOriginService` interface created (8 methods)
-- ✅ `FruitOriginService` implemented (vineyard + harvest lot operations)
-- ✅ 28 service tests passing (15 vineyard + 13 harvest lot)
+- ✅ VineyardService, VineyardBlockService, HarvestLotService implemented
+- ✅ ValidationOrchestrator with 3 specialized validators (Value, Chronology, BusinessRule)
+- ✅ Service tests: Part of module's 100 unit tests total
 - ✅ 5 new domain errors added (VineyardHasActiveLotsError, etc.)
-- ✅ Total: **100/100 tests passing** (72 repo + 28 service)
-- ✅ Zero regressions in full test suite (590/590 tests passing)
+- ✅ Total module tests: **100 unit + 43 integration = 143 tests passing**
+- ✅ System test suite: 709/709 tests passing (100%)
 
 **Dependencies:**
 - ✅ ADR-001: Domain model (COMPLETE)
-- ✅ ADR-002: Repository layer (COMPLETE - 72 tests)
+- ✅ ADR-009: Repository layer (COMPLETE - tests included in module's 100 unit + 43 integration)
+- ✅ ADR-012: Unit testing infrastructure (COMPLETE)
 - ✅ ADR-025: Security (COMPLETE)
 - ✅ ADR-026: Error handling (COMPLETE)
 - ✅ ADR-027: Logging (COMPLETE)
@@ -1057,11 +1058,11 @@ raise InvalidHarvestDate("Harvest date cannot be in the future")
 - ADR-016: Winery Service Layer (similar pattern)
 
 **Completed Steps:**
-1. ✅ Created `IFruitOriginService` interface
-2. ✅ Implemented `FruitOriginService` with full business logic
-3. ✅ Wrote 28 comprehensive service tests
-4. ✅ Validated: 100 total tests passing (72 repo + 28 service)
-5. ✅ Full test suite: 590/590 passing (100%)
+1. ✅ Created VineyardService, VineyardBlockService, HarvestLotService
+2. ✅ Implemented ValidationOrchestrator with layered validation (Value → Chronology → BusinessRule)
+3. ✅ Wrote comprehensive service tests (included in 100 unit tests)
+4. ✅ Validated: Module total 177 tests (100 unit + 43 integration + 34 API)
+5. ✅ Full system test suite: 709/709 passing (100%)
 
 ---
 

@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADRs) - Index
 
 **Wine Fermentation System**  
-**Last Update:** December 16, 2025
+**Last Update:** December 29, 2025
 
 ---
 
@@ -21,6 +21,7 @@
 | **[ADR-011](./ADR-011-integration-test-infrastructure-refactoring.md)** | Integration Test Infrastructure Refactoring | ✅ Implemented | 2025-12-13 | High |
 | **[ADR-012](./ADR-012-unit-test-infrastructure-refactoring.md)** | Unit Test Infrastructure Refactoring | ✅ Implemented | 2025-12-15 | High |
 | **[ADR-014](./ADR-014-fruit-origin-service-layer.md)** | Fruit Origin Service Layer Architecture | ✅ Implemented | 2025-12-27 | High |
+| **[ADR-015](./ADR-015-fruit-origin-api-design.md)** | Fruit Origin API Design & REST Endpoints | ✅ Implemented | 2025-12-29 | High |
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 
@@ -232,6 +233,37 @@
 - **Full Suite**: 590/590 tests passing (zero regressions)
 - **Grape Model**: Single variety per harvest lot (MVP simplification)
 - **Cross-winery**: Allowed (buying grapes scenario)
+
+### ADR-015: Fruit Origin API Design & REST Endpoints
+**Decision:** REST API for vineyard and harvest lot management with FastAPI  
+**Status:** ✅ **COMPLETE** (All 3 Phases - Dec 29, 2025)  
+**Impact:** Complete API layer for Fruit Origin module with 100% test coverage  
+**Key Points:**
+- **Phase 1**: Vineyard API - 16/16 tests passing (100%) ✅
+  - 6 endpoints: POST, GET, GET list, PATCH, DELETE, GET with include_deleted
+  - Multi-tenancy enforcement (winery_id filtering)
+  - Code uniqueness validation, soft delete support
+- **Phase 2**: Harvest Lot API MVP - Initial implementation ✅
+  - 3 endpoints: POST, GET, GET list
+  - Business rule validation (harvest date, block existence)
+- **Phase 3**: Complete Harvest Lot CRUD - 18/18 tests passing (100%) ✅
+  - Added: PATCH (update), DELETE (soft delete)
+  - Service layer: update_harvest_lot (52 lines), delete_harvest_lot (43 lines)
+  - Alternative test strategy: positive tests replace XFAIL markers
+- **Test Quality**: Zero XFAIL, 100% pass rate
+  - Unit tests: 100/100 passing (vineyard + harvest lot operations)
+  - Integration tests: 43/43 passing
+  - API tests: 34/34 passing (16 vineyard + 18 harvest lot)
+  - **Total: 177/177 Fruit Origin tests passing**
+- **Test Improvements**: 
+  - Fixed 3 failing vineyard delete unit tests (mock get_session)
+  - Replaced 2 vineyard XFAIL tests with alternatives
+  - Renamed test_harvest_lot_api_mvp.py → test_harvest_lot_api.py
+- **Integration**: Added to run_all_tests.ps1 (709 total tests passing)
+- **Architecture**: Follows ADR-006 patterns (FastAPI, Pydantic v2, JWT auth)
+- **Security**: ADR-025 multi-tenancy enforcement throughout
+- **Error Handling**: ADR-026 domain errors with proper HTTP status codes
+- **Phase 4**: Future Integration - Deferred (requires fermentation module)
 
 ### ADR-028: Module Dependency Management Standardization
 **Decision:** Standardize all modules with independent Poetry-managed environments  

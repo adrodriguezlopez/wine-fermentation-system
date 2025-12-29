@@ -49,6 +49,7 @@ $testResults = @{
     WineryIntegration = $null
     FruitOriginUnit = $null
     FruitOriginIntegration = $null
+    FruitOriginAPI = $null
     FermentationUnit = $null
     FermentationIntegration = $null
 }
@@ -144,12 +145,12 @@ function Invoke-TestSuite {
                 Write-Host "[PASS] ${Name}: $passed tests passed" -ForegroundColor Green
                 return @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = $exitCode }
             }
-        } elseif ($output | Select-String -Pattern "failed|error") {
-            $failedLine = $output | Select-String -Pattern "=+ (\d+) failed" | Select-Object -Last 1
-            $errorLine = $output | Select-String -Pattern "=+ (\d+) error" | Select-Object -Last 1
+        } elseif ($output | Select-String -Pattern "failed|errors?") {
+            $failedLine = $output | Select-String -Pattern "(\d+) failed" | Select-Object -Last 1
+            $errorLine = $output | Select-String -Pattern "(\d+) errors?" | Select-Object -Last 1
             
             $failed = if ($failedLine) { [int]($failedLine -replace '.*?(\d+) failed.*', '$1') } else { 0 }
-            $errors = if ($errorLine) { [int]($errorLine -replace '.*?(\d+) error.*', '$1') } else { 0 }
+            $errors = if ($errorLine) { [int]($errorLine -replace '.*?(\d+) errors?.*', '$1') } else { 0 }
             
             Write-Host "[FAIL] ${Name}: $failed failed, $errors errors" -ForegroundColor Red
             Write-Host "Last 10 lines of output:" -ForegroundColor Yellow
@@ -210,8 +211,8 @@ if (-not $Quick) {
     Write-Host "`n"
     $testResults.SharedAuthIntegration = Invoke-TestSuite `
         -Name "Shared Auth - Integration Tests" `
-        -ModulePath "src/shared" `
-        -TestPath "auth/tests/integration/" `
+        -ModulePath "src/shared/auth" `
+        -TestPath "tests/integration/" `
         -Type "integration"
     
     if (-not $testResults.SharedAuthIntegration.Success) { $allPassed = $false }
@@ -261,6 +262,18 @@ if (-not $Quick) {
         -Type "integration"
     
     if (-not $testResults.FruitOriginIntegration.Success) { $allPassed = $false }
+}
+
+# Run Fruit Origin API Tests
+if (-not $Quick) {
+    Write-Host "`n"
+    $testResults.FruitOriginAPI = Invoke-TestSuite `
+        -Name "Fruit Origin - API Tests" `
+        -ModulePath "src/modules/fruit_origin" `
+        -TestPath "tests/api/" `
+        -Type "api"
+    
+    if (-not $testResults.FruitOriginAPI.Success) { $allPassed = $false }
 }
 
 # Run Fermentation Unit Tests

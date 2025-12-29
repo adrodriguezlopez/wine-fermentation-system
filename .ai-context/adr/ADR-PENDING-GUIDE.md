@@ -1,12 +1,12 @@
 # Guía de ADRs Pendientes para Completar el MVP
 
 **Fecha de creación:** 16 de diciembre de 2025  
-**Última actualización:** 23 de diciembre de 2025  
+**Última actualización:** 29 de diciembre de 2025  
 **Propósito:** Identificar decisiones arquitectónicas necesarias para completar el MVP del Wine Fermentation System
 
 ---
 
-## Estado Actual del Proyecto: 55-60% Completo ✅
+## Estado Actual del Proyecto: 65-70% Completo ✅
 
 ### Módulos Completados ✅
 1. **Authentication Module** - 100% (159 tests)
@@ -15,68 +15,56 @@
 4. **Module Dependency Management** - 100% (ADR-028 ✅)
 5. **Error Handling Strategy** - 100% (ADR-026 ✅) - December 26, 2025
 6. **Multi-Tenancy Security (LIGHT)** - 100% (ADR-025 ✅) - December 23, 2025
+7. **Fruit Origin Service Layer** - 100% (ADR-014 ✅) - December 27, 2025
+8. **Fruit Origin API Layer** - 100% (ADR-015 ✅) - December 29, 2025
 
 ### Módulos Parcialmente Completados 🟡
-7. **Fruit Origin Module** - 70% (72 tests) - Repository + Poetry env ✅, Falta Service + API
-8. **Winery Module** - 70% (22 tests) - Repository + Poetry env ✅, Falta Service + API
-9. **Shared Module** - 100% (52 tests) - Testing utilities ✅
+9. **Winery Module** - 70% (40 tests) - Repository + Poetry env ✅, Falta Service + API
+10. **Shared Module** - 100% (52 tests) - Testing utilities ✅
 
 ### Módulos Pendientes ⏳
-10. **Historical Data Module** - 0%
-11. **Analysis Engine Module** - 0%
-12. **Action Tracking Module** - 0%
-13. **Frontend Module** - 0%
+11. **Historical Data Module** - 0%
+12. **Analysis Engine Module** - 0%
+13. **Action Tracking Module** - 0%
+14. **Frontend Module** - 0%
 
-**Tests Passing:** 562/562 (100%) ✅  
-**Last Update:** December 26, 2025
+**Tests Passing:** 709/709 (100%) ✅  
+**Last Update:** December 29, 2025
 
 ---
 
 ## ADRs Necesarios por Módulo
 
-### 1. Fruit Origin Module - Service & API Layer
+### 1. Fruit Origin Module - Service & API Layer ✅ COMPLETADO
 
-#### ADR-014: Fruit Origin Service Layer Architecture
-**Decisión a tomar:** Diseño de la capa de servicios para gestión de viñedos y lotes de cosecha
+#### ADR-014: Fruit Origin Service Layer Architecture ✅
+**Estado:** ✅ **IMPLEMENTADO** (December 27, 2025)
 
-**Contexto:**
-- Repository layer completo (VineyardRepository, GrapeVarietyRepository, HarvestLotRepository)
-- 156 tests existentes (113 unit + 43 integration)
-- Necesidad de orquestar operaciones entre múltiples repositorios
-- Validaciones de negocio para viñedos y lotes de cosecha
+**Decisión tomada:**
+- Unified FruitOriginService para vineyard y harvest lot operations
+- 8 métodos: vineyard CRUD + harvest lot CRUD
+- 28 service tests (15 vineyard + 13 harvest lot)
+- 100/100 tests passing (72 repo + 28 service)
 
-**Aspectos a decidir:**
-- Estructura de servicios (FruitOriginService vs servicios separados)
-- Validaciones de negocio específicas del dominio
-- Manejo de transacciones para operaciones multi-entidad
-- Patrón de dependencias entre servicios
-- Estrategia de caché para datos de viñedos (datos relativamente estáticos)
-
-**Referencia:** Ver ADR-007 (Fermentation Service) como patrón establecido
+**Referencia:** Ver [ADR-014](./ADR-014-fruit-origin-service-layer.md)
 
 ---
 
-#### ADR-015: Fruit Origin API Design & DTOs
-**Decisión a tomar:** Diseño de endpoints REST y contratos de datos para gestión de origen de fruta
+#### ADR-015: Fruit Origin API Design & REST Endpoints ✅
+**Estado:** ✅ **IMPLEMENTADO** (December 29, 2025)
 
-**Contexto:**
-- Endpoints necesarios: viñedos, variedades de uva, lotes de cosecha
-- Relación con Fermentation API (cada fermentación tiene harvest_lot_id)
-- Necesidad de consultas eficientes (listar viñedos con sus variedades)
-- Filtrado por winery_id (multi-tenancy)
+**Decisión tomada:**
+- **Phase 1**: Vineyard API - 16/16 tests (100%)
+  - 6 endpoints: POST, GET, GET list, PATCH, DELETE, GET with include_deleted
+- **Phase 2**: Harvest Lot API MVP - Initial implementation
+- **Phase 3**: Complete Harvest Lot CRUD - 18/18 tests (100%)
+  - Added: PATCH (update), DELETE (soft delete)
+- **Total**: 177/177 Fruit Origin tests passing
+  - Unit: 100/100
+  - Integration: 43/43
+  - API: 34/34 (16 vineyard + 18 harvest lot)
 
-**Aspectos a decidir:**
-- Estructura de endpoints REST:
-  - `/api/v1/vineyards` - CRUD de viñedos
-  - `/api/v1/vineyards/{id}/varieties` - Variedades por viñedo
-  - `/api/v1/grape-varieties` - Catálogo de variedades
-  - `/api/v1/harvest-lots` - CRUD de lotes de cosecha
-- DTOs (Request/Response) para cada entidad
-- Paginación y filtrado
-- Validaciones de input en API layer
-- Documentación OpenAPI/Swagger
-
-**Referencia:** Ver ADR-006 (Fermentation API) como patrón establecido
+**Referencia:** Ver [ADR-015](./ADR-015-fruit-origin-api-design.md)
 
 ---
 

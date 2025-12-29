@@ -175,6 +175,8 @@ async def override_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]
             await conn.execute(text("DELETE FROM fermentation_notes"))
             await conn.execute(text("DELETE FROM fermentations"))
             await conn.execute(text("DELETE FROM harvest_lots"))
+            await conn.execute(text("DELETE FROM vineyard_blocks"))
+            await conn.execute(text("DELETE FROM vineyards"))
             await conn.execute(text("DELETE FROM users"))
             await conn.execute(text("DELETE FROM wineries"))
             await conn.commit()

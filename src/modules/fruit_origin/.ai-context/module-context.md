@@ -73,50 +73,26 @@ FermentationLotSource (fermentation module)
 
 ## Implementation status
 
-**Status:** ✅ **Domain & Repository Layer Complete** | 🎯 **Tests Passing (113 unit + 43 integration)**  
-**Last Updated:** December 15, 2025  
-**Reference:** ADR-004 (Harvest Consolidation), ADR-009 (Missing Repositories), ADR-012 (Unit Testing Phase 3)
+**Status:** ✅ **COMPLETE (Repository + Service + API)**  
+**Last Updated:** December 29, 2025  
+**Total Tests:** 177 passing (100 unit + 43 integration + 34 API)
 
-### Completed
-- ✅ Entity models with SQLAlchemy mappings
-  - Vineyard: 4 fields (winery_id, code, name, notes)
-  - VineyardBlock: 11 fields (block details, technical specs)
-  - HarvestLot: 19 fields (complete harvest traceability)
-- ✅ Relationships: vineyard ↔ blocks ↔ harvest_lots
-- ✅ Database tables created (verified in system schema)
-- ✅ **Repository Layer (113 unit + 43 integration tests)**
-  - VineyardRepository: 28 unit + 11 integration tests (Phase 3 migrated to ADR-012) ✅
-  - VineyardBlockRepository: 31 unit + 12 integration tests (Phase 3 migrated to ADR-012) ✅
-  - HarvestLotRepository: 12 unit + 20 integration tests (Phase 3 migrated to ADR-012) ✅
-  - Multi-tenant security patterns implemented
-  - Soft-delete support
-  - Error handling (DuplicateCodeError, EntityNotFoundError)
-- ✅ **ADR-012 Impact**: 3 repository test files migrated (71 tests using shared infrastructure)
+### Component status
+- ✅ **Domain Layer**: Entities (Vineyard, VineyardBlock, HarvestLot) with SQLAlchemy mappings  
+  See: [domain component-context.md](src/domain/.ai-context/component-context.md)
 
-### Pending
-- ⏭️ Service layer (vineyard management, harvest recording)
-- ⏭️ API endpoints
+- ✅ **Repository Layer**: 156 tests (113 unit + 43 integration)  
+  See: [repository_component component-context.md](src/repository_component/.ai-context/component-context.md)
 
-## Cross-module dependencies
+- ✅ **Service Layer**: 100 unit tests with validation orchestration  
+  See: [service_component component-context.md](src/service_component/.ai-context/component-context.md)
 
-**Outgoing** (fruit_origin depends on):
-- `winery.Winery` - Ownership via `winery_id` FK
+- ✅ **API Layer**: 34 API tests (16 vineyard + 18 harvest lot endpoints)  
+  See: [api_component component-context.md](src/api_component/.ai-context/component-context.md)
 
-**Incoming** (other modules depend on fruit_origin):
-- `fermentation.FermentationLotSource` - References `HarvestLot` to track fruit origin
-
-## Why 19 fields in HarvestLot?
-
-**Regulatory compliance**: Denominaciones de origen require precise documentation  
-**Quality correlation**: Link fermentation characteristics to fruit origin  
-**Historical analysis**: Identify best blocks/dates for future harvest decisions  
-**Blend decisions**: Know exact fruit characteristics per lot
-
-**Real-world example**: Winemaker compares two fermentations of same wine with different profiles. With complete HarvestLot:
-- Compare `brix_at_harvest` (different maturity)
-- Check `pick_method` (hand vs mechanical affects quality)
-- Review `field_temp_c` (high temp → spontaneous fermentation risk)
-- Verify `pick_start_time` (nocturnal vs diurnal harvest)
+### Next steps
+- ⏭️ VineyardBlock API endpoints (future phase)
+- ⏭️ Advanced filtering/search endpoints
 
 ## Module components
 Currently only **Domain** component (entities). Future:

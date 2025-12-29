@@ -54,28 +54,20 @@ Winery (root)
 
 ## Implementation status
 
-**Status:** ✅ **Domain & Repository Layer Complete** | 🎯 **Tests Passing (22 unit + 18 integration)**  
-**Last Updated:** December 15, 2025  
-**Reference:** ADR-009 (Missing Repositories), ADR-012 (Unit Testing Phase 3)
+**Status:** ✅ **REPOSITORY LAYER COMPLETE**  
+**Last Updated:** December 29, 2025  
+**Total Tests:** 40 passing (22 unit + 18 integration)
 
-### Completed
-- ✅ Entity model with SQLAlchemy mapping
-  - Winery: 4 fields (code, name, location, notes)
-  - Unique constraints: code (globally unique)
-  - Indexed: code
-- ✅ Database table created (wineries)
-- ✅ **Repository Layer (22 unit + 18 integration tests)**
-  - WineryRepository: Complete CRUD operations ✅
-  - 22 unit tests (Phase 3 migrated to ADR-012) ✅
-  - 18 integration tests ✅
-  - Multi-tenant ready (no winery_id filtering needed - root entity)
-  - Error handling (DuplicateNameError, RepositoryError)
-  - Soft-delete support
-- ✅ **ADR-012 Impact**: 1 repository test file migrated (22 tests using shared infrastructure)
+### Component status
+- ✅ **Domain Layer**: Winery entity with SQLAlchemy mapping  
+  See: [domain component-context.md](src/domain/.ai-context/component-context.md)
 
-### Pending
+- ✅ **Repository Layer**: 40 tests (22 unit + 18 integration)  
+  See: [repository_component component-context.md](src/repository_component/.ai-context/component-context.md)
+
+### Next steps
 - ⏭️ Service layer (winery CRUD operations)
-- ⏭️ API endpoints
+- ⏭️ API endpoints (winery management)
 
 ## Cross-module dependencies
 

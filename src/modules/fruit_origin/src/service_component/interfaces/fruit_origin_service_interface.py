@@ -24,7 +24,7 @@ from typing import List, Optional
 from src.modules.fruit_origin.src.domain.entities.vineyard import Vineyard
 from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot
 from src.modules.fruit_origin.src.domain.dtos.vineyard_dtos import VineyardCreate, VineyardUpdate
-from src.modules.fruit_origin.src.domain.dtos.harvest_lot_dtos import HarvestLotCreate
+from src.modules.fruit_origin.src.domain.dtos.harvest_lot_dtos import HarvestLotCreate, HarvestLotUpdate
 
 
 class IFruitOriginService(ABC):
@@ -259,5 +259,64 @@ class IFruitOriginService(ABC):
             
         Returns:
             List of harvest lots (may be empty)
+        """
+        pass
+    
+    @abstractmethod
+    async def update_harvest_lot(
+        self,
+        lot_id: int,
+        winery_id: int,
+        user_id: int,
+        data: "HarvestLotUpdate"
+    ) -> HarvestLot:
+        """
+        Update harvest lot details.
+        
+        Security:
+        - Only updates if lot belongs to winery_id (ADR-025)
+        
+        Args:
+            lot_id: Harvest lot ID
+            winery_id: Winery ID for access control
+            user_id: User updating (audit trail)
+            data: Update data (only provided fields updated)
+            
+        Returns:
+            Updated harvest lot
+            
+        Raises:
+            HarvestLotNotFound: Lot doesn't exist or access denied (ADR-026)
+            DuplicateCodeError: Code already exists for this winery (ADR-026)
+        """
+        pass
+    
+    @abstractmethod
+    async def delete_harvest_lot(
+        self,
+        lot_id: int,
+        winery_id: int,
+        user_id: int
+    ) -> bool:
+        """
+        Soft delete a harvest lot with validation.
+        
+        Business rule (ADR-014):
+        - Cannot delete lot if used in any fermentation (active or completed)
+        
+        Security:
+        - Only deletes if lot belongs to winery_id (ADR-025)
+        
+        Args:
+            lot_id: Harvest lot ID
+            winery_id: Winery ID for access control
+            user_id: User deleting (audit trail)
+            
+        Returns:
+            True if deleted successfully
+            
+        Raises:
+            HarvestLotNotFound: Lot doesn't exist or access denied (ADR-026)
+            HarvestLotInUseError: Cannot delete - used in fermentation (ADR-026)
         """
         pass

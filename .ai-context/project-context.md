@@ -60,40 +60,29 @@
 **Details:** See [fermentation module-context.md](../src/modules/fermentation/.ai-context/module-context.md)
 
 ### Fruit Origin Module  
-**Status:** ✅ REPOSITORY LAYER COMPLETE  
-**Last Updated:** December 15, 2025  
-**Total Tests:** 156 passing (113 unit + 43 integration)  
+**Status:** ✅ COMPLETE (Repository + Service + API)  
+**Last Updated:** December 29, 2025  
+**Total Tests:** 177 passing  
 **Details:** See [fruit_origin module-context.md](../src/modules/fruit_origin/.ai-context/module-context.md)
 
 ### Winery Module
 **Status:** ✅ REPOSITORY LAYER COMPLETE  
-**Last Updated:** December 15, 2025  
-**Total Tests:** 40 passing (22 unit + 18 integration)  
+**Last Updated:** December 29, 2025  
+**Total Tests:** 40 passing  
 **Details:** See [winery module-context.md](../src/modules/winery/.ai-context/module-context.md)
 
 ### Shared Testing Infrastructure
 **Status:** ✅ PRODUCTION READY  
 **Last Updated:** December 15, 2025  
-**Total Tests:** 138 passing (86 unit infrastructure + 52 integration infrastructure)  
+**Total Tests:** 138 passing  
 **Details:** See [testing module-context.md](../src/shared/testing/.ai-context/module-context.md)
 
 ### Project Totals
-**Tests:** **737 passing** (545+ unit + 192+ integration)  
-**Modules Complete:** 
-- ✅ Auth: Full implementation with API (187 tests)
-- ✅ Fermentation: Full implementation with API (272 tests)
-- ✅ Fruit Origin: Repository layer complete (156 tests)
-- ✅ Winery: Repository layer complete (40 tests)
-- ✅ Shared Testing: Infrastructure utilities (138 tests)
+**Tests:** **709 passing** (100% pass rate)  
+**ADR Status:** 14 implemented (ADR-002 through ADR-015, excluding ADR-010)  
+**Details:** See [ADR-INDEX.md](./.ai-context/adr/ADR-INDEX.md) and [ADR-PENDING-GUIDE.md](./.ai-context/adr/ADR-PENDING-GUIDE.md)
 
-**ADR Implementation Status:**
-All 11 architectural decisions (ADR-002 through ADR-013, excluding ADR-010) are fully implemented. See [ADR-INDEX.md](./.ai-context/adr/ADR-INDEX.md) for details.
-
-**Next Phase:** 
-1. Fruit Origin Service & API Layers
-2. Winery Service & API Layers
-3. Historical Data Module
-4. Analysis Engine Module
+**Next Phase:** Winery Service & API Layers
 
 ## How to restart work on this system
 Read the module-context.md for the specific module you need to work on:

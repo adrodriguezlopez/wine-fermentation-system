@@ -449,6 +449,20 @@ class TestVineyardOperations:
         mock_vineyard_repo.get_by_id.return_value = vineyard
         mock_vineyard_repo.delete.return_value = True
         
+        # Mock get_session() to return async context manager
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=AsyncMock(fetchall=Mock(return_value=[])))
+        
+        async def mock_get_session():
+            class AsyncContextManager:
+                async def __aenter__(self):
+                    return mock_session
+                async def __aexit__(self, exc_type, exc_val, exc_tb):
+                    pass
+            return AsyncContextManager()
+        
+        mock_vineyard_repo.get_session = mock_get_session
+        
         # Act
         result = await service.delete_vineyard(vineyard_id, winery_id, user_id)
         
@@ -480,6 +494,20 @@ class TestVineyardOperations:
         block = Mock(spec=VineyardBlock, id=1)
         vineyard = Mock(spec=Vineyard, id=1, blocks=[block])
         mock_vineyard_repo.get_by_id.return_value = vineyard
+        
+        # Mock get_session() to return async context manager with block IDs
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=AsyncMock(fetchall=Mock(return_value=[(1,)])))
+        
+        async def mock_get_session():
+            class AsyncContextManager:
+                async def __aenter__(self):
+                    return mock_session
+                async def __aexit__(self, exc_type, exc_val, exc_tb):
+                    pass
+            return AsyncContextManager()
+        
+        mock_vineyard_repo.get_session = mock_get_session
         
         # Block has active harvest lots
         active_lot = Mock(spec=HarvestLot, id=1, is_deleted=False)
@@ -539,6 +567,20 @@ class TestVineyardOperations:
         block = Mock(spec=VineyardBlock, id=1)
         vineyard = Mock(spec=Vineyard, id=1, blocks=[block])
         mock_vineyard_repo.get_by_id.return_value = vineyard
+        
+        # Mock get_session() to return async context manager with block IDs
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=AsyncMock(fetchall=Mock(return_value=[(1,)])))
+        
+        async def mock_get_session():
+            class AsyncContextManager:
+                async def __aenter__(self):
+                    return mock_session
+                async def __aexit__(self, exc_type, exc_val, exc_tb):
+                    pass
+            return AsyncContextManager()
+        
+        mock_vineyard_repo.get_session = mock_get_session
         
         # Block has only deleted lots
         deleted_lot = Mock(spec=HarvestLot, id=1, is_deleted=True)

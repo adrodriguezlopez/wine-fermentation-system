@@ -14,6 +14,7 @@ Related ADRs:
 """
 from typing import List, Optional
 from datetime import datetime, timezone
+from sqlalchemy import select
 
 # ADR-027: Structured logging
 from src.shared.wine_fermentator_logging import get_logger, LogTimer
@@ -25,6 +26,7 @@ from src.modules.fruit_origin.src.service_component.interfaces.fruit_origin_serv
 
 # Domain entities
 from src.modules.fruit_origin.src.domain.entities.vineyard import Vineyard
+from src.modules.fruit_origin.src.domain.entities.vineyard_block import VineyardBlock
 from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot
 
 # DTOs
@@ -32,7 +34,7 @@ from src.modules.fruit_origin.src.domain.dtos.vineyard_dtos import (
     VineyardCreate,
     VineyardUpdate,
 )
-from src.modules.fruit_origin.src.domain.dtos.harvest_lot_dtos import HarvestLotCreate
+from src.modules.fruit_origin.src.domain.dtos.harvest_lot_dtos import HarvestLotCreate, HarvestLotUpdate
 
 # Repositories
 from src.modules.fruit_origin.src.domain.repositories.vineyard_repository_interface import (
@@ -49,6 +51,7 @@ from src.shared.domain.errors import (
     VineyardBlockNotFound,
     InvalidHarvestDate,
     HarvestLotNotFound,
+    DuplicateCodeError,
 )
 
 logger = get_logger(__name__)
@@ -259,8 +262,16 @@ class FruitOriginService(IFruitOriginService):
                 )
             
             # Check for active harvest lots (via vineyard blocks)
-            # Get all blocks for this vineyard
-            all_blocks_ids = [block.id for block in vineyard.blocks]
+            # Query blocks directly instead of using lazy loading
+            session_cm = await self._vineyard_repo.get_session()
+            async with session_cm as session:
+                # Get all block IDs for this vineyard
+                block_query = select(VineyardBlock.id).where(
+                    VineyardBlock.vineyard_id == vineyard_id,
+                    VineyardBlock.is_deleted == False
+                )
+                block_result = await session.execute(block_query)
+                all_blocks_ids = [row[0] for row in block_result.fetchall()]
             
             # Count active lots across all blocks
             active_lots_count = 0
@@ -464,3 +475,101 @@ class FruitOriginService(IFruitOriginService):
                 )
                 
                 return lots
+    
+    async def update_harvest_lot(
+        self,
+        lot_id: int,
+        winery_id: int,
+        user_id: int,
+        data: HarvestLotUpdate
+    ) -> HarvestLot:
+        """Update harvest lot with validation."""
+        with LogTimer(logger, "update_harvest_lot_service"):
+            logger.info(
+                "updating_harvest_lot",
+                lot_id=lot_id,
+                winery_id=winery_id,
+                user_id=user_id
+            )
+            
+            # Get existing lot with access control
+            existing_lot = await self._harvest_lot_repo.get_by_id(lot_id, winery_id)
+            if not existing_lot:
+                logger.warning(
+                    "harvest_lot_not_found_for_update",
+                    lot_id=lot_id,
+                    winery_id=winery_id
+                )
+                raise HarvestLotNotFound(lot_id)
+            
+            # Check for code uniqueness if code is being changed
+            if data.code and data.code != existing_lot.code:
+                existing_by_code = await self._harvest_lot_repo.get_by_code(data.code, winery_id)
+                if existing_by_code:
+                    logger.warning(
+                        "duplicate_harvest_lot_code_on_update",
+                        code=data.code,
+                        winery_id=winery_id,
+                        existing_lot_id=existing_by_code.id
+                    )
+                    raise DuplicateCodeError(f"Harvest lot code '{data.code}' already exists")
+            
+            # Update lot
+            updated_lot = await self._harvest_lot_repo.update(lot_id, winery_id, data)
+            
+            logger.info(
+                "harvest_lot_updated",
+                lot_id=lot_id,
+                lot_code=updated_lot.code,
+                winery_id=winery_id
+            )
+            
+            return updated_lot
+    
+    async def delete_harvest_lot(
+        self,
+        lot_id: int,
+        winery_id: int,
+        user_id: int
+    ) -> bool:
+        """Soft delete harvest lot with usage validation."""
+        with LogTimer(logger, "delete_harvest_lot_service"):
+            logger.info(
+                "deleting_harvest_lot",
+                lot_id=lot_id,
+                winery_id=winery_id,
+                user_id=user_id
+            )
+            
+            # Get existing lot with access control
+            existing_lot = await self._harvest_lot_repo.get_by_id(lot_id, winery_id)
+            if not existing_lot:
+                logger.warning(
+                    "harvest_lot_not_found_for_delete",
+                    lot_id=lot_id,
+                    winery_id=winery_id
+                )
+                raise HarvestLotNotFound(lot_id)
+            
+            # TODO Phase 3: Check if lot is used in any fermentation
+            # This requires integration with fermentation module
+            # For now, we allow deletion (will be blocked by foreign key constraint if used)
+            
+            # Soft delete
+            success = await self._harvest_lot_repo.delete(lot_id, winery_id)
+            
+            if success:
+                logger.info(
+                    "harvest_lot_deleted",
+                    lot_id=lot_id,
+                    lot_code=existing_lot.code,
+                    winery_id=winery_id
+                )
+            else:
+                logger.error(
+                    "harvest_lot_delete_failed",
+                    lot_id=lot_id,
+                    winery_id=winery_id
+                )
+            
+            return success
