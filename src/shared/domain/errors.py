@@ -178,6 +178,12 @@ class InvalidWineryData(WineryError):
     error_code = "INVALID_WINERY_DATA"
 
 
+class WineryHasActiveDataError(WineryError):
+    """Raised when attempting to delete winery with active data in other modules"""
+    http_status = 409  # Conflict
+    error_code = "WINERY_HAS_ACTIVE_DATA"
+
+
 # ============================================
 # Auth-specific errors
 # ============================================

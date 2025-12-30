@@ -36,10 +36,12 @@ from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot
 
 async def create_test_winery(session, winery_id: int = 1):
     """Helper: Create a test winery in the database."""
+    from uuid import uuid4
     winery = Winery(
         id=winery_id,
+        code=f"TEST-W{winery_id}-{uuid4().hex[:6].upper()}",
         name=f"Test Winery {winery_id}",
-        region="Test Region",
+        location="Test Region",
         is_deleted=False
     )
     session.add(winery)

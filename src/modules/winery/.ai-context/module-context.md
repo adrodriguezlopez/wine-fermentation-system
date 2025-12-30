@@ -54,20 +54,27 @@ Winery (root)
 
 ## Implementation status
 
-**Status:** ✅ **REPOSITORY LAYER COMPLETE**  
+**Status:** � **SERVICE LAYER COMPLETE** (ADR-016 ✅)  
 **Last Updated:** December 29, 2025  
-**Total Tests:** 40 passing (22 unit + 18 integration)
+**Total Tests:** 44 passing (22 repository + 22 service)
 
 ### Component status
 - ✅ **Domain Layer**: Winery entity with SQLAlchemy mapping  
   See: [domain component-context.md](src/domain/.ai-context/component-context.md)
 
-- ✅ **Repository Layer**: 40 tests (22 unit + 18 integration)  
+- ✅ **Repository Layer**: 22 unit tests passing (100%)  
   See: [repository_component component-context.md](src/repository_component/.ai-context/component-context.md)
 
+- ✅ **Service Layer**: 22 unit tests passing (100%) - ADR-016 ✅  
+  See: [service_component component-context.md](src/service_component/.ai-context/component-context.md)
+  - WineryService with 9 methods
+  - ValidationOrchestrator pattern
+  - Cross-module deletion protection
+  - Structured logging integration
+
 ### Next steps
-- ⏭️ Service layer (winery CRUD operations)
-- ⏭️ API endpoints (winery management)
+- ⏭️ **Next**: API endpoints (ADR-017 - winery management REST endpoints)
+- 🔮 **Future**: Advanced features (statistics, bulk operations, enhanced caching)
 
 ## Cross-module dependencies
 

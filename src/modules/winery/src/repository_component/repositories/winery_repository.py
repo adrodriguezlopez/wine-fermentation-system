@@ -59,14 +59,16 @@ class WineryRepository(BaseRepository, IWineryRepository):
                 logger.info(
                     "creating_winery",
                     winery_name=data.name,
-                    region=data.region
+                    location=data.location
                 )
                 
                 session_cm = await self.get_session()
                 async with session_cm as session:
                     winery = Winery(
+                        code=data.code,
                         name=data.name,
-                        region=data.region,
+                        location=data.location,
+                        notes=getattr(data, 'notes', None),
                         is_deleted=False,
                     )
 
@@ -197,6 +199,32 @@ class WineryRepository(BaseRepository, IWineryRepository):
         except Exception as e:
             raise RepositoryError(f"Failed to get winery by name: {str(e)}") from e
 
+    async def get_by_code(self, code: str) -> Optional[Winery]:
+        """
+        Find a winery by code.
+        
+        Args:
+            code: Unique code of the winery
+            
+        Returns:
+            Optional[Winery]: Winery entity or None if not found
+        """
+        async def _get_operation():
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                query = select(Winery).where(
+                    Winery.code == code,
+                    Winery.is_deleted == False,
+                )
+
+                result = await session.execute(query)
+                return result.scalar_one_or_none()
+
+        try:
+            return await _get_operation()
+        except Exception as e:
+            raise RepositoryError(f"Failed to get winery by code: {str(e)}") from e
+
     async def update(self, winery_id: int, data: WineryUpdate) -> Optional[Winery]:
         """
         Update winery information.
@@ -229,8 +257,10 @@ class WineryRepository(BaseRepository, IWineryRepository):
                 # Apply updates
                 if data.name is not None:
                     winery.name = data.name
-                if data.region is not None:
-                    winery.region = data.region
+                if data.location is not None:
+                    winery.location = data.location
+                if data.notes is not None:
+                    winery.notes = data.notes
 
                 await session.flush()
                 await session.refresh(winery)
@@ -286,3 +316,52 @@ class WineryRepository(BaseRepository, IWineryRepository):
             return await _delete_operation()
         except Exception as e:
             raise RepositoryError(f"Failed to delete winery: {str(e)}") from e
+
+    async def list_all(self, skip: int = 0, limit: int = 100) -> List[Winery]:
+        """
+        List all non-deleted wineries with pagination.
+        
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            
+        Returns:
+            List[Winery]: List of winery entities
+        """
+        async def _list_operation():
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                query = select(Winery).where(
+                    Winery.is_deleted == False,
+                ).offset(skip).limit(limit)
+                
+                result = await session.execute(query)
+                return list(result.scalars().all())
+        
+        try:
+            return await _list_operation()
+        except Exception as e:
+            raise RepositoryError(f"Failed to list wineries: {str(e)}") from e
+
+    async def count(self) -> int:
+        """
+        Count all non-deleted wineries.
+        
+        Returns:
+            int: Total count of active wineries
+        """
+        async def _count_operation():
+            from sqlalchemy import func
+            session_cm = await self.get_session()
+            async with session_cm as session:
+                query = select(func.count()).select_from(Winery).where(
+                    Winery.is_deleted == False,
+                )
+                
+                result = await session.execute(query)
+                return result.scalar() or 0
+        
+        try:
+            return await _count_operation()
+        except Exception as e:
+            raise RepositoryError(f"Failed to count wineries: {str(e)}") from e

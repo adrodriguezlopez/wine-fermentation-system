@@ -164,8 +164,13 @@ class TestVineyardRepositoryCRUD:
     ):
         """Test that get_by_id() enforces multi-tenant isolation."""
         # Arrange - Create another winery
+        from uuid import uuid4
         Winery = test_models['Winery']
-        other_winery = Winery(name="Other Winery", region="Sonoma")
+        other_winery = Winery(
+            code=f"OTHER-{uuid4().hex[:8].upper()}",
+            name="Other Winery",
+            location="Sonoma"
+        )
         db_session.add(other_winery)
         await db_session.flush()
         

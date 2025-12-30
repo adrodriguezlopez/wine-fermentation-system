@@ -30,18 +30,21 @@ class TestWineryRepositoryCRUD:
         db_session,
     ):
         """Test that create() persists Winery to database."""
+        from uuid import uuid4
         Winery = test_models['Winery']
         winery_data = WineryCreate(
+            code=f"SUNSET-{uuid4().hex[:8].upper()}",
             name="Sunset Vineyards",
-            region="Napa Valley"
+            location="Napa Valley"
         )
         
         created = await winery_repository.create(data=winery_data)
         await db_session.flush()
         
         assert created.id is not None
+        assert created.code is not None
         assert created.name == "Sunset Vineyards"
-        assert created.region == "Napa Valley"
+        assert created.location == "Napa Valley"
         assert created.is_deleted == False
         
         # Verify persistence
@@ -57,13 +60,17 @@ class TestWineryRepositoryCRUD:
         self,
         winery_repository,
     ):
-        """Test that create() works without optional region field."""
-        winery_data = WineryCreate(name="Mountain Winery")
+        """Test that create() works without optional location field."""
+        from uuid import uuid4
+        winery_data = WineryCreate(
+            code=f"MTN-{uuid4().hex[:8].upper()}",
+            name="Mountain Winery"
+        )
         
         created = await winery_repository.create(data=winery_data)
         
         assert created.name == "Mountain Winery"
-        assert created.region is None
+        assert created.location is None
 
     @pytest.mark.asyncio
     async def test_create_duplicate_name_raises_error(
@@ -72,9 +79,11 @@ class TestWineryRepositoryCRUD:
         test_winery,
     ):
         """Test that creating winery with duplicate name raises error."""
+        from uuid import uuid4
         duplicate_data = WineryCreate(
+            code=f"DUP-{uuid4().hex[:8].upper()}",
             name=test_winery.name,  # Use the same name as test_winery
-            region="Different Region"
+            location="Different Region"
         )
         
         with pytest.raises(DuplicateNameError) as exc_info:
@@ -112,8 +121,14 @@ class TestWineryRepositoryCRUD:
         db_session,
     ):
         """Test that get_by_id() excludes soft-deleted wineries."""
+        from uuid import uuid4
         Winery = test_models['Winery']
-        winery = Winery(name="Deleted Winery", region="Old Region", is_deleted=True)
+        winery = Winery(
+            code=f"DEL-{uuid4().hex[:8].upper()}",
+            name="Deleted Winery",
+            location="Old Region",
+            is_deleted=True
+        )
         db_session.add(winery)
         await db_session.flush()
         await db_session.refresh(winery)
@@ -145,9 +160,20 @@ class TestWineryRepositoryCRUD:
         test_models,
     ):
         """Test that get_all() returns wineries ordered by name."""
+        from uuid import uuid4
         Winery = test_models['Winery']
-        winery_z = Winery(name="Zebra Winery", region="Region Z", is_deleted=False)
-        winery_a = Winery(name="Alpha Winery", region="Region A", is_deleted=False)
+        winery_z = Winery(
+            code=f"ZEBRA-{uuid4().hex[:8].upper()}",
+            name="Zebra Winery",
+            location="Region Z",
+            is_deleted=False
+        )
+        winery_a = Winery(
+            code=f"ALPHA-{uuid4().hex[:8].upper()}",
+            name="Alpha Winery",
+            location="Region A",
+            is_deleted=False
+        )
         db_session.add(winery_z)
         db_session.add(winery_a)
         await db_session.flush()
@@ -169,7 +195,12 @@ class TestWineryRepositoryCRUD:
         """Test that get_all() excludes soft-deleted wineries."""
         from uuid import uuid4
         Winery = test_models['Winery']
-        deleted = Winery(name=f"Deleted Winery {uuid4().hex[:8]}", region="Old", is_deleted=True)
+        deleted = Winery(
+            code=f"DELETED-{uuid4().hex[:8].upper()}",
+            name=f"Deleted Winery {uuid4().hex[:8]}",
+            location="Old",
+            is_deleted=True
+        )
         db_session.add(deleted)
         await db_session.flush()
         
@@ -214,7 +245,7 @@ class TestWineryRepositoryCRUD:
         Winery = test_models['Winery']
         update_data = WineryUpdate(
             name="Updated Name",
-            region="Updated Region"
+            location="Updated Region"
         )
         
         updated = await winery_repository.update(
@@ -225,7 +256,7 @@ class TestWineryRepositoryCRUD:
         
         assert updated is not None
         assert updated.name == "Updated Name"
-        assert updated.region == "Updated Region"
+        assert updated.location == "Updated Region"
         
         result = await db_session.execute(
             select(Winery).where(Winery.id == test_winery.id)
@@ -240,7 +271,7 @@ class TestWineryRepositoryCRUD:
         test_winery,
     ):
         """Test that update() supports partial updates."""
-        original_region = test_winery.region
+        original_location = test_winery.location
         update_data = WineryUpdate(name="New Name Only")
         
         updated = await winery_repository.update(
@@ -249,7 +280,7 @@ class TestWineryRepositoryCRUD:
         )
         
         assert updated.name == "New Name Only"
-        assert updated.region == original_region
+        assert updated.location == original_location
 
     @pytest.mark.asyncio
     async def test_update_nonexistent_winery_returns_none(
@@ -319,8 +350,14 @@ class TestWineryRepositoryCRUD:
         db_session,
     ):
         """Test that delete() returns False for already deleted winery."""
+        from uuid import uuid4
         Winery = test_models['Winery']
-        winery = Winery(name="Already Deleted", region="Old", is_deleted=True)
+        winery = Winery(
+            code=f"ALDEL-{uuid4().hex[:8].upper()}",
+            name="Already Deleted",
+            location="Old",
+            is_deleted=True
+        )
         db_session.add(winery)
         await db_session.flush()
         await db_session.refresh(winery)

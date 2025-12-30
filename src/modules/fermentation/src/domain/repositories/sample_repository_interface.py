@@ -6,8 +6,8 @@ ARCHITECTURE: Repository returns BaseSample entities consistently across all met
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 from datetime import datetime
-from domain.entities.samples.base_sample import BaseSample
-from domain.enums.sample_type import SampleType
+from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
+from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 
 
 class ISampleRepository(ABC):

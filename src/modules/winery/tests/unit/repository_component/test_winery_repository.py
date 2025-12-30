@@ -32,8 +32,9 @@ from src.shared.testing.unit import (
 def sample_winery_create():
     """Sample WineryCreate DTO."""
     return WineryCreate(
+        code="SUNSET-01",
         name="Sunset Vineyards",
-        region="Napa Valley",
+        location="Napa Valley",
     )
 
 
@@ -44,7 +45,7 @@ def sample_winery():
         Winery,
         id=1,
         name="Sunset Vineyards",
-        region="Napa Valley",
+        location="Napa Valley",
         is_deleted=False,
     )
     winery.created_at = datetime(2024, 1, 1, 12, 0, 0)
@@ -70,7 +71,7 @@ async def test_create_success(sample_winery_create):
 @pytest.mark.asyncio
 async def test_create_with_minimal_data():
     """Test creating winery with only required fields."""
-    data = WineryCreate(name="Mountain Winery")
+    data = WineryCreate(code="MTN-01", name="Mountain Winery")
     session_manager = MockSessionManagerBuilder().build()
     repository = WineryRepository(session_manager)
 
@@ -209,7 +210,7 @@ async def test_get_all_success(sample_winery):
         Winery,
         id=2,
         name="River Valley Wines",
-        region="Sonoma",
+        location="Sonoma",
         is_deleted=False,
     )
     session_manager = (
@@ -333,7 +334,7 @@ async def test_update_success(sample_winery):
     )
     repository = WineryRepository(session_manager)
     
-    update_data = WineryUpdate(name="New Name", region="New Region")
+    update_data = WineryUpdate(name="New Name", location="New Location")
 
     # Act
     result = await repository.update(1, update_data)
@@ -341,7 +342,7 @@ async def test_update_success(sample_winery):
     # Assert
     assert result == sample_winery
     assert sample_winery.name == "New Name"
-    assert sample_winery.region == "New Region"
+    assert sample_winery.location == "New Location"
 
 
 @pytest.mark.asyncio
@@ -354,7 +355,7 @@ async def test_update_partial(sample_winery):
     )
     repository = WineryRepository(session_manager)
     
-    original_region = sample_winery.region
+    original_location = sample_winery.location
     update_data = WineryUpdate(name="Updated Name")
 
     # Act
@@ -362,7 +363,7 @@ async def test_update_partial(sample_winery):
 
     # Assert
     assert sample_winery.name == "Updated Name"
-    assert sample_winery.region == original_region
+    assert sample_winery.location == original_location
 
 
 @pytest.mark.asyncio

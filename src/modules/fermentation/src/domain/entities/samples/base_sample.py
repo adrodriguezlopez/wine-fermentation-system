@@ -44,12 +44,15 @@ class BaseSample(BaseEntity):
 
     # Relationships - using fully qualified paths and Mapped types for consistency
     # Note: No back_populates for single-table inheritance to avoid mapper confusion
+    # Note: lazy='noload' prevents auto-loading which can cause mapper configuration issues across modules
     fermentation: Mapped["Fermentation"] = relationship(
-        "src.modules.fermentation.src.domain.entities.fermentation.Fermentation",
+        "Fermentation",
+        lazy="noload",
         viewonly=True
     )
     recorded_by_user: Mapped["User"] = relationship(
-        "src.shared.auth.domain.entities.user.User",
+        "User",
+        lazy="noload",
         viewonly=True
     )
 

@@ -588,11 +588,15 @@ class TestHarvestLotRepositoryMultiTenant:
     ):
         """Test that create() validates block belongs to winery."""
         # Arrange: Create another winery and block
+        from uuid import uuid4
         Winery = test_models['Winery']
         Vineyard = test_models['Vineyard']
         VineyardBlock = test_models['VineyardBlock']
         
-        other_winery = Winery(name="Other Winery")
+        other_winery = Winery(
+            code=f"OTHER-{uuid4().hex[:8].upper()}",
+            name="Other Winery"
+        )
         db_session.add(other_winery)
         await db_session.flush()
         
@@ -637,12 +641,16 @@ class TestHarvestLotRepositoryMultiTenant:
     ):
         """Test that get_by_winery() only returns lots for specified winery."""
         # Arrange: Create another winery with its own structure
+        from uuid import uuid4
         Winery = test_models['Winery']
         Vineyard = test_models['Vineyard']
         VineyardBlock = test_models['VineyardBlock']
         HarvestLot = test_models['HarvestLot']
         
-        other_winery = Winery(name="Other Winery 2")
+        other_winery = Winery(
+            code=f"OTHER2-{uuid4().hex[:8].upper()}",
+            name="Other Winery 2"
+        )
         db_session.add(other_winery)
         await db_session.flush()
         

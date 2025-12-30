@@ -22,6 +22,7 @@
 | **[ADR-012](./ADR-012-unit-test-infrastructure-refactoring.md)** | Unit Test Infrastructure Refactoring | ✅ Implemented | 2025-12-15 | High |
 | **[ADR-014](./ADR-014-fruit-origin-service-layer.md)** | Fruit Origin Service Layer Architecture | ✅ Implemented | 2025-12-27 | High |
 | **[ADR-015](./ADR-015-fruit-origin-api-design.md)** | Fruit Origin API Design & REST Endpoints | ✅ Implemented | 2025-12-29 | High |
+| **[ADR-016](./ADR-016-winery-service-layer.md)** | Winery Service Layer Architecture | ✅ Implemented | 2025-12-29 | High |
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 
@@ -265,6 +266,41 @@
 - **Error Handling**: ADR-026 domain errors with proper HTTP status codes
 - **Phase 4**: Future Integration - Deferred (requires fermentation module)
 
+### ADR-016: Winery Service Layer Architecture
+**Decision:** Service layer with WineryService implementing business logic and validation  
+**Status:** ✅ **COMPLETE** (All 5 Phases - Dec 29, 2025)  
+**Impact:** Complete service layer for Winery module with integration tests  
+**Key Points:**
+- **Phase 1-4**: Foundation complete (entity, repository, DTOs)
+  - Winery entity with `code` field (business identifier)
+  - WineryRepository with get_by_code(), list_all(), count()
+  - 44 repository tests (22 unit + 22 integration)
+- **Phase 5**: Service Layer + Integration Tests ✅
+  - IWineryService interface (9 abstract methods)
+  - WineryService implementation (392 lines)
+  - 9 methods: create, get, get_by_code, list, update, delete, exists, check_can_delete, count
+  - 22 unit tests (100% passing)
+  - 17 integration tests (100% passing)
+- **Architecture Patterns**:
+  - ValidationOrchestrator pattern (consistent with ADR-014)
+  - Delete protection: validation + DB constraints (dual layer)
+  - Cross-module validation (vineyard + fermentation dependencies)
+  - No caching initially (YAGNI principle)
+- **Error Handling**:
+  - WineryHasActiveDataError for delete protection
+  - WineryNotFoundError, DuplicateWineryError
+  - ADR-026 domain error patterns
+- **Security & Logging**:
+  - ADR-025 multi-tenancy enforcement (winery_id)
+  - ADR-027 structured logging with LogTimer
+- **Test Results**:
+  - Unit: 44/44 (22 repository + 22 service)
+  - Integration: 35/35 (18 repository + 17 service)
+  - **Total: 79/79 Winery tests (100%)**
+  - **System: 748/748 tests (100%)**
+- **Cross-Module Impact**: Fixed 39 Fruit Origin tests (code field added to fixtures)
+- **Timeline**: December 29, 2025 (1 day implementation)
+
 ### ADR-028: Module Dependency Management Standardization
 **Decision:** Standardize all modules with independent Poetry-managed environments  
 **Status:** ✅ **FULLY IMPLEMENTED** (All 4 Phases - Dec 23, 2025)  
@@ -282,16 +318,19 @@
   - WineryRepository, FermentationNoteRepository ✅
   - **Total**: 194 repository tests passing (113 unit + 81 integration)
 - ✅ Service Layer (FermentationService + SampleService + Validators)
+- ✅ **Winery Service Layer**: WineryService implemented (ADR-016)
+  - 22 unit tests + 17 integration tests = 39 service layer tests
+  - 79/79 total Winery tests (44 repository + 35 integration)
 - ✅ **Fruit Origin Service Layer**: FruitOriginService implemented (ADR-014)
   - 28 service tests (15 vineyard + 13 harvest lot)
   - 100/100 total tests (72 repo + 28 service)
 - ✅ Auth Module (shared/auth with JWT, RBAC, multi-tenancy)
 - ✅ **API Layer (All Phases)**: Complete endpoint suite with real database
 - ✅ **Error Handling Refactoring**: Centralized with decorator pattern
-- ✅ Total: **590/590 tests passing (100%)**
+- ✅ Total: **748/748 tests passing (100%)**
   - Fermentation: 234 tests
-  - Fruit Origin: 100 tests (72 repo + 28 service)
-  - Winery:14 COMPLETE**: Fruit Origin Service Layer (Dec 27, 2025)
+  - Fruit Origin: 177 tests (100 repo/service + 77 api/integration)
+  - Winery: 79 tests (44 unit + 35 integration)14 COMPLETE**: Fruit Origin Service Layer (Dec 27, 2025)
   - FruitOriginService implemented with 8 methods
   - 28 service tests passing (15 vineyard + 13 harvest lot)
   - Business rules: harvest date validation, cascade delete
@@ -311,13 +350,21 @@
   - WineryRepository, FermentationNoteRepository ✅
   - **Total**: 194 repository tests passing (113 unit + 81 integration)
 - ✅ Service Layer (FermentationService + SampleService + Validators)
+- ✅ **Fruit Origin Service Layer**: FruitOriginService implemented (ADR-014)
+  - 28 service tests (15 vineyard + 13 harvest lot)
+  - 100/100 total tests (72 repo + 28 service)
+- ✅ **Winery Service Layer**: WineryService implemented (ADR-016)
+  - 22 unit tests + 17 integration tests = 39 service layer tests
+  - 79/79 total Winery tests (44 repository + 35 integration)
 - ✅ Auth Module (shared/auth with JWT, RBAC, multi-tenancy)
 - ✅ **API Layer (All Phases)**: Complete endpoint suite with real database
 - ✅ **Error Handling Refactoring**: Centralized with decorator pattern
-- ✅ Total: **466+ tests passing (100%)**
-  - Fermentation: 272 tests (173 unit + 9 integration + 90 API)
-  - Auth: 163 unit tests
-  - New Repositories: 194 tests (113 unit + 81 integration)
+- ✅ Total: **748/748 tests passing (100%)**
+  - Fermentation: 234 tests
+  - Fruit Origin: 177 tests (100 repo/service + 77 integration/api)
+  - Winery: 79 tests (44 unit + 35 integration)
+  - Auth: 159 tests
+  - Shared: 52 tests + 47 testing infrastructure
 
 **Current Phase:**
 - ✅ **ADR-027 COMPLETE**: Structured Logging & Observability (Dec 22, 2025)
@@ -339,6 +386,18 @@
   - All modules now independent with Poetry-managed environments
 
 **Recent Achievements (December 2025):**
+- ✅ ADR-016 Complete: Winery Service Layer implemented (Dec 29, 2025)
+  - WineryService: 9 methods (create, get, get_by_code, list, update, delete, exists, check_can_delete, count)
+  - 22 unit tests + 17 integration tests = 39 service layer tests
+  - Total: 79/79 Winery tests (44 repository + 35 integration)
+  - Cross-module fixes: 39 Fruit Origin tests updated for code field
+  - System: 748/748 tests passing (100%)
+- ✅ ADR-015 Complete: Fruit Origin API Layer implemented (Dec 29, 2025)
+  - Phase 1-3: Complete vineyard + harvest lot CRUD (34 API tests)
+  - 177/177 Fruit Origin tests passing (100 unit + 43 integration + 34 API)
+- ✅ ADR-014 Complete: Fruit Origin Service Layer implemented (Dec 27, 2025)
+  - FruitOriginService: 8 methods (vineyard CRUD + harvest lot CRUD)
+  - 28 service tests + 72 repository tests = 100/100 passing
 - ✅ ADR-009 Complete: 5 new repositories implemented with full test coverage
   - WineryRepository: 22 unit + 18 integration tests
   - VineyardRepository: 28 unit + 11 integration tests
@@ -350,32 +409,28 @@
   - **Shared testing utilities created** (641 lines, 52/52 tests passing)
   - **3 modules migrated** to shared infrastructure (winery, fruit_origin, fermentation)
   - **Metadata blocker fixed**: All tests run together without errors (61/61 passing)
-  - **Performance**: 2.25s for 61 tests (within target)
 - ✅ ADR-012 Complete: Unit test infrastructure refactored (Dec 15, 2025)
-  - **Phase 1-3 Complete**: All core utilities and migration finished
   - **800-1,000 lines eliminated** across 8 repository test files
   - **4 core utilities**: MockSessionManagerBuilder, QueryResultBuilder, EntityFactory, ValidationResultFactory
-  - **142+ tests migrated**: 50 fermentation + 93 fruit_origin/winery
   - **50% time savings**: Test creation time reduced from 45min → 15min
-  - **100% pattern consistency**: All migrated tests use shared utilities
-- ✅ Multi-tenant security patterns validated across all repositories
-- ✅ Soft-delete support standardized
-- ✅ Error handling patterns (DuplicateNameError, EntityNotFoundError)
 
 **Code Metrics:**
 - Repositories: 9/9 implemented (100%) ✅
 - Repository tests: 194/194 passing (100%) ✅
+- Service layer: 3/3 modules complete (Fermentation, Fruit Origin, Winery) ✅
 - Integration test infrastructure: 52/52 utility tests passing ✅
-- Total test suite: 518+ tests passing (466 original + 52 new utility tests)
-- Test coverage: Comprehensive (unit + integration for all repositories)
-- Code reduction: 635 lines eliminated from integration tests ✅
+- Total test suite: 748/748 tests passing (100%) ✅
+- Test coverage: Comprehensive (unit + integration + API for all modules)
+- Code reduction: 635 lines eliminated from integration tests + 800-1,000 from unit tests ✅
 
 **Next Steps:**
 1. ✅ ~~Implement ADR-011 (Integration test infrastructure)~~ **COMPLETE**
 2. ✅ ~~Implement ADR-012 (Unit test infrastructure)~~ **COMPLETE Phase 3**
-3. Service layer refactoring to use new repositories
-4. API endpoints for new entities (Winery, Vineyard, HarvestLot)
-5. Continue ADR-012 Phase 4 (optional): Additional test file migrations
+3. ✅ ~~Implement ADR-014 (Fruit Origin Service Layer)~~ **COMPLETE**
+4. ✅ ~~Implement ADR-015 (Fruit Origin API Layer)~~ **COMPLETE**
+5. ✅ ~~Implement ADR-016 (Winery Service Layer)~~ **COMPLETE**
+6. Implement ADR-017 (Winery API Layer)
+7. Continue with ADR-018+ for Historical Data, Analysis Engine, etc.
 
 ---
 

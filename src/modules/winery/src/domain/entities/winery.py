@@ -20,18 +20,23 @@ class Winery(BaseEntity):
     - Harvest lots
     
     Attributes:
+        code: Unique identifier code for the winery (e.g., "BODEGA-001")
         name: Name of the winery
-        region: Geographic region where the winery is located
+        location: Geographic location where the winery is situated
+        notes: Additional notes about the winery
     """
     __tablename__ = "wineries"
     __table_args__ = (
         UniqueConstraint("name", name="uq_wineries__name"),
+        UniqueConstraint("code", name="uq_wineries__code"),
         {"extend_existing": True}
     )
     
+    code: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
-    region: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
 
     def __repr__(self) -> str:
-        return f"<Winery(id={self.id}, name='{self.name}', region='{self.region}', is_deleted={self.is_deleted})>"
+        return f"<Winery(id={self.id}, code='{self.code}', name='{self.name}', location='{self.location}', is_deleted={self.is_deleted})>"

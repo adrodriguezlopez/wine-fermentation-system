@@ -19,7 +19,7 @@
 8. **Fruit Origin API Layer** - 100% (ADR-015 ✅) - December 29, 2025
 
 ### Módulos Parcialmente Completados 🟡
-9. **Winery Module** - 70% (40 tests) - Repository + Poetry env ✅, Falta Service + API
+9. **Winery Module** - 95% (79 tests) - Repository ✅ + Service Layer ✅ + Integration Tests ✅, Falta API
 10. **Shared Module** - 100% (52 tests) - Testing utilities ✅
 
 ### Módulos Pendientes ⏳
@@ -28,8 +28,8 @@
 13. **Action Tracking Module** - 0%
 14. **Frontend Module** - 0%
 
-**Tests Passing:** 709/709 (100%) ✅  
-**Last Update:** December 29, 2025
+**Tests Passing:** 748/748 (100%) ✅  
+**Last Update:** December 29, 2025 (ADR-016 Complete)
 
 ---
 
@@ -70,31 +70,36 @@
 
 ### 2. Winery Module - Service & API Layer
 
-#### ADR-016: Winery Service Layer Architecture
-**Decisión a tomar:** Diseño de la capa de servicios para gestión de bodegas
+#### ADR-016: Winery Service Layer Architecture ✅
+**Estado:** ✅ **IMPLEMENTADO** (December 29, 2025)
 
-**Contexto:**
-- Repository layer completo (WineryRepository)
-- 40 tests existentes (22 unit + 18 integration)
-- Módulo fundamental para multi-tenancy
-- Datos relativamente estáticos (pocas modificaciones)
+**Decisión tomada:**
+- WineryService con 9 métodos: create, get, get_by_code, list, update, delete, exists, check_can_delete, count
+- ValidationOrchestrator pattern (consistente con Fruit Origin ADR-014)
+- Sin caché inicial (YAGNI - agregar cuando sea necesario)
+- Protección de eliminación: Validación + restricciones de DB (dos capas)
+- Interface IWineryService para testabilidad
+- WineryHasActiveDataError para claridad de errores
+- Logging estructurado (ADR-027 con LogTimer)
 
-**Aspectos a decidir:**
-- WineryService con operaciones CRUD básicas
-- Estrategia de caché agresiva (datos estáticos)
-- Validaciones de negocio (unicidad de nombre, datos requeridos)
-- Manejo de relaciones con otros módulos (ownership de fermentaciones, viñedos)
-- Seguridad: Prevenir acceso cross-winery
+**Implementación Completa:**
+- ✅ **Phase 1-4**: Domain + Repository + DTOs (44 repository tests)
+- ✅ **Phase 5**: Service Layer + Integration Tests
+  - IWineryService interface (9 métodos abstractos)
+  - WineryService implementation (392 líneas)
+  - 22 unit tests (100% coverage)
+  - 17 integration tests (100% passing)
+  - WineryHasActiveDataError en shared domain errors
+  - DTOs simplificados (código requerido, región → location)
+  - Protección de eliminación cross-módulo (vineyard + fermentation)
 
-**Advertencia Crítica:**
-- Actualmente hay código vulnerable (ver `module-context.md`):
-  ```python
-  # ❌ DANGEROUS: No winery_id check
-  fermentation = session.query(Fermentation).filter_by(id=ferm_id).first()
-  ```
-- El ADR debe definir estrategia para prevenir estos errores
+**Tests Passing:**
+- Unit: 44/44 (22 repository + 22 service)
+- Integration: 35/35 (18 repository + 17 service)
+- **Total: 79/79 Winery tests (100%)**
+- **System: 748/748 tests (100%)**
 
-**Referencia:** Ver ADR-007 (Fermentation Service) como patrón establecido
+**Referencia:** Ver [ADR-016](./ADR-016-winery-service-layer.md)
 
 ---
 

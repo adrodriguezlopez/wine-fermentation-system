@@ -131,8 +131,13 @@ class TestVineyardBlockRepositoryCRUD:
     ):
         """Test that create() enforces vineyard belongs to winery."""
         # Arrange - Create another winery and try to create block in test_vineyard
+        from uuid import uuid4
         Winery = test_models['Winery']
-        other_winery = Winery(name="Other Winery", region="Sonoma")
+        other_winery = Winery(
+            code=f"OTHER-{uuid4().hex[:8].upper()}",
+            name="Other Winery",
+            location="Sonoma"
+        )
         db_session.add(other_winery)
         await db_session.flush()
         
@@ -197,8 +202,13 @@ class TestVineyardBlockRepositoryCRUD:
     ):
         """Test that get_by_id() enforces multi-tenant isolation via vineyard JOIN."""
         # Arrange - Create another winery
+        from uuid import uuid4
         Winery = test_models['Winery']
-        other_winery = Winery(name="Other Winery", region="Sonoma")
+        other_winery = Winery(
+            code=f"OTHER2-{uuid4().hex[:8].upper()}",
+            name="Other Winery",
+            location="Sonoma"
+        )
         db_session.add(other_winery)
         await db_session.flush()
         

@@ -34,10 +34,12 @@ harvest_lot_repository = create_repository_fixture(HarvestLotRepository)
 @pytest_asyncio.fixture
 async def test_winery(test_models, db_session):
     """Create a test winery for integration tests."""
+    from uuid import uuid4
     Winery = test_models['Winery']
     winery = Winery(
+        code=f"TEST-{uuid4().hex[:8].upper()}",
         name="Test Winery",
-        region="Napa Valley"
+        location="Napa Valley"
     )
     db_session.add(winery)
     await db_session.flush()
