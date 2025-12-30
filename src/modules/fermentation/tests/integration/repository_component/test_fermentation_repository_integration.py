@@ -159,8 +159,14 @@ class TestFermentationRepositoryCRUD:
         THEN None should be returned (security isolation)
         """
         # Arrange: Create another winery
+        from uuid import uuid4
         Winery = test_models['Winery']
-        other_winery = Winery(id=999, name="Other Winery", region="Other Region")
+        other_winery = Winery(
+            id=999,
+            code=f"OTHER-{uuid4().hex[:8].upper()}",
+            name="Other Winery",
+            location="Other Region"
+        )
         db_session.add(other_winery)
         await db_session.flush()
         
@@ -302,8 +308,14 @@ class TestFermentationRepositoryQueries:
         THEN only active fermentations for specified winery should be returned
         """
         # Arrange: Create second winery
+        from uuid import uuid4
         Winery = test_models['Winery']
-        winery2 = Winery(id=999, name="Other Winery", region="Other Region")
+        winery2 = Winery(
+            id=999,
+            code=f"OTHER-{uuid4().hex[:8].upper()}",
+            name="Other Winery",
+            location="Other Region"
+        )
         db_session.add(winery2)
         await db_session.flush()
         

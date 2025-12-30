@@ -48,10 +48,12 @@ repository = create_repository_fixture(FermentationNoteRepository)
 @pytest_asyncio.fixture
 async def test_winery(test_models, db_session):
     """Create a test winery for integration tests."""
+    from uuid import uuid4
     Winery = test_models['Winery']
     winery = Winery(
+        code=f"TEST-{uuid4().hex[:8].upper()}",
         name="Test Winery",
-        region="Napa Valley"
+        location="Napa Valley"
     )
     db_session.add(winery)
     await db_session.flush()
@@ -150,3 +152,27 @@ async def test_harvest_lot(test_models, db_session, test_winery, test_vineyard_b
     db_session.add(harvest_lot)
     await db_session.flush()
     return harvest_lot
+
+
+@pytest_asyncio.fixture
+async def uow(session_manager_factory):
+    """Create a UnitOfWork instance for integration tests."""
+    from src.modules.fermentation.src.repository_component.unit_of_work import UnitOfWork
+    
+    # Create a simple wrapper that implements ISessionManager interface
+    # The session_manager_factory fixture returns a callable that returns an AsyncContextManager
+    # but UnitOfWork expects an object with get_session() method
+    class SessionManagerWrapper:
+        def __init__(self, session_func):
+            self._session_func = session_func
+        
+        async def get_session(self):
+            """Return the async context manager for the session."""
+            return self._session_func()
+        
+        async def close(self):
+            """No-op for test fixture."""
+            pass
+    
+    wrapped_manager = SessionManagerWrapper(session_manager_factory)
+    return UnitOfWork(session_manager=wrapped_manager)

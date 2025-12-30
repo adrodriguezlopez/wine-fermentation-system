@@ -5,7 +5,10 @@ Legacy error names are maintained as aliases for backward compatibility.
 """
 
 # Import from shared ADR-026 error hierarchy
-# Use try/except to handle both contexts: when running from shared/ and when imported from modules
+# Use try/except to handle multiple contexts:
+# 1. Running from shared/ module context: domain.errors
+# 2. Running from workspace root: shared.domain.errors
+# 3. Running from Poetry module (ADR-028): src.shared.domain.errors
 try:
     from domain.errors import (
         AuthError,
@@ -16,14 +19,24 @@ try:
         InsufficientPermissions,
     )
 except ModuleNotFoundError:
-    from shared.domain.errors import (
-        AuthError,
-        InvalidCredentials,
-        TokenExpired,
-        InvalidToken,
-        UserNotFound,
-        InsufficientPermissions,
-    )
+    try:
+        from shared.domain.errors import (
+            AuthError,
+            InvalidCredentials,
+            TokenExpired,
+            InvalidToken,
+            UserNotFound,
+            InsufficientPermissions,
+        )
+    except ModuleNotFoundError:
+        from src.shared.domain.errors import (
+            AuthError,
+            InvalidCredentials,
+            TokenExpired,
+            InvalidToken,
+            UserNotFound,
+            InsufficientPermissions,
+        )
 
 # Backward compatibility wrappers (DEPRECATED - use shared.domain.errors directly)
 # These maintain the old API while using ADR-026 errors internally

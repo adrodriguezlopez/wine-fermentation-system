@@ -286,25 +286,16 @@ $testResults.FermentationUnit = Invoke-TestSuite `
 
 if (-not $testResults.FermentationUnit.Success) { $allPassed = $false }
 
-# Run Fermentation Integration Tests - SKIPPED due to known limitations
-# See ADR-011 and ADR-013 for details on Sample model metadata conflicts
+# Run Fermentation Integration Tests
 if (-not $Quick) {
     Write-Host "`n"
-    Write-Host "--------------------------------------------" -ForegroundColor Yellow
-    Write-Host "Fermentation - Integration Tests (SKIPPED)" -ForegroundColor Yellow
-    Write-Host "--------------------------------------------" -ForegroundColor Yellow
-    Write-Host "NOTE: These tests are skipped due to SQLAlchemy single-table inheritance" -ForegroundColor Gray
-    Write-Host "      metadata conflicts (ADR-011/ADR-013). To run them separately:" -ForegroundColor Gray
-    Write-Host "      cd src/modules/fermentation" -ForegroundColor Gray
-    Write-Host "      poetry run pytest tests/integration/repository_component/ -v" -ForegroundColor Gray
+    $testResults.FermentationIntegration = Invoke-TestSuite `
+        -Name "Fermentation - Integration Tests" `
+        -ModulePath "src/modules/fermentation" `
+        -TestPath "tests/integration/" `
+        -Type "integration"
     
-    $testResults.FermentationIntegration = @{
-        Success = $true
-        Passed = 0
-        Failed = 0
-        Skipped = $true
-        ExitCode = 0
-    }
+    if (-not $testResults.FermentationIntegration.Success) { $allPassed = $false }
 }
 
 # Summary

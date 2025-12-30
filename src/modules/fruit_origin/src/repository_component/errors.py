@@ -5,18 +5,35 @@ Legacy error names are maintained as aliases for backward compatibility.
 """
 
 # Import from shared ADR-026 error hierarchy
-from shared.domain.errors import (
-    FruitOriginError,
-    VineyardNotFound,
-    VineyardHasActiveLotsError,
-    VineyardBlockNotFound,
-    InvalidHarvestDate,
-    HarvestLotNotFound,
-    HarvestLotAlreadyUsed,
-    GrapeVarietyNotFound,
-    InvalidGrapePercentage,
-    DuplicateCodeError,
-)
+# Use try/except to handle multiple contexts (ADR-028):
+# 1. Running from workspace root: shared.domain.errors
+# 2. Running from Poetry module: src.shared.domain.errors
+try:
+    from shared.domain.errors import (
+        FruitOriginError,
+        VineyardNotFound,
+        VineyardHasActiveLotsError,
+        VineyardBlockNotFound,
+        InvalidHarvestDate,
+        HarvestLotNotFound,
+        HarvestLotAlreadyUsed,
+        GrapeVarietyNotFound,
+        InvalidGrapePercentage,
+        DuplicateCodeError,
+    )
+except ModuleNotFoundError:
+    from src.shared.domain.errors import (
+        FruitOriginError,
+        VineyardNotFound,
+        VineyardHasActiveLotsError,
+        VineyardBlockNotFound,
+        InvalidHarvestDate,
+        HarvestLotNotFound,
+        HarvestLotAlreadyUsed,
+        GrapeVarietyNotFound,
+        InvalidGrapePercentage,
+        DuplicateCodeError,
+    )
 
 # Backward compatibility aliases (DEPRECATED - use shared.domain.errors directly)
 RepositoryError = FruitOriginError
