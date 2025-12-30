@@ -161,13 +161,13 @@ async def uow(session_manager_factory):
     
     # Create a simple wrapper that implements ISessionManager interface
     # The session_manager_factory fixture returns a callable that returns an AsyncContextManager
-    # but UnitOfWork expects an object with get_session() method
+    # but UnitOfWork expects an object with get_session() method that returns the context manager
     class SessionManagerWrapper:
         def __init__(self, session_func):
             self._session_func = session_func
         
-        async def get_session(self):
-            """Return the async context manager for the session."""
+        def get_session(self):
+            """Return the async context manager for the session (not async - returns context manager directly)."""
             return self._session_func()
         
         async def close(self):

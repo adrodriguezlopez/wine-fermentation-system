@@ -28,7 +28,7 @@ class TestSampleRepositoryIntegration:
     @pytest.mark.asyncio
     async def test_create_sugar_sample_persists_to_database(
         self, 
-        test_models,
+        test_models_with_samples,
         sample_repository, 
         test_fermentation,
         test_user,
@@ -44,7 +44,7 @@ class TestSampleRepositoryIntegration:
         AND should have correct sample_type polymorphic discrimination
         """
         # Arrange: Create SugarSample domain entity
-        SugarSample = test_models['SugarSample']
+        SugarSample = test_models_with_samples['SugarSample']
         
         sample = SugarSample(
             fermentation_id=test_fermentation.id,

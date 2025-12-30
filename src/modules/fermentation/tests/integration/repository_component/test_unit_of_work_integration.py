@@ -35,21 +35,77 @@ def session_manager_factory(db_session):
     """
     Create a session manager factory for UnitOfWork.
     
-    Uses the same pattern as conftest.py - returns a callable
-    that creates context managers for the test session.
+    The db_session fixture provides a session that's already in a transaction
+    context. To allow multiple UoW contexts to reuse this session, we need to:
+    1. Intercept commit/rollback to use savepoints instead of committing the parent transaction
+    2. Intercept close() to prevent closing the shared test session
     
     Args:
-        db_session: Test database session from conftest
+        db_session: Test database session from conftest (already in transaction)
     
     Returns:
         Callable that returns async context manager for session
     """
     @asynccontextmanager
     async def get_session():
-        """Async context manager that yields the test session."""
-        yield db_session
+        """
+        Async context manager that yields a wrapped session.
+        
+        The wrapper intercepts commit/rollback/close to allow multiple UoW contexts
+        on the same test session.
+        """
+        # Wrap the session to intercept transactional operations
+        class SessionWrapper:
+            def __init__(self, real_session):
+                self._real_session = real_session
+                self._savepoint = None
+            
+            async def commit(self):
+                """Commit the savepoint instead of the parent transaction."""
+                if self._savepoint and self._savepoint.is_active:
+                    await self._savepoint.commit()
+            
+            async def rollback(self):
+                """Rollback the savepoint instead of the parent transaction."""
+                if self._savepoint and self._savepoint.is_active:
+                    await self._savepoint.rollback()
+            
+            async def close(self):
+                """No-op - don't close the shared test session."""
+                # Close the savepoint if still active
+                if self._savepoint and self._savepoint.is_active:
+                    await self._savepoint.close()
+            
+            async def flush(self, *args, **kwargs):
+                """Delegate flush to real session."""
+                return await self._real_session.flush(*args, **kwargs)
+            
+            async def execute(self, *args, **kwargs):
+                """Delegate execute to real session."""
+                return await self._real_session.execute(*args, **kwargs)
+            
+            async def begin_nested(self):
+                """Create a savepoint for this UoW context."""
+                self._savepoint = await self._real_session.begin_nested()
+                return self._savepoint
+            
+            def __getattr__(self, name):
+                """Delegate all other attributes to the real session."""
+                return getattr(self._real_session, name)
+        
+        # Create wrapper and start a savepoint
+        wrapper = SessionWrapper(db_session)
+        await wrapper.begin_nested()
+        
+        try:
+            yield wrapper
+        finally:
+            # Cleanup: close savepoint if still active
+            if wrapper._savepoint and wrapper._savepoint.is_active:
+                await wrapper._savepoint.close()
     
     return get_session
+
 
 
 @pytest.fixture
@@ -63,7 +119,24 @@ def uow(session_manager_factory):
     Returns:
         UnitOfWork: UnitOfWork instance for integration testing
     """
-    return UnitOfWork(session_manager_factory)
+    # Wrap session_manager_factory to match ISessionManager interface
+    # UnitOfWork expects an object with get_session() method that returns an async context manager
+    # For testing, we need to ensure the session can be reused across multiple UoW contexts
+    class SessionManagerWrapper:
+        def __init__(self, session_func):
+            self._session_func = session_func
+        
+        def get_session(self):
+            """Return an async context manager for the session."""
+            # Return the context manager directly - it will handle session lifecycle
+            return self._session_func()
+        
+        async def close(self):
+            """No-op for test fixture - db_session fixture handles cleanup."""
+            pass
+    
+    wrapped_manager = SessionManagerWrapper(session_manager_factory)
+    return UnitOfWork(wrapped_manager)
 
 
 class TestUnitOfWorkTransactionCommit:
@@ -151,14 +224,15 @@ class TestUnitOfWorkTransactionCommit:
             fermentation_id = fermentation.id
             
             # Create sample for this fermentation
-            sample = await uow.sample_repo.create_sample(
-                winery_id=winery_id,
+            from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+            sample = SugarSample(
                 fermentation_id=fermentation_id,
-                sample_type=SampleType.SUGAR,
-                sample_date=datetime(2024, 11, 16),
-                measured_by_user_id=1,
-                value=Decimal("20.5")
+                recorded_at=datetime(2024, 11, 16),
+                recorded_by_user_id=1,
+                value=20.5,
+                sample_type=SampleType.SUGAR.value
             )
+            sample = await uow.sample_repo.create(sample)
             sample_id = sample.id
             
             await uow.commit()
@@ -169,8 +243,10 @@ class TestUnitOfWorkTransactionCommit:
                 fermentation_id=fermentation_id,
                 winery_id=winery_id
             )
+            # Get sample with proper access control parameters
             retrieved_sample = await uow.sample_repo.get_sample_by_id(
                 sample_id=sample_id,
+                fermentation_id=fermentation_id,
                 winery_id=winery_id
             )
             
