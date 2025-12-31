@@ -54,9 +54,9 @@
 **Details:** See [auth module-context.md](../src/shared/auth/.ai-context/module-context.md)
 
 ### Fermentation Management Module
-**Status:** ✅ API LAYER COMPLETE  
-**Last Updated:** December 15, 2025  
-**Total Tests:** 272 passing (223 unit + 49 integration)  
+**Status:** ✅ COMPLETE (Repository + Service + API + Integration Tests)  
+**Last Updated:** December 30, 2025  
+**Total Tests:** 283 passing (234 unit + 49 integration)  
 **Details:** See [fermentation module-context.md](../src/modules/fermentation/.ai-context/module-context.md)
 
 ### Fruit Origin Module  
@@ -66,23 +66,23 @@
 **Details:** See [fruit_origin module-context.md](../src/modules/fruit_origin/.ai-context/module-context.md)
 
 ### Winery Module
-**Status:** ✅ REPOSITORY LAYER COMPLETE  
+**Status:** ✅ SERVICE LAYER COMPLETE (Repository + Service + Integration Tests)  
 **Last Updated:** December 29, 2025  
-**Total Tests:** 40 passing  
+**Total Tests:** 79 passing (44 unit + 35 integration)  
 **Details:** See [winery module-context.md](../src/modules/winery/.ai-context/module-context.md)
 
 ### Shared Testing Infrastructure
-**Status:** ✅ PRODUCTION READY  
-**Last Updated:** December 15, 2025  
-**Total Tests:** 138 passing  
+**Status:** ✅ PRODUCTION READY (Full Integration Test Resolution)  
+**Last Updated:** December 30, 2025  
+**Total Tests:** 52 passing  
 **Details:** See [testing module-context.md](../src/shared/testing/.ai-context/module-context.md)
 
 ### Project Totals
-**Tests:** **709 passing** (100% pass rate)  
-**ADR Status:** 14 implemented (ADR-002 through ADR-015, excluding ADR-010)  
+**Tests:** **797 passing** (100% pass rate)  
+**ADR Status:** 16 implemented (ADR-002 through ADR-016, ADR-025 through ADR-028, excluding ADR-010)  
 **Details:** See [ADR-INDEX.md](./.ai-context/adr/ADR-INDEX.md) and [ADR-PENDING-GUIDE.md](./.ai-context/adr/ADR-PENDING-GUIDE.md)
 
-**Next Phase:** Winery Service & API Layers
+**Next Phase:** Winery API Layer
 
 ## How to restart work on this system
 Read the module-context.md for the specific module you need to work on:

@@ -70,9 +70,9 @@
 
 ## Implementation status
 
-**Status:** ✅ **PRODUCTION READY** | 🎯 **All Tests Passing (138 tests)**  
-**Last Updated:** December 15, 2025  
-**Reference:** ADR-012 Phase 3 Complete, ADR-011 Implemented
+**Status:** ✅ **PRODUCTION READY** | 🎯 **All Tests Passing (52 tests + Full Integration Resolution)**  
+**Last Updated:** December 30, 2025  
+**Reference:** ADR-012 Phase 3 Complete, ADR-011 Phase 3 Complete (Full Integration Test Resolution)
 
 ### Completed Components
 
@@ -110,13 +110,21 @@
 - **Time Savings**: 50% faster test creation (45min → 15min)
 - **Code Reduction**: ~50-70% fixture code per file
 
-**✅ Integration Testing Infrastructure (52 tests passing) - ADR-011**
+**✅ Integration Testing Infrastructure (52 tests + System-Wide Resolution) - ADR-011 Phase 3**
 - **Base Conftest**: Database setup and teardown
 - **Session Manager**: Test-specific async session handling
 - **Entity Builders**: Helper functions for test data creation
 - **Fixtures**: Reusable pytest fixtures
+- **SessionWrapper Pattern**: Savepoint-based transaction management for UnitOfWork tests (Dec 30, 2025)
+  - Intercepts commit/rollback/close for test reusability
+  - Enables multiple UoW contexts with same session
+  - Prevents "closed transaction" errors
+- **ADR-011 Phase 3 Complete**: All 797 tests run together, fermentation integration tests fully resolved
+  - Isolated sample_repository fixtures
+  - Triple try/except import pattern for ADR-028
+  - Complete metadata conflict resolution
 
-**Total: 138 tests passing (100%) - Sub-second execution time**
+**Total: 52 infrastructure tests + 797 system-wide tests passing (100%)**
 
 ### Migration Status (ADR-012 Phase 3)
 
@@ -197,12 +205,14 @@
 - **Avoid accessing internal repository attributes** (breaks encapsulation)
 
 ## Success metrics
-- ✅ 138 infrastructure tests passing (100%)
-- ✅ 737 project tests passing (100%)
-- ✅ 8 files migrated (142+ tests)
+- ✅ 52 infrastructure tests passing (100%)
+- ✅ 797 project tests passing (100%)
+- ✅ 8 repository files migrated (142+ tests)
 - ✅ ~800-1,000 lines of boilerplate eliminated
 - ✅ 50% faster test creation time
 - ✅ 100% pattern consistency
+- ✅ **ADR-011 Phase 3**: All integration tests run together (fermentation 49/49 passing)
+- ✅ **SessionWrapper pattern**: UnitOfWork tests resolved with savepoint management
 
 ---
 

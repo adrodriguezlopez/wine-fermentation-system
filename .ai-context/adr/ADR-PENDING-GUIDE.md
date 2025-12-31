@@ -1,7 +1,7 @@
 # Guía de ADRs Pendientes para Completar el MVP
 
 **Fecha de creación:** 16 de diciembre de 2025  
-**Última actualización:** 29 de diciembre de 2025  
+**Última actualización:** 30 de diciembre de 2025  
 **Propósito:** Identificar decisiones arquitectónicas necesarias para completar el MVP del Wine Fermentation System
 
 ---
@@ -10,26 +10,27 @@
 
 ### Módulos Completados ✅
 1. **Authentication Module** - 100% (159 tests)
-2. **Fermentation Management Module** - 100% (234 tests)
+2. **Fermentation Management Module** - 100% (283 tests: 234 unit + 49 integration)
 3. **Structured Logging Infrastructure** - 100% (ADR-027 ✅)
 4. **Module Dependency Management** - 100% (ADR-028 ✅)
 5. **Error Handling Strategy** - 100% (ADR-026 ✅) - December 26, 2025
 6. **Multi-Tenancy Security (LIGHT)** - 100% (ADR-025 ✅) - December 23, 2025
 7. **Fruit Origin Service Layer** - 100% (ADR-014 ✅) - December 27, 2025
 8. **Fruit Origin API Layer** - 100% (ADR-015 ✅) - December 29, 2025
+9. **Integration Test Infrastructure** - 100% (ADR-011 ✅ Phase 3) - December 30, 2025
 
 ### Módulos Parcialmente Completados 🟡
-9. **Winery Module** - 95% (79 tests) - Repository ✅ + Service Layer ✅ + Integration Tests ✅, Falta API
-10. **Shared Module** - 100% (52 tests) - Testing utilities ✅
+10. **Winery Module** - 95% (79 tests) - Repository ✅ + Service Layer ✅ + Integration Tests ✅, Falta API
+11. **Shared Module** - 100% (52 tests) - Testing utilities ✅
 
 ### Módulos Pendientes ⏳
-11. **Historical Data Module** - 0%
-12. **Analysis Engine Module** - 0%
-13. **Action Tracking Module** - 0%
-14. **Frontend Module** - 0%
+12. **Historical Data Module** - 0%
+13. **Analysis Engine Module** - 0%
+14. **Action Tracking Module** - 0%
+15. **Frontend Module** - 0%
 
-**Tests Passing:** 748/748 (100%) ✅  
-**Last Update:** December 29, 2025 (ADR-016 Complete)
+**Tests Passing:** 797/797 (100%) ✅  
+**Last Update:** December 30, 2025 (ADR-011 Phase 3 Complete)
 
 ---
 

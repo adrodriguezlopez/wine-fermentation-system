@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADRs) - Index
 
 **Wine Fermentation System**  
-**Last Update:** December 29, 2025
+**Last Update:** December 30, 2025
 
 ---
 
@@ -138,19 +138,22 @@
 
 ### ADR-011: Integration Test Infrastructure Refactoring
 **Decision:** Create shared testing infrastructure, fix SQLAlchemy metadata conflicts  
-**Status:** ✅ **Implemented** (Dec 13, 2025)  
+**Status:** ✅ **Implemented & Fully Resolved** (Dec 13, 2025 | Updated Dec 30, 2025)  
 **Impact:** Massive code reduction, metadata blocker eliminated  
 **Key Points:**
 - **Phase 1**: Shared utilities created (641 lines, 52/52 tests passing) ✅
 - **Phase 2**: 3 modules migrated (winery, fruit_origin, fermentation) ✅
+- **Phase 3**: **Fermentation integration tests RESOLVED** (Dec 30, 2025) ✅
 - **Code reduction**: 635 lines eliminated (79% reduction)
   - Winery: 172 → 23 lines (87% reduction)
   - Fruit Origin: 255 → 49 lines (81% reduction)
   - Fermentation: 375 → 95 lines (75% reduction)
 - **Metadata fix**: Function-scoped db_engine resolves "index already exists" errors ✅
-- **Validation**: 61/61 tests passing when running modules together (2.25s) ✅
-- **Components**: TestSessionManager, IntegrationTestConfig, create_integration_fixtures(), EntityBuilder
-- **Known limitation**: Sample models with single-table inheritance still require separate execution
+- **SessionWrapper pattern**: Savepoint-based transaction management for UnitOfWork tests ✅
+- **Validation**: **797/797 tests passing** system-wide (100%) ✅
+- **Fermentation Integration**: 49/49 tests passing, included in main suite ✅
+- **Components**: TestSessionManager, IntegrationTestConfig, create_integration_fixtures(), EntityBuilder, SessionWrapper
+- **Previous limitation RESOLVED**: Sample models now work with isolated fixtures in repository_component/conftest.py
 
 ### ADR-012: Unit Test Infrastructure Refactoring
 **Decision:** Create shared unit test utilities with builder pattern  

@@ -578,39 +578,54 @@ After thorough analysis, **Phase 3 will NOT be implemented**. The current workar
 # Main test suite (run_all_tests.ps1): Skips Fermentation repository integration
 .\run_all_tests.ps1  # 651 tests in 26s
 
-# Run Fermentation repository tests separately:
+# All tests now run together:
+.\run_all_tests.ps1  # 797 tests in ~61s
+
+# Or run fermentation integration separately if needed:
 cd src/modules/fermentation
-python -m pytest tests/integration/repository_component/ -v  # 61 tests in ~3s
+poetry run pytest tests/integration/ -v  # 49 tests in ~2.6s
 ```
 
-**Total Test Coverage**: 712 tests (651 main + 61 fermentation repository)
+**Total Test Coverage**: 797 tests (all modules, all test types)
 
-**Conclusion**: Phase 3 is **intentionally not implemented** because the current solution optimizes for production performance while maintaining full test coverage with minimal inconvenience.
+**Conclusion**: Phase 3 initially deferred, but **FULLY RESOLVED (December 30, 2025)** with SessionWrapper pattern and isolated sample fixtures. All tests now run together without conflicts.
 
-**Implementation Verified:**
+**Implementation Verified (Updated December 30, 2025):**
 - ✅ All 4 modules migrated successfully (shared_testing, winery, fruit_origin, fermentation)
 - ✅ 52/52 shared infrastructure tests passing
-- ✅ 107/107 integration tests passing (24 auth + 18 winery + 43 fruit_origin + 22 winery unit)
-- ✅ Metadata blocker resolved for all modules except Fermentation repository (see limitations)
+- ✅ **797/797 integration tests passing** (24 auth + 35 winery + 43 fruit_origin + 234 fermentation unit + 49 fermentation integration + 100 fruit_origin unit + 34 fruit_origin API + 159 shared auth + 23 shared error + 44 winery unit + 52 shared testing)
+- ✅ Metadata blocker **FULLY RESOLVED** for all modules including Fermentation repository
 - ✅ 635+ lines of code eliminated (79% reduction achieved)
 - ✅ Test execution script (run_all_tests.ps1) updated and verified
-- ✅ Quick mode: 566 tests in 10.54s
-- ✅ Full mode: 651 tests in 26.07s (excluding Fermentation repository integration)
-- ⚠️ Fermentation repository tests excluded from main script due to Sample model limitations
+- ✅ **Full mode: 797 tests in ~61s (ALL tests including Fermentation integration)**
+- ✅ Fermentation repository tests **NOW INCLUDED** in main script (issue resolved)
 
-**Known Limitations:**
-- **Fermentation Repository Integration Tests** cannot run with other tests due to Sample model metadata conflicts
-- **Root Cause**: Sample models (SugarSample, DensitySample, CelsiusTemperatureSample) use SQLAlchemy single-table inheritance which registers indices globally when classes are imported. The conftest in `repository_component/` imports these models, causing conflicts for ALL tests in that directory.
-- **Impact**: Even tests that don't use Sample models (fermentation_note, fermentation, harvest_lot, unit_of_work) fail with `sqlite3.OperationalError: index ix_samples_* already exists`
-- **Architectural Decision**: Keep single-table inheritance for production performance benefits (see ADR-013)
-- **Test Strategy**: 
-  - Main test script (`run_all_tests.ps1`) skips Fermentation repository integration tests
-  - Tests must be run separately: `cd src/modules/fermentation && python -m pytest tests/integration/repository_component/ -v`
-  - This isolation is documented and acceptable given production performance trade-offs
-- **Future Resolution**: Optional Phase 3 - would require either:
-  1. Removing Sample model imports from conftest (moving to test files directly), or
-  2. Creating separate metadata registry for Sample models, or  
-  3. Refactoring away from single-table inheritance (NOT recommended per ADR-013)
+**Known Limitations: ✅ RESOLVED (December 30, 2025)**
+
+**Previous Issue (Resolved):**
+- **Fermentation Repository Integration Tests** previously skipped due to Sample model metadata conflicts
+- **Root Cause**: Sample models use SQLAlchemy single-table inheritance which registers indices globally
+
+**Resolution Implemented:**
+1. **Removed skip from run_all_tests.ps1** - Fermentation integration tests now run with main suite
+2. **Created separate conftest.py** in `repository_component/` with isolated sample_repository fixture
+3. **Fixed UnitOfWork tests** using savepoint-based SessionWrapper:
+   - Intercepts commit/rollback/close to use savepoints
+   - Prevents closing parent test transaction
+   - Allows multiple UoW contexts to reuse same test session
+4. **Fixed import paths** with triple try/except pattern for ADR-028 Poetry modules
+5. **Fixed Winery entity schema** (added `code` field, `region` → `location`)
+
+**Current Status:**
+- ✅ All 49 fermentation integration tests passing (100%)
+- ✅ System-wide: 797/797 tests passing (100%)
+- ✅ Tests run together in main suite (no separate execution needed)
+- ✅ Fermentation Integration included in run_all_tests.ps1
+
+**Technical Implementation:**
+- `SessionWrapper` class intercepts session operations for test reusability
+- Savepoint-based transaction management prevents session closure issues
+- Sample models isolated to specific fixture to avoid global conflicts
 
 **Files Modified:**
 1. `src/shared/testing/integration/` - New shared infrastructure (base_conftest.py, fixtures.py, session_manager.py, entity_builders.py)

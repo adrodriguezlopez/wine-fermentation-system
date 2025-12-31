@@ -176,6 +176,55 @@ class TestCreate:
 3. **Use `flush()` not `commit()`** - Tests auto-rollback via session fixture
 4. **Import from shared.testing.integration** - Never copy-paste the classes
 
+### Advanced Pattern: SessionWrapper for UnitOfWork Tests
+
+When testing UnitOfWork with multiple contexts that reuse the same session, use the **SessionWrapper pattern** with savepoints:
+
+```python
+@pytest.fixture
+def session_manager_factory(db_session):
+    @asynccontextmanager
+    async def get_session():
+        # Wrap session to intercept commit/rollback/close
+        class SessionWrapper:
+            def __init__(self, real_session):
+                self._real_session = real_session
+                self._savepoint = None
+            
+            async def commit(self):
+                if self._savepoint and self._savepoint.is_active:
+                    await self._savepoint.commit()
+            
+            async def rollback(self):
+                if self._savepoint and self._savepoint.is_active:
+                    await self._savepoint.rollback()
+            
+            async def close(self):
+                if self._savepoint and self._savepoint.is_active:
+                    await self._savepoint.close()
+            
+            def __getattr__(self, name):
+                return getattr(self._real_session, name)
+        
+        wrapper = SessionWrapper(db_session)
+        wrapper._savepoint = await db_session.begin_nested()
+        try:
+            yield wrapper
+        finally:
+            if wrapper._savepoint and wrapper._savepoint.is_active:
+                await wrapper._savepoint.close()
+    
+    return get_session
+```
+
+**Why use this pattern:**
+- Prevents "Can't operate on closed transaction" errors
+- Allows multiple `async with uow:` blocks to reuse same session
+- Uses savepoints instead of closing parent test transaction
+- Maintains test isolation while enabling UnitOfWork testing
+
+**Use case:** Integration tests that verify UnitOfWork transaction management across multiple contexts.
+
 ## 🔗 Related
 
 - **ADR-011**: [Integration Test Infrastructure Refactoring](../../../.ai-context/adr/ADR-011-integration-test-infrastructure-refactoring.md)

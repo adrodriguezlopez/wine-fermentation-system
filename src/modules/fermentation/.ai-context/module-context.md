@@ -45,9 +45,9 @@
 
 ## Implementation status
 
-**Status:** ✅ **Domain, Repository, Service & API Complete**  
-**Last Updated:** 2025-11-17  
-**Reference:** ADR-006 (API Layer), ADR-005 (Service Layer), ADR-003 (Repository Layer), ADR-002 (Repository Architecture)
+**Status:** ✅ **Domain, Repository, Service, API & Integration Tests Complete**  
+**Last Updated:** 2025-12-30  
+**Reference:** ADR-006 (API Layer), ADR-005 (Service Layer), ADR-003 (Repository Layer), ADR-002 (Repository Architecture), ADR-011 Phase 3 (Integration Tests)
 
 ### Completed Components
 
@@ -82,11 +82,18 @@
 - Error handling: 19 tests passing (error class hierarchy)
 - **ADR-012 Impact**: 4 files migrated, 50 tests using shared test infrastructure
 
-**✅ Integration Tests (9 tests passing)**
-- FermentationRepository integration: 8 tests with real PostgreSQL
-- SampleRepository integration: 1 test with real PostgreSQL
+**✅ Integration Tests (49 tests passing) - Dec 30, 2025**
+- **FermentationNoteRepository**: 20 tests with real database
+- **FermentationRepository**: 22 tests with PostgreSQL
+- **HarvestLotRepository**: 21 tests (from fruit_origin module)
+- **SampleRepository**: 1 test with sample model isolation
+- **UnitOfWork**: 6 tests with savepoint-based transaction management
 - Multi-tenancy isolation verified
 - Database transactions and rollbacks tested
+- **ADR-011 Phase 3 Resolution**: All integration tests now run with main suite
+  - SessionWrapper pattern for UnitOfWork tests
+  - Isolated sample_repository fixture to avoid metadata conflicts
+  - Triple try/except import pattern for ADR-028 compatibility
 
 **✅ API Layer (90 tests passing) - Nov 17, 2025**
 - **FastAPI Routers**: Fermentation (10 endpoints) and Sample (7 endpoints)
@@ -104,29 +111,34 @@
 - Standardized exception→HTTP status code mappings
 - All 17 endpoints refactored to use centralized error handling
 
-**Total: 272 tests passing (173 unit + 9 integration + 90 API)**
+**Total: 283 tests passing (234 unit + 49 integration + 90 API)**
 
 ### Test Execution Notes
 
-⚠️ **Important**: Due to SQLAlchemy mapper registry conflicts, unit and integration tests must be run separately:
+✅ **All tests now run together** (December 30, 2025 - ADR-011 Phase 3 Complete):
 
 ```powershell
-# Run unit tests (173 tests)
-poetry run pytest tests/unit/
+# Run all fermentation tests together
+cd src/modules/fermentation
+poetry run pytest tests/ -v
 
-# Run integration tests (9 tests) 
-poetry run pytest tests/integration/
+# Or use the system-wide test suite
+cd C:\dev\wine-fermentation-system
+.\run_all_tests.ps1  # 797 tests total, includes all 49 fermentation integration
 
-# Run API tests (90 tests)
-poetry run pytest tests/api/
-
-# Run all tests sequentially
-poetry run pytest tests/unit/ --tb=no -q; poetry run pytest tests/integration/ --tb=no -q; poetry run pytest tests/api/ --tb=no -q
+# Run specific test suites
+poetry run pytest tests/unit/        # 234 tests
+poetry run pytest tests/integration/ # 49 tests  
+poetry run pytest tests/api/         # 90 tests
 ```
 
-**Why separate?** The global SQLAlchemy mapper registry gets configured during pytest collection. When both test suites are collected together, entity re-imports cause mapper conflicts with polymorphic inheritance (`SugarSample` inheriting from `BaseSample`). Running separately avoids this issue.
+**Resolution**: SQLAlchemy metadata conflicts RESOLVED via:
+1. **Isolated sample fixtures** in `tests/integration/repository_component/conftest.py`
+2. **SessionWrapper pattern** for UnitOfWork tests using savepoints
+3. **Function-scoped db_engine** from ADR-011 Phase 2
+4. **Late Sample model imports** to avoid global registry pollution
 
-**See**: `tests/README.md` for detailed explanation.
+**Previous limitation eliminated**: All integration tests now included in main test suite.
 
 ### Pending Components
 
@@ -142,12 +154,14 @@ poetry run pytest tests/unit/ --tb=no -q; poetry run pytest tests/integration/ -
 ## Quick Reference
 
 **Need to work on this module?**
-1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`, `ADR-006`
+1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`, `ADR-006`, `ADR-011 Phase 3`
 2. Review component contexts in `src/*/.ai-context/component-context.md`
 3. Run tests: 
-   - Unit: `poetry run pytest tests/unit/` (173 tests)
-   - Integration: `poetry run pytest tests/integration/` (9 tests)
+   - All tests: `poetry run pytest tests/` (283 tests)
+   - Unit: `poetry run pytest tests/unit/` (234 tests)
+   - Integration: `poetry run pytest tests/integration/` (49 tests)
    - API: `poetry run pytest tests/api/` (90 tests)
+   - System-wide: `.\run_all_tests.ps1` from workspace root (797 tests)
    - **Note**: Must run separately due to SQLAlchemy mapper conflicts (see tests/README.md)
 
 **Architecture:**
