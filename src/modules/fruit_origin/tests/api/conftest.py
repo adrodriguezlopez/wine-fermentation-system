@@ -6,7 +6,9 @@ Extends shared test fixtures with fruit_origin-specific setup.
 import pytest
 import pytest_asyncio
 import sys
+import os
 from pathlib import Path
+from typing import AsyncGenerator
 
 # Add project root to Python path to use src.shared imports
 project_root = Path(__file__).parent.parent.parent.parent.parent
@@ -14,19 +16,87 @@ sys.path.insert(0, str(project_root))
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.pool import StaticPool
+from sqlalchemy import text
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.domain.enums.user_role import UserRole
 from src.shared.auth.infra.api.dependencies import get_current_user
-from src.shared.infra.database.fastapi_session import get_db_session
+from src.shared.infra.database.fastapi_session import get_db_session, initialize_database
+from src.shared.infra.orm.base_entity import Base
 from src.modules.fruit_origin.src.api_component.routers.vineyard_router import router as vineyard_router
 from src.modules.fruit_origin.src.api_component.routers.harvest_lot_router import router as harvest_lot_router
 from src.modules.fruit_origin.src.api_component.error_handlers import register_error_handlers
 
+# Import entities for Base.metadata
+from src.shared.auth.domain.entities.user import User
+from src.modules.winery.src.domain.entities.winery import Winery
+from src.modules.fruit_origin.src.domain.entities.vineyard import Vineyard
+from src.modules.fruit_origin.src.domain.entities.vineyard_block import VineyardBlock
+from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot
 
-# Import shared fixtures from global conftest
-pytest_plugins = ["tests.api.conftest"]
+
+# =============================================================================
+# DATABASE FIXTURES
+# =============================================================================
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_database():
+    """Session-level fixture: Initialize database for testing."""
+    os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+    initialize_database()
+    yield
+    os.environ.pop("DATABASE_URL", None)
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an event loop for the entire test session."""
+    import asyncio
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def test_engine():
+    """Session-scoped: Create database engine ONCE for all tests."""
+    engine = create_async_engine(
+        "sqlite+aiosqlite:///file:test_db?mode=memory&cache=shared&uri=true",
+        connect_args={"check_same_thread": False, "uri": True},
+        poolclass=StaticPool,
+    )
+    
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    yield engine
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def override_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
+    """Function-scoped: Provide clean session for each test."""
+    async_session_maker = async_sessionmaker(
+        test_engine, class_=AsyncSession, expire_on_commit=False
+    )
+    
+    async with async_session_maker() as session:
+        yield session
+        await session.rollback()
+    
+    # Clean all data after each test
+    async with test_engine.begin() as conn:
+        try:
+            await conn.execute(text("DELETE FROM harvest_lots"))
+            await conn.execute(text("DELETE FROM vineyard_blocks"))
+            await conn.execute(text("DELETE FROM vineyards"))
+            await conn.execute(text("DELETE FROM users"))
+            await conn.execute(text("DELETE FROM wineries"))
+            await conn.commit()
+        except Exception:
+            await conn.rollback()
 
 
 @pytest.fixture

@@ -25,6 +25,8 @@
 | **[ADR-016](./ADR-016-winery-service-layer.md)** | Winery Service Layer Architecture | ✅ Implemented | 2025-12-29 | High |
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
+| **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Approved | 2025-12-30 | Medium |
+| **[ADR-019](./ADR-019-etl-pipeline-historical-data.md)** | ETL Pipeline Design for Historical Data | ✅ Approved | 2025-12-30 | High |
 
 **Legend:**
 - ✅ **Implemented** - Fully implemented with tests passing
@@ -303,6 +305,43 @@
   - **System: 748/748 tests (100%)**
 - **Cross-Module Impact**: Fixed 39 Fruit Origin tests (code field added to fixtures)
 - **Timeline**: December 29, 2025 (1 day implementation)
+
+### ADR-029: Data Source Field for Historical Data Tracking
+**Decision:** Add data_source field to Fermentation/Sample entities instead of creating separate HistoricalFermentation entities  
+**Status:** ✅ **Approved** (Dec 30, 2025)  
+**Impact:** Medium - Enables historical data tracking without entity duplication  
+**Key Points:**
+- **Field**: `data_source: Mapped[str]` with enum values (SYSTEM, IMPORTED, MIGRATED)
+- **Additional**: `imported_at: Mapped[datetime]` (nullable) for import timestamp
+- **Benefits**: Auditing, debugging, UI differentiation, future-proofing
+- **Cost**: Only 20 bytes per registro
+- **Index**: Created on data_source for query performance
+- **Alternative rejected**: Separate HistoricalFermentation tables (massive code duplication)
+- **Alternative rejected**: Boolean is_historical (not extensible)
+- **Alternative rejected**: YAGNI/no field (loses auditing capability)
+- **Impact**: Prerequisite for ADR-018 (Historical Data Module)
+
+### ADR-019: ETL Pipeline Design for Historical Data
+**Decision:** pandas-based ETL pipeline with 3-layer validation and upsert strategy  
+**Status:** ✅ **Approved** (Dec 30, 2025)  
+**Impact:** High - Enables historical data import from Excel  
+**Key Points:**
+- **Library**: pandas + openpyxl (read and write Excel)
+- **Validation**: 3 layers (pre-validate schema, row-validate data, post-validate integrity)
+- **Error handling**: Best-effort with detailed report (ImportResult)
+- **Excel error report**: Auto-generated Excel with errors/warnings highlighted
+  - Error rows in red, warning rows in yellow
+  - Additional columns: 'Errors' and 'Warnings'
+  - Download endpoint: GET /import/{job_id}/error-report
+- **Async**: FastAPI Background Tasks (MVP), migrate to Celery if needed
+- **Excel format**: 1 row = 1 sample, fermentation metadata repeats
+- **Re-import**: Upsert strategy (UPDATE by winery_id + code + data_source)
+- **Sample merge**: Match by measured_at (update if exists, create if not)
+- **Performance targets**: 1K rows < 30s, 10K rows < 5min, memory < 500MB
+- **Success rate**: 95%+ valid rows imported successfully
+- **No data loss**: Valid rows always imported even if others fail
+- **Idempotent**: Re-importing doesn't duplicate data
+- **User-friendly**: Download Excel to see exactly what needs fixing
 
 ### ADR-028: Module Dependency Management Standardization
 **Decision:** Standardize all modules with independent Poetry-managed environments  

@@ -50,7 +50,7 @@
 ### Authentication Module (Auth)
 **Status:** ✅ COMPLETE  
 **Last Updated:** November 4, 2025  
-**Total Tests:** 187 passing (163 unit + 24 integration)  
+**Total Tests:** 183 passing (159 unit + 24 integration)  
 **Details:** See [auth module-context.md](../src/shared/auth/.ai-context/module-context.md)
 
 ### Fermentation Management Module

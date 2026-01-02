@@ -18,7 +18,7 @@ from typing import AsyncGenerator
 from unittest.mock import AsyncMock, Mock
 
 # Add project root to Python path
-project_root = Path(__file__).parent.parent.parent
+project_root = Path(__file__).parent.parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from fastapi.testclient import TestClient
@@ -202,6 +202,7 @@ def create_test_app(user_override: UserContext = None, db_override: AsyncSession
     from src.shared.infra.database.fastapi_session import get_db_session as real_get_db_session
     from src.modules.fermentation.src.api.routers.fermentation_router import router as fermentation_router
     from src.modules.fermentation.src.api.routers.sample_router import router as sample_router, samples_router
+    from src.modules.fermentation.src.api.error_handlers import register_error_handlers
     
     # Create minimal FastAPI app for testing
     app = FastAPI(title="Fermentation API - Test")
@@ -210,6 +211,9 @@ def create_test_app(user_override: UserContext = None, db_override: AsyncSession
     app.include_router(sample_router)
     app.include_router(samples_router)  # New: non-nested sample endpoints
     app.include_router(fermentation_router)
+    
+    # Register error handlers for domain exceptions
+    register_error_handlers(app)
     
     # Test endpoint to verify client works
     @app.get("/test")

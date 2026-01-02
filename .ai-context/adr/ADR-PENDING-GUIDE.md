@@ -105,7 +105,7 @@
 ---
 
 #### ADR-017: Winery API Design & Multi-Tenancy Strategy
-**Decisión a taker:** Diseño de endpoints REST y estrategia de aislamiento de datos por bodega
+**Decisión a tomar:** Diseño de endpoints REST y estrategia de aislamiento de datos por bodega
 
 **Contexto:**
 - Winery es la entidad raíz del multi-tenancy
@@ -129,6 +129,38 @@
 ---
 
 ### 3. Historical Data Module - Completo
+
+#### ADR-029: Data Source Field for Historical Data Tracking ✅
+**Estado:** ✅ **APROBADO** (December 30, 2025)
+
+**Decisión tomada:**
+- Agregar campo `data_source: Mapped[str]` a entidades `Fermentation` y `Sample`
+- Enum DataSource con valores: SYSTEM, IMPORTED, MIGRATED
+- Índice en `data_source` para performance
+- Campo adicional `imported_at: Mapped[datetime]` (nullable)
+- **Beneficios:** Auditing, debugging, UI differentiation, future-proofing
+- **Costo:** Solo 20 bytes por registro
+
+**Razones:**
+1. Evita duplicación de entidades (HistoricalFermentation vs Fermentation)
+2. Permite reutilizar código existente (repositories, services)
+3. Queries unificadas con filtrado por fuente
+4. Extensible para futuras fuentes de datos
+
+**Alternativas rechazadas:**
+- YAGNI (sin campo): Sin auditoría de origen, debugging difícil
+- Tablas separadas: Duplicación masiva de código
+- Boolean is_historical: No extensible
+
+**Implementación:**
+- Migration: Agregar columnas con default 'system'
+- Repositories: Métodos opcionales `list_by_data_source()`
+- DTOs: Incluir `data_source` en responses
+- ETL: Establecer `data_source=IMPORTED` al importar
+
+**Referencia:** Ver [ADR-029](./ADR-029-data-source-field-historical-tracking.md)
+
+---
 
 #### ADR-018: Historical Data Module Architecture
 **Decisión a tomar:** Arquitectura completa del módulo de datos históricos
@@ -173,34 +205,59 @@
 
 ---
 
-#### ADR-019: ETL Pipeline Design for Historical Data
-**Decisión a tomar:** Diseño del pipeline ETL para importar datos históricos desde Excel
+#### ADR-019: ETL Pipeline Design for Historical Data ✅
+**Estado:** ✅ **APROBADO** (December 30, 2025)
 
-**Contexto:**
-- Cada bodega tiene formato diferente de Excel
-- Datos pueden tener inconsistencias (fechas faltantes, valores inválidos)
-- Proceso puede ser largo (miles de fermentaciones)
-- Necesidad de feedback al usuario sobre progreso
+**Decisión tomada:**
+- **Librería**: pandas + openpyxl (lectura y escritura de Excel)
+- **Validación**: 3 capas (pre-validate, row-validate, post-validate)
+- **Errores**: Best-effort con reporte detallado (ImportResult)
+- **Excel de errores**: Generación automática de Excel con errores/warnings
+  - Filas con errores resaltadas en rojo
+  - Filas con warnings resaltadas en amarillo
+  - Columnas adicionales: 'Errors' y 'Warnings'
+  - Endpoint de descarga: GET /import/{job_id}/error-report
+- **Async**: FastAPI Background Tasks (MVP), migrar a Celery si necesario
+- **Formato Excel**: 1 fila = 1 sample (fermentation metadata se repite)
+- **Re-importación**: Upsert strategy (UPDATE by winery_id + code + data_source)
+- **Samples merge**: Match por measured_at (update si existe, create si no)
 
-**Aspectos a decidir:**
-- Librería de procesamiento: pandas vs openpyxl vs xlrd
-- Estrategia de validación de datos:
-  - Pre-validación (schema del Excel)
-  - Validación por fila (detectar inconsistencias)
-  - Post-validación (verificar integridad referencial)
-- Manejo de errores:
-  - ¿Abortar todo si hay un error?
-  - ¿Importar filas válidas e informar errores?
-  - ¿Permitir corrección y re-intento?
-- Procesamiento asíncrono (¿Celery? ¿background tasks?)
-- Reportes de importación (success/error rates)
-- Versionado de datos históricos (¿permitir re-importar?)
+**Arquitectura:**
+```python
+# Validación 3 capas
+1. pre_validate(): Schema check antes de cargar datos
+2. row_validate(): Validación por fila (fechas, rangos, tipos)
+3. post_validate(): Integridad cross-entity después de cargar
 
-**Consideraciones técnicas:**
-- Transacciones grandes (bulk insert eficiente)
-- Memory management (procesar por lotes si es muy grande)
-- Logging detallado del proceso ETL
-- Testing del ETL (fixtures con Excel de ejemplo)
+# Procesamiento
+- Background task con ImportJob tracking
+- groupby('fermentation_code') para agrupar samples
+- Transacción por fermentation (no todo-o-nada)
+- Upsert: Detecta existentes y actualiza sin duplicar
+
+# Error report
+- ErrorReportGenerator genera Excel con formato
+- Solo incluye filas con errores/warnings
+- Styling con openpyxl (colores, formato)
+- FileResponse para descarga
+```
+
+**Beneficios:**
+- ✅ Validación robusta (fail fast + granular + integrity)
+- ✅ No pierde trabajo (partial success funciona)
+- ✅ Re-import seguro (sin duplicados)
+- ✅ **Excel descargable** (usuario corrige fácilmente)
+- ✅ **Formato visual** (rojo = error, amarillo = warning)
+- ✅ User-friendly (Excel tabla plana, reportes claros)
+- ✅ Performance (pandas optimizado, async processing)
+
+**Métricas:**
+- 1K filas < 30s
+- 10K filas < 5min
+- 95%+ success rate
+- Memory < 500MB por import
+
+**Referencia:** Ver [ADR-019](./ADR-019-etl-pipeline-historical-data.md)
 
 ---
 

@@ -84,7 +84,7 @@
 - **Tests**: 61 service tests passing (100% coverage)
 - **Dependencies**: PyJWT, passlib[bcrypt] installed
 
-**Total: 163 unit tests passing (100%) - Sub-second execution time**
+**Total: 159 unit tests passing (100%) - Sub-second execution time**
 
 ### Recent Fixes (Nov 15, 2025)
 
@@ -98,7 +98,7 @@
 - **Original Skip Reason**: "Requires fermentation module for User entity relationships"
 - **Investigation**: Test uses Mock fixture (sample_user), not real entity
 - **Solution**: Removed @pytest.mark.skip decorator
-- **Result**: Test now runs and passes (162 → 163 passing tests) ✅
+- **Result**: Test now runs and passes (158 → 159 passing tests) ✅
 
 ### Integration Status
 

@@ -52,6 +52,7 @@ $testResults = @{
     FruitOriginAPI = $null
     FermentationUnit = $null
     FermentationIntegration = $null
+    FermentationAPI = $null
 }
 
 $allPassed = $true
@@ -80,22 +81,25 @@ function Invoke-TestSuite {
             }
             
             # Run tests using poetry from module directory
-            Push-Location $ModulePath
-            $testArgs = @(
-                "run",
-                "pytest",
-                $TestPath,
-                "-q",
-                "--tb=line"
-            )
-            
-            if ($Verbose) {
-                $testArgs[2] = "-v"
+            try {
+                Push-Location $ModulePath
+                $testArgs = @(
+                    "run",
+                    "pytest",
+                    $TestPath,
+                    "-q",
+                    "--tb=line"
+                )
+                
+                if ($Verbose) {
+                    $testArgs[2] = "-v"
+                }
+                
+                $output = & poetry @testArgs 2>&1
+                $exitCode = $LASTEXITCODE
+            } finally {
+                Pop-Location
             }
-            
-            $output = & poetry @testArgs 2>&1
-            $exitCode = $LASTEXITCODE
-            Pop-Location
         } else {
             # Run tests using python directly (for shared modules without Poetry)
             try {
@@ -296,6 +300,18 @@ if (-not $Quick) {
         -Type "integration"
     
     if (-not $testResults.FermentationIntegration.Success) { $allPassed = $false }
+}
+
+# Run Fermentation API Tests
+if (-not $Quick) {
+    Write-Host "`n"
+    $testResults.FermentationAPI = Invoke-TestSuite `
+        -Name "Fermentation - API Tests" `
+        -ModulePath "src/modules/fermentation" `
+        -TestPath "tests/api/" `
+        -Type "api"
+    
+    if (-not $testResults.FermentationAPI.Success) { $allPassed = $false }
 }
 
 # Summary

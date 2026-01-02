@@ -141,3 +141,87 @@ def handle_service_errors(func: Callable[..., T]) -> Callable[..., T]:
             )
     
     return wrapper
+
+
+def register_error_handlers(app) -> None:
+    """
+    Register exception handlers with FastAPI app for Fermentation domain errors.
+    
+    Maps domain errors to appropriate HTTP status codes:
+    - FermentationNotFound → 404
+    - SampleNotFound → 404
+    - InvalidFermentationState → 422
+    - FermentationAlreadyCompleted → 409
+    - InvalidSampleDate, InvalidSampleValue → 422
+    
+    Args:
+        app: FastAPI application instance
+    """
+    from fastapi import Request, status
+    from fastapi.responses import JSONResponse
+    
+    @app.exception_handler(FermentationNotFound)
+    async def fermentation_not_found_handler(
+        request: Request,
+        exc: FermentationNotFound
+    ) -> JSONResponse:
+        """Handle fermentation not found errors."""
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc), "error_type": "FermentationNotFound"}
+        )
+    
+    @app.exception_handler(SampleNotFound)
+    async def sample_not_found_handler(
+        request: Request,
+        exc: SampleNotFound
+    ) -> JSONResponse:
+        """Handle sample not found errors."""
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc), "error_type": "SampleNotFound"}
+        )
+    
+    @app.exception_handler(InvalidFermentationState)
+    async def invalid_fermentation_state_handler(
+        request: Request,
+        exc: InvalidFermentationState
+    ) -> JSONResponse:
+        """Handle invalid fermentation state errors."""
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": str(exc), "error_type": "InvalidFermentationState"}
+        )
+    
+    @app.exception_handler(FermentationAlreadyCompleted)
+    async def fermentation_already_completed_handler(
+        request: Request,
+        exc: FermentationAlreadyCompleted
+    ) -> JSONResponse:
+        """Handle fermentation already completed errors."""
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"detail": str(exc), "error_type": "FermentationAlreadyCompleted"}
+        )
+    
+    @app.exception_handler(InvalidSampleDate)
+    async def invalid_sample_date_handler(
+        request: Request,
+        exc: InvalidSampleDate
+    ) -> JSONResponse:
+        """Handle invalid sample date errors."""
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": str(exc), "error_type": "InvalidSampleDate"}
+        )
+    
+    @app.exception_handler(InvalidSampleValue)
+    async def invalid_sample_value_handler(
+        request: Request,
+        exc: InvalidSampleValue
+    ) -> JSONResponse:
+        """Handle invalid sample value errors."""
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": str(exc), "error_type": "InvalidSampleValue"}
+        )
