@@ -14,8 +14,10 @@ Defines the core business model, domain entities, enums, and repository interfac
 
 ## Arquitectura específica del componente
 - **Entities**: Fermentation, BaseSample, FermentationNote, etc. (en `entities/`)
-- **Enums**: FermentationStatus, SampleType, etc. (en `enums/`)
+  - ADR-029: Campos `data_source` e `imported_at` para tracking de origen de datos
+- **Enums**: FermentationStatus, SampleType, DataSource (ADR-029), etc. (en `enums/`)
 - **Repository Interfaces**: IFermentationRepository, ISampleRepository (en `repositories/`)
+  - ADR-029: Métodos `list_by_data_source()` en ambas interfaces
 - **No lógica de infraestructura**: Solo contratos, reglas y modelos puros.
 
 ## Component interfaces

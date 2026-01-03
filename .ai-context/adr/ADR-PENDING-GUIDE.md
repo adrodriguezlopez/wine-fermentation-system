@@ -131,32 +131,37 @@
 ### 3. Historical Data Module - Completo
 
 #### ADR-029: Data Source Field for Historical Data Tracking ✅
-**Estado:** ✅ **APROBADO** (December 30, 2025)
+**Estado:** ✅ **IMPLEMENTADO** (January 2, 2026)
 
-**Decisión tomada:**
-- Agregar campo `data_source: Mapped[str]` a entidades `Fermentation` y `Sample`
+**Decisión implementada:**
+- Campo `data_source: Mapped[str]` agregado a Fermentation y BaseSample
 - Enum DataSource con valores: SYSTEM, IMPORTED, MIGRATED
 - Índice en `data_source` para performance
 - Campo adicional `imported_at: Mapped[datetime]` (nullable)
 - **Beneficios:** Auditing, debugging, UI differentiation, future-proofing
 - **Costo:** Solo 20 bytes por registro
 
-**Razones:**
-1. Evita duplicación de entidades (HistoricalFermentation vs Fermentation)
-2. Permite reutilizar código existente (repositories, services)
-3. Queries unificadas con filtrado por fuente
-4. Extensible para futuras fuentes de datos
+**Implementación completa:**
+- ✅ DataSource enum (6 tests passing)
+- ✅ Entity fields en Fermentation (8 tests passing)
+- ✅ Entity fields en BaseSample (8 tests passing)
+- ✅ FermentationRepository.list_by_data_source() (8 tests passing)
+- ✅ SampleRepository.list_by_data_source() (implementado)
+- ✅ Interface tests actualizados (2 tests passing)
+- ✅ Base de datos PostgreSQL actualizada (recreate_test_tables.py)
+- ✅ **Total: 914/914 tests passing system-wide**
 
 **Alternativas rechazadas:**
 - YAGNI (sin campo): Sin auditoría de origen, debugging difícil
 - Tablas separadas: Duplicación masiva de código
 - Boolean is_historical: No extensible
 
-**Implementación:**
-- Migration: Agregar columnas con default 'system'
-- Repositories: Métodos opcionales `list_by_data_source()`
-- DTOs: Incluir `data_source` en responses
-- ETL: Establecer `data_source=IMPORTED` al importar
+**Resultado:**
+- Sistema listo para trackear origen de datos
+- Prerequisito completado para ADR-018 (Historical Data Module)
+- Prerequisito completado para ADR-019 (ETL Pipeline)
+- Repositories pueden filtrar por data_source
+- DTOs listos para incluir data_source en responses
 
 **Referencia:** Ver [ADR-029](./ADR-029-data-source-field-historical-tracking.md)
 

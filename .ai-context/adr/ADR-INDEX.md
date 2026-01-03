@@ -25,7 +25,7 @@
 | **[ADR-016](./ADR-016-winery-service-layer.md)** | Winery Service Layer Architecture | ✅ Implemented | 2025-12-29 | High |
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
-| **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Approved | 2025-12-30 | Medium |
+| **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Implemented | 2026-01-02 | Medium |
 | **[ADR-019](./ADR-019-etl-pipeline-historical-data.md)** | ETL Pipeline Design for Historical Data | ✅ Approved | 2025-12-30 | High |
 
 **Legend:**
@@ -308,18 +308,25 @@
 
 ### ADR-029: Data Source Field for Historical Data Tracking
 **Decision:** Add data_source field to Fermentation/Sample entities instead of creating separate HistoricalFermentation entities  
-**Status:** ✅ **Approved** (Dec 30, 2025)  
+**Status:** ✅ **IMPLEMENTED** (Jan 2, 2026)  
 **Impact:** Medium - Enables historical data tracking without entity duplication  
 **Key Points:**
+- **Implementation**: 32 new tests passing (6 enum + 16 entity + 8 repository + 2 interface)
 - **Field**: `data_source: Mapped[str]` with enum values (SYSTEM, IMPORTED, MIGRATED)
 - **Additional**: `imported_at: Mapped[datetime]` (nullable) for import timestamp
 - **Benefits**: Auditing, debugging, UI differentiation, future-proofing
-- **Cost**: Only 20 bytes per registro
+- **Cost**: Only 20 bytes per record
 - **Index**: Created on data_source for query performance
+- **Database**: PostgreSQL tables recreated with new columns
+- **Repository Methods**: 
+  - `FermentationRepository.list_by_data_source()`
+  - `SampleRepository.list_by_data_source()`
+- **Logging**: Structured logging with ADR-027 (LogTimer, context binding)
+- **Total Tests**: 914/914 system-wide tests passing
 - **Alternative rejected**: Separate HistoricalFermentation tables (massive code duplication)
 - **Alternative rejected**: Boolean is_historical (not extensible)
 - **Alternative rejected**: YAGNI/no field (loses auditing capability)
-- **Impact**: Prerequisite for ADR-018 (Historical Data Module)
+- **Ready For**: ADR-018 (Historical Data Module), ADR-019 (ETL Pipeline)
 
 ### ADR-019: ETL Pipeline Design for Historical Data
 **Decision:** pandas-based ETL pipeline with 3-layer validation and upsert strategy  

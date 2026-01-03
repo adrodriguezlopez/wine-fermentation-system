@@ -66,14 +66,15 @@
 ### Implemented Components
 
 **FermentationRepository** ✅ COMPLETE
-- **Methods:** 5 (create, get_by_id, update_status, get_by_status, get_by_winery)
-- **Unit Tests:** 8 passing (100% coverage of interface)
+- **Methods:** 6 (create, get_by_id, update_status, get_by_status, get_by_winery, list_by_data_source)
+  - ADR-029: `list_by_data_source(winery_id, data_source, include_deleted)` implementado
+- **Unit Tests:** 16 passing (8 base + 8 ADR-029)
 - **Integration Tests:** 8 passing (real PostgreSQL operations)
 - **Status:** Fully implemented with SQLAlchemy integration, multi-tenancy verified
 - **Compliance:** ADR-003 compliant (zero sample operations)
 
 **SampleRepository** ✅ COMPLETE + REFACTORED
-- **Methods:** 11 fully implemented with async session management
+- **Methods:** 12 fully implemented with async session management
   - ✅ `create()` - Polymorphic sample creation with session context
   - ✅ `upsert_sample()` - Upsert with conflict resolution
   - ✅ `get_sample_by_id()` - Single sample retrieval (returns None if not found)
@@ -85,11 +86,17 @@
   - ✅ `check_duplicate_timestamp()` - Duplicate detection with session context
   - ✅ `soft_delete_sample()` - Logical deletion with session context (no error if not found)
   - ✅ `bulk_upsert_samples()` - Batch operations
+  - ✅ `list_by_data_source()` - Filter by data source (ADR-029)
 - **Unit Tests:** 12 passing (interface validation)
 - **Integration Tests:** 1 passing (real database persistence)
 - **API Integration Tests:** 12 passing (full endpoint validation)
 - **Status:** Production-ready with session context managers, error handling, and API integration
 - **Compliance:** ADR-003 compliant (all sample operations centralized)
+- **ADR-029 Implementation (2026-01-02):**
+  - Added `list_by_data_source(fermentation_id, data_source, winery_id)` method
+  - Queries across all sample types (SugarSample, DensitySample, CelsiusTemperatureSample)
+  - Multi-tenant security via fermentation join
+  - Structured logging with ADR-027
 - **Recent Refactoring (2025-11-15):**
   - Added `async with session_cm as session:` pattern to all methods
   - Changed ValueError → None returns for not-found scenarios
@@ -104,8 +111,8 @@
 - **Status:** Complete error mapping infrastructure
 
 ### Test Coverage
-- **Unit Tests:** 39 passing (repository layer coverage)
-  - FermentationRepository: 8 tests (lifecycle operations)
+- **Unit Tests:** 47 passing (repository layer coverage)
+  - FermentationRepository: 16 tests (8 base + 8 ADR-029)
   - SampleRepository: 12 tests (all methods validated)
   - Error Classes: 19 tests (error hierarchy and handling)
 - **Integration Tests:** 9 passing (real PostgreSQL operations)
@@ -116,7 +123,10 @@
   - GET /samples: 3 tests (list, empty, not found)
   - GET /samples/{id}: 2 tests (get, not found)
   - GET /samples/latest: 3 tests (latest, no samples, filter by type)
-- **Total:** 60 tests (39 unit + 9 integration + 12 API)
+- **Interface Tests:** 2 passing (ADR-029)
+  - test_fermentation_repository_interface.py
+  - test_sample_repository_interface.py
+- **Total:** 70 tests (47 unit + 9 integration + 12 API + 2 interface)
 
 ### Critical Fixes Applied
 

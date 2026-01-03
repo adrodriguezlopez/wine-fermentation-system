@@ -22,6 +22,7 @@ def test_fermentation_repository_interface_methods() -> None:
         "update_status",
         "get_by_status",
         "get_by_winery",
+        "list_by_data_source",  # ADR-029: Data source tracking
     }
     
     # NOTE: Sample operations removed (ADR-003: Separation of Concerns)

@@ -42,6 +42,10 @@ class Fermentation(BaseEntity):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     
+    # Data source tracking (ADR-029)
+    data_source: Mapped[str] = mapped_column(String(20), nullable=False, default="system", server_default="system", index=True)
+    imported_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    
     # Soft delete support
     is_deleted: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false")
 

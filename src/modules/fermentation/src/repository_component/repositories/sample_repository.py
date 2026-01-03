@@ -547,3 +547,65 @@ class SampleRepository(BaseRepository, ISampleRepository):
             result.append(upserted)
         return result
 
+    async def list_by_data_source(
+        self, fermentation_id: int, data_source: str, winery_id: int
+    ) -> List[BaseSample]:
+        """
+        Retrieves samples filtered by data source (ADR-029).
+        
+        Multi-tenant secured by winery_id via fermentation relationship.
+        
+        Args:
+            fermentation_id: Fermentation ID to filter samples
+            data_source: Data source value to filter by
+            winery_id: Winery ID for multi-tenant scoping
+            
+        Returns:
+            List of samples matching criteria
+        """
+        from sqlalchemy import select
+        from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
+        from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+        from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+        from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
+        
+        async def _list_by_data_source_operation():
+            with LogTimer(logger, "list_samples_by_data_source"):
+                logger.debug(
+                    "querying_samples_by_data_source",
+                    fermentation_id=fermentation_id,
+                    data_source=data_source,
+                    winery_id=winery_id
+                )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    all_samples = []
+                    
+                    # Query each sample type table
+                    for sample_class in [SugarSample, DensitySample, CelsiusTemperatureSample]:
+                        query = (
+                            select(sample_class)
+                            .join(Fermentation, sample_class.fermentation_id == Fermentation.id)
+                            .where(
+                                sample_class.fermentation_id == fermentation_id,
+                                sample_class.data_source == data_source,
+                                Fermentation.winery_id == winery_id
+                            )
+                        )
+                        result = await session.execute(query)
+                        samples = result.scalars().all()
+                        all_samples.extend(samples)
+                    
+                    logger.info(
+                        "samples_retrieved_by_data_source",
+                        fermentation_id=fermentation_id,
+                        data_source=data_source,
+                        winery_id=winery_id,
+                        count=len(all_samples)
+                    )
+                    
+                    return list(all_samples)
+        
+        return await self.execute_with_error_mapping(_list_by_data_source_operation)
+

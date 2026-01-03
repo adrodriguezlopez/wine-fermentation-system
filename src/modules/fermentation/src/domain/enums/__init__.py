@@ -6,5 +6,6 @@ Enumeration types that represent valid states and types in the fermentation doma
 
 from .fermentation_status import FermentationStatus
 from .sample_type import SampleType
+from .data_source import DataSource
 
-__all__ = ['FermentationStatus', 'SampleType']
+__all__ = ['FermentationStatus', 'SampleType', 'DataSource']

@@ -363,6 +363,56 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
             include_deleted=False
         )
 
+    async def list_by_data_source(
+        self, winery_id: int, data_source: str, include_deleted: bool = False
+    ) -> List[Fermentation]:
+        """
+        Retrieves fermentations filtered by data source (ADR-029).
+
+        Args:
+            winery_id: ID of the winery
+            data_source: Data source to filter by ('system', 'imported', 'migrated')
+            include_deleted: Whether to include soft-deleted fermentations
+
+        Returns:
+            List[Fermentation]: List of fermentations with specified data source
+        """
+        async def _list_by_data_source_operation():
+            with LogTimer(logger, "list_fermentations_by_data_source"):
+                logger.debug(
+                    "querying_fermentations_by_data_source",
+                    winery_id=winery_id,
+                    data_source=data_source,
+                    include_deleted=include_deleted
+                )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    # Build query with data_source filter
+                    conditions = [
+                        Fermentation.winery_id == winery_id,
+                        Fermentation.data_source == data_source
+                    ]
+                    
+                    if not include_deleted:
+                        conditions.append(Fermentation.is_deleted == False)
+                    
+                    query = select(Fermentation).where(*conditions)
+                    result = await session.execute(query)
+                    fermentations = result.scalars().all()
+                    
+                    logger.info(
+                        "fermentations_retrieved_by_data_source",
+                        winery_id=winery_id,
+                        data_source=data_source,
+                        count=len(fermentations),
+                        include_deleted=include_deleted
+                    )
+                    
+                    return list(fermentations)
+
+        return await self.execute_with_error_mapping(_list_by_data_source_operation)
+
     # NOTE: For comprehensive sample queries, implement ISampleRepository
     # This repository focuses on fermentation lifecycle operations.
     # Sample-specific queries should use SampleRepository:

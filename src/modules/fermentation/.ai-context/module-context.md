@@ -53,9 +53,11 @@
 
 **✅ Domain Layer**
 - Entities: Fermentation, BaseSample (+ 3 subtypes: Sugar, Density, Temperature), User, FermentationLotSource
+  - ADR-029: Campos `data_source` e `imported_at` agregados (16 tests)
 - DTOs: FermentationCreate, SampleCreate
-- Enums: FermentationStatus, SampleType
+- Enums: FermentationStatus, SampleType, DataSource (ADR-029 - 6 tests)
 - Interfaces: IFermentationRepository, ISampleRepository
+  - ADR-029: Métodos `list_by_data_source()` agregados (2 tests)
 
 **✅ Service Layer (115 tests passing)**
 - FermentationService: 7 methods, 33 tests
@@ -74,13 +76,14 @@
 - IFermentationRepository: Interface validation
 - ISampleRepository: Interface validation
 
-**✅ Repository Layer (39 tests passing - Using ADR-012 Shared Utilities)**
-- FermentationRepository: 8 tests passing (Phase 2 migrated) ✅
-- SampleRepository: 12 tests passing (Phase 2 migrated) ✅
+**✅ Repository Layer (47 tests passing - Using ADR-012 Shared Utilities)**
+- FermentationRepository: 16 tests passing (8 base + 8 ADR-029) ✅
+- SampleRepository: 12 tests passing (Phase 2 migrated + ADR-029 method) ✅
 - LotSourceRepository: 11 tests passing (Phase 2 migrated) ✅
 - FermentationNoteRepository: 19 tests passing (Phase 2 migrated) ✅
 - Error handling: 19 tests passing (error class hierarchy)
 - **ADR-012 Impact**: 4 files migrated, 50 tests using shared test infrastructure
+- **ADR-029 Impact**: 8 new tests for list_by_data_source() methods
 
 **✅ Integration Tests (49 tests passing) - Dec 30, 2025**
 - **FermentationNoteRepository**: 20 tests with real database
@@ -154,15 +157,15 @@ poetry run pytest tests/api/         # 90 tests
 ## Quick Reference
 
 **Need to work on this module?**
-1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`, `ADR-006`, `ADR-011 Phase 3`
+1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`, `ADR-006`, `ADR-011 Phase 3`, `ADR-029`
 2. Review component contexts in `src/*/.ai-context/component-context.md`
 3. Run tests: 
-   - All tests: `poetry run pytest tests/` (283 tests)
-   - Unit: `poetry run pytest tests/unit/` (234 tests)
+   - All tests: `poetry run pytest tests/` (400 tests - includes 32 new ADR-029 tests)
+   - Unit: `poetry run pytest tests/unit/` (264 tests)
    - Integration: `poetry run pytest tests/integration/` (49 tests)
-   - API: `poetry run pytest tests/api/` (90 tests)
-   - System-wide: `.\run_all_tests.ps1` from workspace root (797 tests)
-   - **Note**: Must run separately due to SQLAlchemy mapper conflicts (see tests/README.md)
+   - API: `poetry run pytest tests/api/` (87 tests)
+   - System-wide: `.\run_all_tests.ps1` from workspace root (914 tests)
+   - **Note**: Integration tests now included in main suite (ADR-011 Phase 3 complete)
 
 **Architecture:**
 - Domain → Repository → Service → API ✅ **Complete**
@@ -191,6 +194,7 @@ poetry run pytest tests/api/         # 90 tests
 **Enums:**
 - **FermentationStatus**: ACTIVE, SLOW, STUCK, COMPLETED
 - **SampleType**: SUGAR, TEMPERATURE, DENSITY, etc.
+- **DataSource**: SYSTEM, IMPORTED, MIGRATED (ADR-029)
 
 ## DDD Implementation
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -37,6 +37,10 @@ class BaseSample(BaseEntity):
     is_deleted: Mapped[bool] = mapped_column(
         default=False, nullable=False
     )  # Soft delete flag
+    
+    # Data source tracking (ADR-029)
+    data_source: Mapped[str] = mapped_column(String(20), nullable=False, default="system", server_default="system", index=True)
+    imported_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
     # Measurement data
     value: Mapped[float] = mapped_column(nullable=False)

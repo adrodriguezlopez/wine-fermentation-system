@@ -26,7 +26,8 @@ def test_sample_repository_interface_methods() -> None:
         "get_latest_sample_by_type",
         "soft_delete_sample",
         "check_duplicate_timestamp",
-        "bulk_upsert_samples"
+        "bulk_upsert_samples",
+        "list_by_data_source",  # ADR-029: Data source tracking
     }
 
     # Get all abstract methods defined in the interface

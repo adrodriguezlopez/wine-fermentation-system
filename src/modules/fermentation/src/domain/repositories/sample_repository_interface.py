@@ -235,3 +235,24 @@ class ISampleRepository(ABC):
             ValidationError: If any sample data is invalid
         """
         pass
+
+    @abstractmethod
+    async def list_by_data_source(
+        self, fermentation_id: int, data_source: str, winery_id: int
+    ) -> List[BaseSample]:
+        """
+        Retrieves samples filtered by data source (ADR-029).
+
+        Args:
+            fermentation_id: ID of the fermentation
+            data_source: Data source to filter by ('system', 'imported', 'migrated')
+            winery_id: Winery ID for multi-tenant security (REQUIRED)
+
+        Returns:
+            List[BaseSample]: List of samples with specified data source
+
+        Raises:
+            RepositoryError: If database operation fails
+            NotFoundError: If fermentation doesn't exist or access denied
+        """
+        pass

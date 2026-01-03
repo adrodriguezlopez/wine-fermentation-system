@@ -157,3 +157,23 @@ class IFermentationRepository(ABC):
             RepositoryError: If database operation fails
         """
         pass
+
+    @abstractmethod
+    async def list_by_data_source(
+        self, winery_id: int, data_source: str, include_deleted: bool = False
+    ) -> List[Fermentation]:
+        """
+        Retrieves fermentations filtered by data source (ADR-029).
+
+        Args:
+            winery_id: ID of the winery
+            data_source: Data source to filter by ('system', 'imported', 'migrated')
+            include_deleted: Whether to include soft-deleted fermentations
+
+        Returns:
+            List[Fermentation]: List of fermentations with specified data source
+
+        Raises:
+            RepositoryError: If database operation fails
+        """
+        pass
