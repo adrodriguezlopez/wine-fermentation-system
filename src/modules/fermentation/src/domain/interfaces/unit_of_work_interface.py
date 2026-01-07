@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
     from src.modules.fermentation.src.domain.repositories.lot_source_repository_interface import ILotSourceRepository
     from src.modules.fruit_origin.src.domain.repositories.harvest_lot_repository_interface import IHarvestLotRepository
+    from src.modules.fruit_origin.src.domain.repositories.vineyard_repository_interface import IVineyardRepository
+    from src.modules.fruit_origin.src.domain.repositories.vineyard_block_repository_interface import IVineyardBlockRepository
 
 
 class IUnitOfWork(ABC):
@@ -114,6 +116,38 @@ class IUnitOfWork(ABC):
         
         Returns:
             IHarvestLotRepository: Repository sharing UoW's transaction
+        
+        Raises:
+            RuntimeError: If accessed outside active context
+        
+        Note: Lazy-loaded on first access
+        """
+        ...
+    
+    @property
+    @abstractmethod
+    def vineyard_repo(self) -> 'IVineyardRepository':
+        """
+        Access to vineyard repository within this UoW.
+        
+        Returns:
+            IVineyardRepository: Repository sharing UoW's transaction
+        
+        Raises:
+            RuntimeError: If accessed outside active context
+        
+        Note: Lazy-loaded on first access
+        """
+        ...
+    
+    @property
+    @abstractmethod
+    def vineyard_block_repo(self) -> 'IVineyardBlockRepository':
+        """
+        Access to vineyard block repository within this UoW.
+        
+        Returns:
+            IVineyardBlockRepository: Repository sharing UoW's transaction
         
         Raises:
             RuntimeError: If accessed outside active context

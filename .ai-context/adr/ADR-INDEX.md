@@ -27,6 +27,7 @@
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 | **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Implemented | 2026-01-02 | Medium |
 | **[ADR-019](./ADR-019-etl-pipeline-historical-data.md)** | ETL Pipeline Design for Historical Data | ✅ Approved | 2025-12-30 | High |
+| **[ADR-030](./ADR-030-etl-cross-module-architecture-refactoring.md)** | ETL Cross-Module Architecture & Performance | ✅ Accepted | 2026-01-06 | High |
 
 **Legend:**
 - ✅ **Implemented** - Fully implemented with tests passing
@@ -347,6 +348,27 @@
 - **Performance targets**: 1K rows < 30s, 10K rows < 5min, memory < 500MB
 - **Success rate**: 95%+ valid rows imported successfully
 - **No data loss**: Valid rows always imported even if others fail
+
+### ADR-030: ETL Cross-Module Architecture & Performance Optimization
+**Decision:** Refactor ETL to use service layer for cross-module orchestration and eliminate N+1 queries  
+**Status:** ✅ **Accepted** (Jan 6, 2026)  
+**Impact:** High - Fixes critical architectural and performance issues in ETL pipeline  
+**Key Points:**
+- **Problem Analysis**: N+1 queries (1000 fermentations = 1000 SELECT), cross-module coupling, all-or-nothing transactions
+- **Service Layer**: Create `FruitOriginOrchestrationService` to encapsulate vineyard/block/harvest lot creation
+- **Performance**: Batch vineyard loading (99.9% query reduction: 1000 queries → 1 query)
+- **Resource Optimization**: Single shared "IMPORTED-DEFAULT" VineyardBlock per vineyard (not per fermentation)
+- **Partial Success**: Independent transactions per fermentation (999/1000 valid → 999 saved)
+- **Progress Tracking**: Async callback mechanism for real-time updates + cancellation support
+- **Optional Fields**: vineyard_name and grape_variety optional with defaults ("UNKNOWN", "Unknown")
+- **Security**: winery_id and user_id from auth context (JWT), not Excel columns
+- **Tests**: 43/43 unit tests passing (includes 5 new tests for edge cases)
+- **Development Environment**: Poetry-managed dependencies (pandas 2.3.3, openpyxl 3.1.5)
+- **Architecture**: Loose coupling via IFruitOriginOrchestrationService interface
+- **Phase 1 Complete**: Optional fields, context parameters, validation updates
+- **Phase 2 Pending**: Service creation, batch optimization, progress tracking
+- **Evaluation Score**: 6.5/10 (functional but needs performance/architecture fixes)
+- **Documentation**: Detailed analysis in `docs/etl-architecture-refactoring.md`
 - **Idempotent**: Re-importing doesn't duplicate data
 - **User-friendly**: Download Excel to see exactly what needs fixing
 

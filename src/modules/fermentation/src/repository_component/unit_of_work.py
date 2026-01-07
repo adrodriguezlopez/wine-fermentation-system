@@ -22,10 +22,14 @@ from src.modules.fermentation.src.domain.repositories.fermentation_repository_in
 from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
 from src.modules.fermentation.src.domain.repositories.lot_source_repository_interface import ILotSourceRepository
 from src.modules.fruit_origin.src.domain.repositories.harvest_lot_repository_interface import IHarvestLotRepository
+from src.modules.fruit_origin.src.domain.repositories.vineyard_repository_interface import IVineyardRepository
+from src.modules.fruit_origin.src.domain.repositories.vineyard_block_repository_interface import IVineyardBlockRepository
 from src.modules.fermentation.src.repository_component.repositories.fermentation_repository import FermentationRepository
 from src.modules.fermentation.src.repository_component.repositories.sample_repository import SampleRepository
 from src.modules.fermentation.src.repository_component.repositories.lot_source_repository import LotSourceRepository
 from src.modules.fruit_origin.src.repository_component.repositories.harvest_lot_repository import HarvestLotRepository
+from src.modules.fruit_origin.src.repository_component.repositories.vineyard_repository import VineyardRepository
+from src.modules.fruit_origin.src.repository_component.repositories.vineyard_block_repository import VineyardBlockRepository
 from src.modules.fermentation.src.repository_component.errors import RepositoryError
 from src.shared.infra.interfaces.session_manager import ISessionManager
 from src.shared.infra.session.shared_session_manager import SharedSessionManager
@@ -108,6 +112,8 @@ class UnitOfWork(IUnitOfWork):
         self._sample_repo: Optional[ISampleRepository] = None
         self._lot_source_repo: Optional[ILotSourceRepository] = None
         self._harvest_lot_repo: Optional[IHarvestLotRepository] = None
+        self._vineyard_repo: Optional[IVineyardRepository] = None
+        self._vineyard_block_repo: Optional[IVineyardBlockRepository] = None
     
     @property
     def fermentation_repo(self) -> IFermentationRepository:
@@ -212,6 +218,58 @@ class UnitOfWork(IUnitOfWork):
             self._harvest_lot_repo = HarvestLotRepository(shared_session_mgr)
         
         return self._harvest_lot_repo
+    
+    @property
+    def vineyard_repo(self) -> IVineyardRepository:
+        """
+        Get vineyard repository sharing this UoW's transaction.
+        
+        Returns:
+            IVineyardRepository: Repository with shared session
+        
+        Raises:
+            RuntimeError: If accessed outside active context
+        
+        Note: Lazy-loaded on first access
+        """
+        if not self._is_active:
+            raise RuntimeError(
+                "Cannot access vineyard_repo outside active UnitOfWork context. "
+                "Use 'async with uow:' to activate."
+            )
+        
+        # Lazy initialization
+        if self._vineyard_repo is None:
+            shared_session_mgr = SharedSessionManager(self._session)
+            self._vineyard_repo = VineyardRepository(shared_session_mgr)
+        
+        return self._vineyard_repo
+    
+    @property
+    def vineyard_block_repo(self) -> IVineyardBlockRepository:
+        """
+        Get vineyard block repository sharing this UoW's transaction.
+        
+        Returns:
+            IVineyardBlockRepository: Repository with shared session
+        
+        Raises:
+            RuntimeError: If accessed outside active context
+        
+        Note: Lazy-loaded on first access
+        """
+        if not self._is_active:
+            raise RuntimeError(
+                "Cannot access vineyard_block_repo outside active UnitOfWork context. "
+                "Use 'async with uow:' to activate."
+            )
+        
+        # Lazy initialization
+        if self._vineyard_block_repo is None:
+            shared_session_mgr = SharedSessionManager(self._session)
+            self._vineyard_block_repo = VineyardBlockRepository(shared_session_mgr)
+        
+        return self._vineyard_block_repo
     
     async def commit(self) -> None:
         """
@@ -336,3 +394,7 @@ class UnitOfWork(IUnitOfWork):
             # (new UoW needs fresh repo instances)
             self._fermentation_repo = None
             self._sample_repo = None
+            self._lot_source_repo = None
+            self._harvest_lot_repo = None
+            self._vineyard_repo = None
+            self._vineyard_block_repo = None
