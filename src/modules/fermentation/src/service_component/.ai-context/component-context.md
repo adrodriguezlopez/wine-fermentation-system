@@ -87,18 +87,35 @@
 - **BusinessRuleValidationService:** 9 tests (sugar trends, temperature ranges)
 - **ValidationService:** 19 tests (result patterns, error aggregation)
 
+**ETLService** ✅ COMPLETE (33 tests total)
+- **Methods:** 3 main (import_fermentations, _import_single_fermentation, _validate_csv_data) + 3 orchestration helpers
+- **Tests:** 21 unit + 12 integration = 33 tests
+- **Architecture:** Cross-module orchestration with TransactionScope pattern
+- **Features:**
+  - 3-layer validation (CSV format → business rules → chronology)
+  - Partial success support (some fermentations succeed, others fail)
+  - Progress tracking with callbacks
+  - Cancellation token for user-initiated abort
+  - Per-fermentation transactions with automatic rollback
+  - Batch vineyard loading (N+1 query elimination)
+- **Performance:** 100 fermentations in ~4.75s (< 10% overhead)
+- **Dependencies:** FruitOriginService (ADR-030), TransactionScope (ADR-031)
+- **References:** ADR-019 (ETL design), ADR-030 (cross-module architecture), ADR-031 (transaction coordination)
+
 ### Test Coverage
-- **Total:** 115 tests passing (100% coverage of service layer)
+- **Total:** 148 tests passing (115 original + 33 ETL)
 - **FermentationService:** 33 tests (lifecycle operations)
 - **SampleService:** 27 tests (sample management)
 - **Validation Services:** 55 tests (all validation logic)
-- **Integration:** Mocked repositories, no database dependency
+- **ETLService:** 33 tests (21 unit + 12 integration)
+- **Integration:** Unit tests use mocked repositories, ETL integration tests use real database
 
-### Next Steps (API Layer - Future Phase)
-1. **FastAPI endpoints** for fermentation and sample management
-2. **DTO models** for API request/response serialization
-3. **Authentication/Authorization** integration with winery context
-4. **API documentation** with OpenAPI/Swagger specifications
+### Completed Features
+1. ✅ **FastAPI endpoints** for fermentation and sample management (90 API tests)
+2. ✅ **DTO models** for API request/response serialization
+3. ✅ **Authentication/Authorization** integration with winery context
+4. ✅ **API documentation** with OpenAPI/Swagger specifications
+5. ✅ **ETL Pipeline** for historical data import with validation (ADR-019, ADR-030, ADR-031)
 
 ## Key implementation considerations
 - **Async operations**: All service methods async for FastAPI compatibility

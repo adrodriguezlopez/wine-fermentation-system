@@ -103,6 +103,17 @@
 - **Pattern:** Error aggregation - collects all validation errors across all services
 - **Result:** Comprehensive ValidationResult with complete error list (all-or-nothing)
 
+**FruitOriginService** ✅ COMPLETE (ETL Orchestration Methods)
+- **Purpose:** Cross-module orchestration for ETL import workflow (ADR-030)
+- **Methods:** 3 orchestration methods for fermentation import
+  - `batch_load_vineyards()`: Batch load vineyards by codes (N+1 elimination)
+  - `get_or_create_default_block()`: Get/create "Default" block per vineyard
+  - `ensure_harvest_lot_for_import()`: Get/create harvest lot for imported fermentations
+- **Tests:** 13 TDD tests (batch loading, default block creation, harvest lot logic)
+- **Performance:** 99% reduction in default block queries (1 query for 100 fermentations)
+- **Pattern:** Service-to-service orchestration maintaining module boundaries
+- **Reference:** ADR-030 (Cross-Module Architecture & Performance Optimization)
+
 ## Validation architecture
 
 ### Three-layer validation strategy

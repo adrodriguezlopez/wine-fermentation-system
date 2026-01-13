@@ -114,7 +114,24 @@
 - Standardized exception→HTTP status code mappings
 - All 17 endpoints refactored to use centralized error handling
 
-**Total: 283 tests passing (234 unit + 49 integration + 90 API)**
+**✅ ETL Pipeline (33 tests passing) - Jan 11, 2026**
+- **ETLService**: Historical data import with validation (ADR-019)
+- **Features:**
+  - 3-layer validation (CSV → business rules → chronology)
+  - Partial success (continue on per-fermentation errors)
+  - Progress tracking with callbacks
+  - Cancellation support for long-running imports
+  - Per-fermentation transactions (ADR-031)
+- **Cross-Module Integration:**
+  - FruitOriginService orchestration (ADR-030)
+  - Batch vineyard loading (N+1 elimination)
+  - Shared default blocks (99% query reduction)
+- **Performance:** 100 fermentations in ~4.75s (< 10% overhead)
+- **Tests:** 21 unit + 12 integration = 33 tests
+- **Architecture:** TransactionScope pattern for cross-module transactions
+- **References:** ADR-019, ADR-030, ADR-031 (all ✅ Implemented)
+
+**Total: 316 tests passing (267 unit + 49 integration + 90 API)**
 
 ### Test Execution Notes
 
@@ -157,14 +174,14 @@ poetry run pytest tests/api/         # 90 tests
 ## Quick Reference
 
 **Need to work on this module?**
-1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`, `ADR-006`, `ADR-011 Phase 3`, `ADR-029`
+1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`, `ADR-006`, `ADR-011 Phase 3`, `ADR-019`, `ADR-029`, `ADR-030`, `ADR-031`
 2. Review component contexts in `src/*/.ai-context/component-context.md`
 3. Run tests: 
-   - All tests: `poetry run pytest tests/` (400 tests - includes 32 new ADR-029 tests)
-   - Unit: `poetry run pytest tests/unit/` (264 tests)
-   - Integration: `poetry run pytest tests/integration/` (49 tests)
-   - API: `poetry run pytest tests/api/` (87 tests)
-   - System-wide: `.\run_all_tests.ps1` from workspace root (914 tests)
+   - All tests: `poetry run pytest tests/` (316 tests)
+   - Unit: `poetry run pytest tests/unit/` (267 tests - includes 21 ETL unit tests)
+   - Integration: `poetry run pytest tests/integration/` (49 tests - includes 12 ETL integration tests)
+   - API: `poetry run pytest tests/api/` (90 tests)
+   - System-wide: `.\run_all_tests.ps1` from workspace root (983 tests)
    - **Note**: Integration tests now included in main suite (ADR-011 Phase 3 complete)
 
 **Architecture:**

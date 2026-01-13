@@ -19,6 +19,9 @@ from src.modules.fruit_origin.src.repository_component.repositories.vineyard_rep
 from src.modules.fruit_origin.src.repository_component.repositories.harvest_lot_repository import (
     HarvestLotRepository,
 )
+from src.modules.fruit_origin.src.repository_component.repositories.vineyard_block_repository import (
+    VineyardBlockRepository,
+)
 from src.shared.infra.database.fastapi_session import get_db_session
 from src.shared.infra.repository.fastapi_session_manager import FastAPISessionManager
 
@@ -32,6 +35,7 @@ async def get_fruit_origin_service(
     Creates service with all required repositories:
     - VineyardRepository
     - HarvestLotRepository
+    - VineyardBlockRepository (for ETL orchestration)
     
     Args:
         session: Async database session from shared infrastructure
@@ -43,10 +47,12 @@ async def get_fruit_origin_service(
     
     vineyard_repo = VineyardRepository(session_manager)
     harvest_lot_repo = HarvestLotRepository(session_manager)
+    vineyard_block_repo = VineyardBlockRepository(session_manager)
     
     service = FruitOriginService(
         vineyard_repo=vineyard_repo,
-        harvest_lot_repo=harvest_lot_repo
+        harvest_lot_repo=harvest_lot_repo,
+        vineyard_block_repo=vineyard_block_repo
     )
     
     yield service

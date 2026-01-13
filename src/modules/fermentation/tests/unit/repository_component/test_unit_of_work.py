@@ -1,331 +1,330 @@
 """
-Unit tests for UnitOfWork pattern implementation.
+Unit tests for UnitOfWork facade pattern.
 
 Following TDD approach - tests written before implementation.
 
 Test Coverage:
-- UoW context manager lifecycle
-- Transaction commit/rollback
-- Repository access within UoW
-- Error handling
-- Session sharing between repositories
+- Repository access (lazy loading)
+- Session manager sharing
+- All repository properties
+- Facade pattern behavior
+
+Note: Transaction management is tested in test_transaction_scope.py
+since UnitOfWork is now a facade (ADR-031).
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, Mock
-from sqlalchemy.ext.asyncio import AsyncSession
+from unittest.mock import Mock
 
 from src.modules.fermentation.src.repository_component.unit_of_work import UnitOfWork
+from src.shared.infra.interfaces.session_manager import ISessionManager
 
 
 @pytest.fixture
 def mock_session_manager():
-    """Create a mock session manager that returns a mock session."""
-    manager = Mock()
-    mock_session = AsyncMock(spec=AsyncSession)
-    
-    # Create async context manager mock
-    mock_context = MagicMock()
-    mock_context.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_context.__aexit__ = AsyncMock()
-    
-    manager.get_session = Mock(return_value=mock_context)
-    
-    return manager, mock_session
-
-
-class TestUnitOfWorkLifecycle:
-    """Test UoW context manager lifecycle."""
-    
-    @pytest.mark.asyncio
-    async def test_uow_enters_context_successfully(self, mock_session_manager):
-        """
-        Given: A UnitOfWork instance
-        When: Entering async context
-        Then: Should return self and mark as active
-        """
-        # Arrange
-        session_manager, mock_session = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act
-        async with uow as result:
-            # Assert
-            assert result is uow
-            assert uow._is_active is True
-            assert uow._session is mock_session
-    
-    @pytest.mark.asyncio
-    async def test_uow_exits_context_successfully(self, mock_session_manager):
-        """
-        Given: A UoW in active context
-        When: Exiting context normally
-        Then: Should cleanup (rollback & close session)
-        """
-        # Arrange
-        session_manager, mock_session = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act
-        async with uow:
-            pass  # Normal exit
-        
-        # Assert
-        assert uow._is_active is False
-        assert uow._session is None
-        mock_session.rollback.assert_called()
-        mock_session.close.assert_called_once()
-    
-    @pytest.mark.asyncio
-    async def test_uow_auto_rollback_on_exception(self, mock_session_manager):
-        """
-        Given: A UoW in active context
-        When: Exception occurs
-        Then: Should auto-rollback and cleanup
-        """
-        # Arrange
-        session_manager, mock_session = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act & Assert
-        with pytest.raises(ValueError):
-            async with uow:
-                raise ValueError("Test error")
-        
-        # Cleanup should have occurred
-        assert uow._is_active is False
-        assert uow._session is None
-        mock_session.rollback.assert_called_once()
-        mock_session.close.assert_called_once()
-
-
-class TestUnitOfWorkTransactions:
-    """Test transaction commit/rollback."""
-    
-    @pytest.mark.asyncio
-    async def test_commit_persists_changes(self, mock_session_manager):
-        """
-        Given: A UoW with changes
-        When: Calling commit()
-        Then: Should call session.commit()
-        """
-        # Arrange
-        session_manager, mock_session = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act
-        async with uow:
-            await uow.commit()
-        
-        # Assert
-        mock_session.commit.assert_called_once()
-    
-    @pytest.mark.asyncio
-    async def test_rollback_discards_changes(self, mock_session_manager):
-        """
-        Given: A UoW with changes
-        When: Calling rollback()
-        Then: Should call session.rollback()
-        """
-        # Arrange
-        session_manager, mock_session = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act
-        async with uow:
-            await uow.rollback()
-        
-        # Assert - rollback called explicitly + in cleanup
-        assert mock_session.rollback.call_count >= 1
-    
-    @pytest.mark.asyncio
-    async def test_commit_outside_context_raises_error(self, mock_session_manager):
-        """
-        Given: A UoW outside active context
-        When: Calling commit()
-        Then: Should raise RuntimeError
-        """
-        # Arrange
-        session_manager, _ = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act & Assert
-        with pytest.raises(RuntimeError, match="outside active"):
-            await uow.commit()
-    
-    @pytest.mark.asyncio
-    async def test_rollback_outside_context_raises_error(self, mock_session_manager):
-        """
-        Given: A UoW outside active context
-        When: Calling rollback()
-        Then: Should raise RuntimeError
-        """
-        # Arrange
-        session_manager, _ = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act & Assert
-        with pytest.raises(RuntimeError, match="outside active"):
-            await uow.rollback()
-    
-    @pytest.mark.asyncio
-    async def test_commit_failure_triggers_rollback(self, mock_session_manager):
-        """
-        Given: A UoW where commit fails
-        When: Calling commit()
-        Then: Should auto-rollback
-        """
-        # Arrange
-        session_manager, mock_session = mock_session_manager
-        mock_session.commit = AsyncMock(side_effect=Exception("DB error"))
-        uow = UnitOfWork(session_manager)
-        
-        # Act & Assert
-        with pytest.raises(Exception):
-            async with uow:
-                await uow.commit()
-        
-        # Rollback should have been called
-        mock_session.rollback.assert_called()
+    """Create a mock session manager."""
+    manager = Mock(spec=ISessionManager)
+    return manager
 
 
 class TestUnitOfWorkRepositoryAccess:
-    """Test repository access within UoW."""
+    """Test repository access via UnitOfWork facade."""
     
-    @pytest.mark.asyncio
-    async def test_fermentation_repo_accessible_in_context(self, mock_session_manager):
+    def test_fermentation_repo_accessible(self, mock_session_manager):
         """
-        Given: A UoW in active context
+        Given: A UnitOfWork instance
         When: Accessing fermentation_repo
         Then: Should return repository instance
         """
         # Arrange
-        session_manager, _ = mock_session_manager
-        uow = UnitOfWork(session_manager)
+        uow = UnitOfWork(mock_session_manager)
         
         # Act
-        async with uow:
-            repo = uow.fermentation_repo
+        repo = uow.fermentation_repo
         
         # Assert
         assert repo is not None
+        assert hasattr(repo, 'create')
+        assert hasattr(repo, 'get_by_id')
     
-    @pytest.mark.asyncio
-    async def test_sample_repo_accessible_in_context(self, mock_session_manager):
+    def test_sample_repo_accessible(self, mock_session_manager):
         """
-        Given: A UoW in active context
+        Given: A UnitOfWork instance
         When: Accessing sample_repo
         Then: Should return repository instance
         """
         # Arrange
-        session_manager, _ = mock_session_manager
-        uow = UnitOfWork(session_manager)
+        uow = UnitOfWork(mock_session_manager)
         
         # Act
-        async with uow:
-            repo = uow.sample_repo
+        repo = uow.sample_repo
+        
+        # Assert
+        assert repo is not None
+        assert hasattr(repo, 'create')
+    
+    def test_lot_source_repo_accessible(self, mock_session_manager):
+        """
+        Given: A UnitOfWork instance
+        When: Accessing lot_source_repo
+        Then: Should return repository instance
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Act
+        repo = uow.lot_source_repo
         
         # Assert
         assert repo is not None
     
-    @pytest.mark.asyncio
-    async def test_repo_access_outside_context_raises_error(self, mock_session_manager):
+    def test_harvest_lot_repo_accessible(self, mock_session_manager):
         """
-        Given: A UoW outside active context
-        When: Accessing repository property
-        Then: Should raise RuntimeError
-        """
-        # Arrange
-        session_manager, _ = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act & Assert
-        with pytest.raises(RuntimeError, match="outside active"):
-            _ = uow.fermentation_repo
-    
-    @pytest.mark.asyncio
-    async def test_repos_share_same_session(self, mock_session_manager):
-        """
-        Given: A UoW with multiple repos accessed
-        When: Accessing different repos
-        Then: All should share same session instance
+        Given: A UnitOfWork instance
+        When: Accessing harvest_lot_repo
+        Then: Should return repository instance
         """
         # Arrange
-        session_manager, mock_session = mock_session_manager
-        uow = UnitOfWork(session_manager)
+        uow = UnitOfWork(mock_session_manager)
         
         # Act
-        async with uow:
-            ferm_repo = uow.fermentation_repo
-            sample_repo = uow.sample_repo
+        repo = uow.harvest_lot_repo
         
-        # Assert - both repos created (we can't directly verify session sharing
-        # without inspecting private repo internals, but we verify they exist)
-        assert ferm_repo is not None
-        assert sample_repo is not None
+        # Assert
+        assert repo is not None
     
-    @pytest.mark.asyncio
-    async def test_repo_lazy_initialization(self, mock_session_manager):
+    def test_vineyard_repo_accessible(self, mock_session_manager):
         """
-        Given: A UoW in active context
+        Given: A UnitOfWork instance
+        When: Accessing vineyard_repo
+        Then: Should return repository instance
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Act
+        repo = uow.vineyard_repo
+        
+        # Assert
+        assert repo is not None
+    
+    def test_vineyard_block_repo_accessible(self, mock_session_manager):
+        """
+        Given: A UnitOfWork instance
+        When: Accessing vineyard_block_repo
+        Then: Should return repository instance
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Act
+        repo = uow.vineyard_block_repo
+        
+        # Assert
+        assert repo is not None
+
+
+class TestUnitOfWorkLazyLoading:
+    """Test lazy initialization of repositories."""
+    
+    def test_repos_lazy_initialized(self, mock_session_manager):
+        """
+        Given: A newly created UnitOfWork
         When: Not accessing any repos
         Then: Repos should not be initialized
         """
-        # Arrange
-        session_manager, _ = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act
-        async with uow:
-            pass  # Don't access any repos
+        # Arrange & Act
+        uow = UnitOfWork(mock_session_manager)
         
         # Assert
         assert uow._fermentation_repo is None
         assert uow._sample_repo is None
-
-
-class TestUnitOfWorkErrorHandling:
-    """Test error handling scenarios."""
+        assert uow._lot_source_repo is None
     
-    @pytest.mark.asyncio
-    async def test_uow_handles_repository_errors(self, mock_session_manager):
+    def test_fermentation_repo_initialized_on_first_access(self, mock_session_manager):
         """
-        Given: A UoW with repository operation that fails
-        When: Error occurs
-        Then: Should auto-rollback and cleanup
+        Given: A UnitOfWork with no fermentation_repo
+        When: Accessing fermentation_repo first time
+        Then: Should initialize and cache repository
         """
         # Arrange
-        session_manager, mock_session = mock_session_manager
-        uow = UnitOfWork(session_manager)
-        
-        # Act & Assert
-        with pytest.raises(RuntimeError):
-            async with uow:
-                # Simulate repo error by accessing outside context
-                raise RuntimeError("Simulated repo error")
-        
-        # Cleanup should have occurred
-        mock_session.rollback.assert_called_once()
-        mock_session.close.assert_called_once()
-    
-    @pytest.mark.asyncio
-    async def test_uow_state_cleaned_after_error(self, mock_session_manager):
-        """
-        Given: A UoW that encountered error
-        When: After context exit
-        Then: State should be fully cleaned
-        """
-        # Arrange
-        session_manager, _ = mock_session_manager
-        uow = UnitOfWork(session_manager)
+        uow = UnitOfWork(mock_session_manager)
+        assert uow._fermentation_repo is None
         
         # Act
-        with pytest.raises(ValueError):
-            async with uow:
-                raise ValueError("Test")
+        repo1 = uow.fermentation_repo
+        repo2 = uow.fermentation_repo
         
-        # Assert - state cleaned
-        assert uow._is_active is False
-        assert uow._session is None
-        assert uow._fermentation_repo is None
+        # Assert
+        assert repo1 is repo2  # Same instance (cached)
+        assert uow._fermentation_repo is not None
+    
+    def test_sample_repo_initialized_on_first_access(self, mock_session_manager):
+        """
+        Given: A UnitOfWork with no sample_repo
+        When: Accessing sample_repo first time
+        Then: Should initialize and cache repository
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
         assert uow._sample_repo is None
+        
+        # Act
+        repo1 = uow.sample_repo
+        repo2 = uow.sample_repo
+        
+        # Assert
+        assert repo1 is repo2  # Same instance (cached)
+        assert uow._sample_repo is not None
+    
+    def test_repos_initialized_independently(self, mock_session_manager):
+        """
+        Given: A UnitOfWork
+        When: Accessing one repo
+        Then: Other repos should remain uninitialized
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Act
+        _ = uow.fermentation_repo
+        
+        # Assert
+        assert uow._fermentation_repo is not None
+        assert uow._sample_repo is None  # Still None
+        assert uow._lot_source_repo is None  # Still None
+
+
+class TestUnitOfWorkSessionSharing:
+    """Test that all repositories share the same session manager."""
+    
+    def test_all_repos_use_same_session_manager(self, mock_session_manager):
+        """
+        Given: A UnitOfWork with session manager
+        When: Accessing multiple repos
+        Then: All should receive same session manager instance
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Act
+        ferm_repo = uow.fermentation_repo
+        sample_repo = uow.sample_repo
+        lot_repo = uow.lot_source_repo
+        
+        # Assert - all repos were created
+        assert ferm_repo is not None
+        assert sample_repo is not None
+        assert lot_repo is not None
+        
+        # Verify they all have the session manager (checking public attribute)
+        assert ferm_repo.session_manager is mock_session_manager
+        assert sample_repo.session_manager is mock_session_manager
+        assert lot_repo.session_manager is mock_session_manager
+
+
+class TestUnitOfWorkFacadePattern:
+    """Test UnitOfWork as a facade for repository access."""
+    
+    def test_uow_provides_unified_interface(self, mock_session_manager):
+        """
+        Given: A UnitOfWork
+        When: Using UnitOfWork
+        Then: Should provide single access point to all repositories
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Act & Assert - all repos accessible from one object
+        assert hasattr(uow, 'fermentation_repo')
+        assert hasattr(uow, 'sample_repo')
+        assert hasattr(uow, 'lot_source_repo')
+        assert hasattr(uow, 'harvest_lot_repo')
+        assert hasattr(uow, 'vineyard_repo')
+        assert hasattr(uow, 'vineyard_block_repo')
+    
+    def test_uow_implements_interface(self, mock_session_manager):
+        """
+        Given: A UnitOfWork
+        When: Checking interface compliance
+        Then: Should implement IUnitOfWork
+        """
+        # Arrange
+        from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import IUnitOfWork
+        
+        # Act
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Assert
+        assert isinstance(uow, IUnitOfWork)
+    
+    def test_uow_initialization_with_session_manager(self, mock_session_manager):
+        """
+        Given: A session manager
+        When: Creating UnitOfWork
+        Then: Should store session manager for repository creation
+        """
+        # Act
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Assert
+        assert uow._session_manager is mock_session_manager
+
+
+class TestUnitOfWorkCrossModuleSupport:
+    """Test UnitOfWork provides repositories from multiple modules."""
+    
+    def test_fermentation_module_repos_available(self, mock_session_manager):
+        """
+        Given: A UnitOfWork
+        When: Accessing fermentation module repos
+        Then: Should provide fermentation, sample, lot_source repos
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Act
+        ferm_repo = uow.fermentation_repo
+        sample_repo = uow.sample_repo
+        lot_repo = uow.lot_source_repo
+        
+        # Assert
+        assert ferm_repo is not None
+        assert sample_repo is not None
+        assert lot_repo is not None
+    
+    def test_fruit_origin_module_repos_available(self, mock_session_manager):
+        """
+        Given: A UnitOfWork
+        When: Accessing fruit_origin module repos
+        Then: Should provide harvest_lot, vineyard, vineyard_block repos
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Act
+        harvest_repo = uow.harvest_lot_repo
+        vineyard_repo = uow.vineyard_repo
+        block_repo = uow.vineyard_block_repo
+        
+        # Assert
+        assert harvest_repo is not None
+        assert vineyard_repo is not None
+        assert block_repo is not None
+    
+    def test_cross_module_session_sharing(self, mock_session_manager):
+        """
+        Given: A UnitOfWork
+        When: Accessing repos from different modules
+        Then: All should share same session manager (enables cross-module transactions)
+        """
+        # Arrange
+        uow = UnitOfWork(mock_session_manager)
+        
+        # Act
+        ferm_repo = uow.fermentation_repo  # fermentation module
+        vineyard_repo = uow.vineyard_repo  # fruit_origin module
+        
+        # Assert - both use same session manager
+        assert ferm_repo.session_manager is mock_session_manager
+        assert vineyard_repo.session_manager is mock_session_manager

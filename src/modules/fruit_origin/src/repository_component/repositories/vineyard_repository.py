@@ -185,6 +185,48 @@ class VineyardRepository(BaseRepository, IVineyardRepository):
             return await _get_operation()
         except Exception as e:
             raise RepositoryError(f"Failed to get vineyard by code: {str(e)}") from e
+    
+    async def get_by_codes(self, codes: List[str], winery_id: int) -> List[Vineyard]:
+        """Get multiple vineyards by codes in a single query (batch loading)."""
+        async def _get_operation():
+            with LogTimer(logger, "batch_load_vineyards"):
+                logger.debug(
+                    "batch_loading_vineyards",
+                    code_count=len(codes),
+                    winery_id=winery_id
+                )
+                
+                session_cm = await self.get_session()
+                async with session_cm as session:
+                    query = select(Vineyard).where(
+                        Vineyard.code.in_(codes),
+                        Vineyard.winery_id == winery_id,
+                        Vineyard.is_deleted == False,
+                    )
+
+                    result = await session.execute(query)
+                    vineyards = result.scalars().all()
+                    
+                    logger.info(
+                        "batch_load_complete",
+                        requested_count=len(codes),
+                        found_count=len(vineyards),
+                        winery_id=winery_id
+                    )
+                    
+                    return vineyards
+
+        try:
+            return await _get_operation()
+        except Exception as e:
+            logger.error(
+                "batch_load_failed",
+                code_count=len(codes),
+                winery_id=winery_id,
+                error=str(e),
+                error_type=type(e).__name__
+            )
+            raise RepositoryError(f"Failed to batch load vineyards: {str(e)}") from e
 
     async def update(
         self, vineyard_id: int, winery_id: int, data: VineyardUpdate

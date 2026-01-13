@@ -13,6 +13,10 @@ class ISessionManager(Protocol):
     
     This protocol defines the contract that any session manager implementation
     must follow to provide async database session handling for repositories.
+    
+    Transaction Coordination (ADR-031):
+    For cross-module transaction coordination, implementations should support
+    begin/commit/rollback methods to enable TransactionScope pattern.
     """
     
     async def get_session(self) -> AsyncContextManager[AsyncSession]:
@@ -35,5 +39,36 @@ class ISessionManager(Protocol):
         
         This should properly dispose of the underlying engine and
         cleanup any pending connections.
+        """
+        ...
+    
+    async def begin(self) -> None:
+        """
+        Begin a new transaction.
+        
+        Used by TransactionScope to coordinate multiple services
+        in a single transaction. Optional method - implementations
+        may no-op if transaction is already active.
+        
+        Note: Not all implementations need explicit begin() - some
+        (like SharedSessionManager) participate in existing transactions.
+        """
+        ...
+    
+    async def commit(self) -> None:
+        """
+        Commit the active transaction.
+        
+        Used by TransactionScope to commit coordinated operations.
+        Implementations should ensure all changes are persisted.
+        """
+        ...
+    
+    async def rollback(self) -> None:
+        """
+        Rollback the active transaction.
+        
+        Used by TransactionScope on exception to undo changes.
+        Implementations should restore database to pre-transaction state.
         """
         ...

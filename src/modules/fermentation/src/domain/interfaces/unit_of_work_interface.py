@@ -1,15 +1,19 @@
 """
-Unit of Work interface for transaction management.
+Unit of Work interface for repository access.
 
-Provides coordinated access to multiple repositories within a single
-database transaction, ensuring atomicity of operations.
+Provides unified access to multiple repositories across modules.
+Acts as a facade pattern to simplify repository coordination.
 
-Design Pattern: Unit of Work (Martin Fowler, Patterns of Enterprise Application Architecture)
+Design Pattern: Facade (Gamma et al., Design Patterns)
 Architecture: Clean Architecture - Domain Layer (Interfaces)
 
 Related ADRs:
 - ADR-002: Repository Architecture
 - ADR-005: Service Layer Interfaces & Type Safety
+- ADR-031: TransactionScope Migration (UnitOfWork refactored to facade)
+
+Note: Transaction management is handled separately via TransactionScope.
+UnitOfWork provides repository access only.
 """
 
 from abc import ABC, abstractmethod
@@ -20,55 +24,55 @@ if TYPE_CHECKING:
     from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
     from src.modules.fermentation.src.domain.repositories.lot_source_repository_interface import ILotSourceRepository
     from src.modules.fruit_origin.src.domain.repositories.harvest_lot_repository_interface import IHarvestLotRepository
+    from src.modules.fruit_origin.src.domain.repositories.vineyard_repository_interface import IVineyardRepository
+    from src.modules.fruit_origin.src.domain.repositories.vineyard_block_repository_interface import IVineyardBlockRepository
 
 
 class IUnitOfWork(ABC):
     """
-    Unit of Work pattern for managing transactional boundaries.
+    Facade for unified repository access across modules.
     
-    Coordinates access to multiple repositories within a single database
-    transaction. Ensures that all changes are committed or rolled back together,
-    maintaining data consistency.
+    Provides centralized access to repositories from both fermentation
+    and fruit_origin modules. All repositories share the same session manager,
+    enabling coordinated operations within a transaction.
     
     Usage:
         ```python
-        async with uow:
-            # All operations share same transaction
+        async with TransactionScope(session_manager) as scope:
+            uow = UnitOfWork(session_manager)
+            
+            # Access repositories through facade
             fermentation = await uow.fermentation_repo.create(...)
             sample = await uow.sample_repo.create_sample(...)
+            harvest_lot = await uow.harvest_lot_repo.create(...)
             
-            # Commit all changes atomically
-            await uow.commit()
+            # Transaction managed by TransactionScope
         ```
     
     Design Principles:
-    - Transaction Atomicity: All or nothing
-    - Repository Coordination: Multiple repos, one transaction
-    - Explicit Commit: Requires explicit commit() call
-    - Auto Rollback: Automatic rollback on exception
-    - Context Manager: Pythonic resource management
+    - Facade Pattern: Simplifies repository access
+    - Lazy Loading: Repositories initialized on first access
+    - Session Sharing: All repos use same session manager
+    - Cross-Module: Supports fermentation + fruit_origin repos
     
     Responsibilities:
-    - Manage transaction lifecycle (begin, commit, rollback)
-    - Provide access to repositories with shared session
-    - Ensure atomicity of multi-repository operations
-    - Handle cleanup on context exit
+    - Provide access to 6 repositories (3 fermentation, 3 fruit_origin)
+    - Ensure all repositories share same session manager
+    - Lazy-load repositories on demand
+    - Simplify multi-repository operations
     
-    Note: This is an abstract interface. Concrete implementation
-    is in repository_component layer (infrastructure concern).
+    Note: Transaction lifecycle (begin, commit, rollback) is managed
+    by TransactionScope. UnitOfWork is purely for repository access.
     """
     
     @property
     @abstractmethod
     def fermentation_repo(self) -> 'IFermentationRepository':
         """
-        Access to fermentation repository within this UoW.
+        Access to fermentation repository.
         
         Returns:
-            IFermentationRepository: Repository sharing UoW's transaction
-        
-        Raises:
-            RuntimeError: If accessed outside active context
+            IFermentationRepository: Repository sharing UoW's session manager
         
         Note: Lazy-loaded on first access
         """
@@ -78,13 +82,10 @@ class IUnitOfWork(ABC):
     @abstractmethod
     def sample_repo(self) -> 'ISampleRepository':
         """
-        Access to sample repository within this UoW.
+        Access to sample repository.
         
         Returns:
-            ISampleRepository: Repository sharing UoW's transaction
-        
-        Raises:
-            RuntimeError: If accessed outside active context
+            ISampleRepository: Repository sharing UoW's session manager
         
         Note: Lazy-loaded on first access
         """
@@ -94,13 +95,10 @@ class IUnitOfWork(ABC):
     @abstractmethod
     def lot_source_repo(self) -> 'ILotSourceRepository':
         """
-        Access to lot source repository within this UoW.
+        Access to lot source repository.
         
         Returns:
-            ILotSourceRepository: Repository sharing UoW's transaction
-        
-        Raises:
-            RuntimeError: If accessed outside active context
+            ILotSourceRepository: Repository sharing UoW's session manager
         
         Note: Lazy-loaded on first access
         """
@@ -110,110 +108,39 @@ class IUnitOfWork(ABC):
     @abstractmethod
     def harvest_lot_repo(self) -> 'IHarvestLotRepository':
         """
-        Access to harvest lot repository within this UoW.
+        Access to harvest lot repository.
         
         Returns:
-            IHarvestLotRepository: Repository sharing UoW's transaction
-        
-        Raises:
-            RuntimeError: If accessed outside active context
+            IHarvestLotRepository: Repository sharing UoW's session manager
         
         Note: Lazy-loaded on first access
         """
         ...
     
+    @property
     @abstractmethod
-    async def commit(self) -> None:
+    def vineyard_repo(self) -> 'IVineyardRepository':
         """
-        Commit the transaction.
-        
-        Persists all changes made through repositories to the database.
-        After commit, the transaction is complete and context should exit.
-        
-        Raises:
-            RuntimeError: If called outside active context
-            RepositoryError: If commit fails (database error)
-        
-        Note: On commit failure, automatic rollback is triggered.
-        
-        Example:
-            ```python
-            async with uow:
-                await uow.fermentation_repo.create(...)
-                await uow.sample_repo.create_sample(...)
-                await uow.commit()  # All changes persisted
-            ```
-        """
-        ...
-    
-    @abstractmethod
-    async def rollback(self) -> None:
-        """
-        Rollback the transaction.
-        
-        Discards all changes made through repositories.
-        Database state is restored to before transaction began.
-        
-        Raises:
-            RuntimeError: If called outside active context
-        
-        Note: Usually not called explicitly - context manager
-        handles automatic rollback on exception.
-        
-        Example:
-            ```python
-            async with uow:
-                await uow.fermentation_repo.create(...)
-                if some_condition:
-                    await uow.rollback()  # Explicit rollback
-                    return
-                await uow.commit()
-            ```
-        """
-        ...
-    
-    @abstractmethod
-    async def __aenter__(self) -> 'IUnitOfWork':
-        """
-        Enter async context - begin transaction.
-        
-        Opens database session and begins transaction.
-        All repository operations will use this session.
+        Access to vineyard repository.
         
         Returns:
-            IUnitOfWork: Self, for use in 'async with' statement
+            IVineyardRepository: Repository sharing UoW's session manager
         
-        Example:
-            ```python
-            async with uow:  # <-- __aenter__ called here
-                # Transaction active
-                ...
-            ```
+        Note: Lazy-loaded on first access
         """
         ...
     
+    @property
     @abstractmethod
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    def vineyard_block_repo(self) -> 'IVineyardBlockRepository':
         """
-        Exit async context - cleanup.
+        Access to vineyard block repository.
         
-        Automatically handles transaction completion:
-        - If exception occurred: Rollback
-        - If commit() not called: Rollback (safe default)
-        - Always: Close session and cleanup state
+        Returns:
+            IVineyardBlockRepository: Repository sharing UoW's session manager
         
-        Args:
-            exc_type: Exception type if error occurred
-            exc_val: Exception value if error occurred
-            exc_tb: Exception traceback if error occurred
-        
-        Note: Automatic rollback on exception ensures data consistency.
-        
-        Example:
-            ```python
-            async with uow:
-                ...
-            # <-- __aexit__ called here (auto-rollback if no commit)
-            ```
+        Note: Lazy-loaded on first access
         """
         ...
+    
+

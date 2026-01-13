@@ -70,6 +70,30 @@ class IVineyardRepository(ABC):
             Vineyard entity if found, None otherwise
         """
         pass
+    
+    @abstractmethod
+    async def get_by_codes(self, codes: List[str], winery_id: int) -> List[Vineyard]:
+        """
+        Get multiple vineyards by codes in a single query (batch loading).
+        
+        This eliminates N+1 query problems when loading vineyards for multiple fermentations.
+        
+        Args:
+            codes: List of vineyard codes to load
+            winery_id: ID of the winery (for multi-tenant security)
+            
+        Returns:
+            List of Vineyard entities (may be fewer than codes if some don't exist)
+            
+        Example:
+            # Instead of 1000 queries:
+            # for code in codes:
+            #     vineyard = await get_by_code(code, winery_id)
+            #
+            # Use batch loading (1 query):
+            # vineyards = await get_by_codes(codes, winery_id)
+        """
+        pass
 
     @abstractmethod
     async def update(

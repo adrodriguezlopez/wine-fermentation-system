@@ -11,9 +11,11 @@ Related ADRs:
 - ADR-025: Multi-Tenancy Security (winery_id enforcement)
 - ADR-026: Error Handling Strategy (domain errors)
 - ADR-027: Structured Logging (observability)
+- ADR-030: ETL Cross-Module Architecture (batch loading, orchestration)
 """
-from typing import List, Optional
-from datetime import datetime, timezone
+from typing import List, Optional, Dict
+from datetime import datetime, timezone, date
+from decimal import Decimal
 from sqlalchemy import select
 
 # ADR-027: Structured logging
@@ -34,6 +36,7 @@ from src.modules.fruit_origin.src.domain.dtos.vineyard_dtos import (
     VineyardCreate,
     VineyardUpdate,
 )
+from src.modules.fruit_origin.src.domain.dtos.vineyard_block_dtos import VineyardBlockCreate
 from src.modules.fruit_origin.src.domain.dtos.harvest_lot_dtos import HarvestLotCreate, HarvestLotUpdate
 
 # Repositories
@@ -42,6 +45,9 @@ from src.modules.fruit_origin.src.domain.repositories.vineyard_repository_interf
 )
 from src.modules.fruit_origin.src.domain.repositories.harvest_lot_repository_interface import (
     IHarvestLotRepository,
+)
+from src.modules.fruit_origin.src.domain.repositories.vineyard_block_repository_interface import (
+    IVineyardBlockRepository,
 )
 
 # Errors (ADR-026)
@@ -77,6 +83,7 @@ class FruitOriginService(IFruitOriginService):
         self,
         vineyard_repo: IVineyardRepository,
         harvest_lot_repo: IHarvestLotRepository,
+        vineyard_block_repo: IVineyardBlockRepository,
     ):
         """
         Initialize service with dependencies (Dependency Injection).
@@ -84,9 +91,11 @@ class FruitOriginService(IFruitOriginService):
         Args:
             vineyard_repo: Repository for vineyard data
             harvest_lot_repo: Repository for harvest lot data
+            vineyard_block_repo: Repository for vineyard block data
         """
         self._vineyard_repo = vineyard_repo
         self._harvest_lot_repo = harvest_lot_repo
+        self._vineyard_block_repo = vineyard_block_repo
     
     # ==================================================================================
     # VINEYARD OPERATIONS
@@ -573,3 +582,278 @@ class FruitOriginService(IFruitOriginService):
                 )
             
             return success
+    
+    # =========================
+    # ETL Orchestration Methods
+    # =========================
+    
+    async def batch_load_vineyards(
+        self,
+        codes: list[str],
+        winery_id: int
+    ) -> dict[str, Vineyard]:
+        """
+        Load multiple vineyards by codes in a single query (eliminates N+1 problem).
+        
+        Args:
+            codes: List of vineyard codes to load
+            winery_id: Winery ID for multi-tenancy
+            
+        Returns:
+            Dictionary mapping vineyard codes to Vineyard entities
+            
+        Example:
+            # Instead of 1000 queries for 1000 fermentations:
+            # for fermentation in fermentations:
+            #     vineyard = await get_vineyard_by_code(fermentation.vineyard_code)
+            #
+            # Use batch loading (1 query for 1000 fermentations):
+            # unique_codes = set(f.vineyard_code for f in fermentations)
+            # vineyards = await batch_load_vineyards(unique_codes, winery_id)
+            # for fermentation in fermentations:
+            #     vineyard = vineyards.get(fermentation.vineyard_code)
+        """
+        logger.debug(
+            "batch_loading_vineyards",
+            code_count=len(codes),
+            winery_id=winery_id
+        )
+        
+        if not codes:
+            return {}
+        
+        try:
+            vineyards = await self._vineyard_repo.get_by_codes(codes, winery_id)
+            result = {v.code: v for v in vineyards}
+            
+            logger.info(
+                "batch_load_vineyards_complete",
+                requested_count=len(codes),
+                found_count=len(result),
+                winery_id=winery_id
+            )
+            
+            return result
+            
+        except Exception as e:
+            logger.error(
+                "batch_load_vineyards_failed",
+                code_count=len(codes),
+                winery_id=winery_id,
+                error=str(e)
+            )
+            raise
+    
+    async def get_or_create_default_block(
+        self,
+        vineyard_id: int,
+        winery_id: int
+    ) -> VineyardBlock:
+        """
+        Get or create the shared default block for a vineyard (fixes duplicate block bug).
+        
+        This method ensures only ONE default block exists per vineyard, preventing
+        UNIQUE constraint violations when multiple fermentations reference the same vineyard.
+        
+        Args:
+            vineyard_id: ID of the vineyard
+            winery_id: Winery ID for multi-tenancy
+            
+        Returns:
+            The shared default VineyardBlock for the vineyard
+            
+        Example:
+            # Before (creates duplicate blocks):
+            # block1 = VineyardBlock(vineyard_id=1, code="V001-DEFAULT")  # Fermentation 1
+            # block2 = VineyardBlock(vineyard_id=1, code="V001-DEFAULT")  # Fermentation 2 - FAILS!
+            #
+            # After (reuses existing block):
+            # block = await get_or_create_default_block(vineyard_id=1, winery_id=1)
+            # # Returns same block for all fermentations
+        """
+        logger.debug(
+            "get_or_create_default_block_started",
+            vineyard_id=vineyard_id,
+            winery_id=winery_id
+        )
+        
+        try:
+            # Get vineyard to build block code
+            vineyard = await self._vineyard_repo.get_by_id(vineyard_id, winery_id)
+            if not vineyard:
+                raise VineyardNotFound(vineyard_id)
+            
+            # Consistent naming: "{VINEYARD_CODE}-DEFAULT"
+            default_block_code = f"{vineyard.code}-DEFAULT"
+            
+            # Try to get existing block
+            existing_block = await self._vineyard_block_repo.get_by_code(
+                code=default_block_code,
+                vineyard_id=vineyard_id,
+                winery_id=winery_id
+            )
+            
+            if existing_block:
+                logger.debug(
+                    "reusing_existing_default_block",
+                    block_id=existing_block.id,
+                    block_code=existing_block.code,
+                    vineyard_id=vineyard_id,
+                    winery_id=winery_id
+                )
+                return existing_block
+            
+            # Create new default block
+            block_data = VineyardBlockCreate(
+                code=default_block_code,
+                notes="Auto-generated default block for imported fermentations"
+            )
+            
+            created_block = await self._vineyard_block_repo.create(
+                vineyard_id=vineyard_id,
+                winery_id=winery_id,
+                data=block_data
+            )
+            
+            logger.info(
+                "default_block_created",
+                block_id=created_block.id,
+                block_code=created_block.code,
+                vineyard_id=vineyard_id,
+                winery_id=winery_id
+            )
+            
+            return created_block
+            
+        except VineyardNotFound:
+            raise
+        except Exception as e:
+            logger.error(
+                "get_or_create_default_block_failed",
+                vineyard_id=vineyard_id,
+                winery_id=winery_id,
+                error=str(e)
+            )
+            raise
+    
+    async def ensure_harvest_lot_for_import(
+        self,
+        winery_id: int,
+        vineyard_name: Optional[str],
+        grape_variety: Optional[str],
+        harvest_date: date,
+        harvest_mass_kg: Optional[Decimal]
+    ) -> HarvestLot:
+        """
+        Ensure complete hierarchy (vineyard → block → harvest lot) exists for ETL import.
+        
+        This orchestrates the creation of:
+        1. Vineyard (if needed)
+        2. Shared default VineyardBlock (if needed)
+        3. HarvestLot
+        
+        Args:
+            winery_id: Winery ID for multi-tenancy
+            vineyard_name: Optional vineyard name (creates "UNKNOWN" vineyard if missing)
+            grape_variety: Optional grape variety (defaults to "UNKNOWN")
+            harvest_date: Harvest date
+            harvest_mass_kg: Optional harvest mass
+            
+        Returns:
+            Created or existing HarvestLot
+            
+        Raises:
+            ValidationException: If winery_id is invalid
+            
+        Example:
+            # ETL imports fermentation with minimal data:
+            # fermentation.vineyard_name = "Smith Vineyard" (might not exist)
+            # fermentation.grape_variety = None
+            # fermentation.harvest_date = "2024-01-15"
+            #
+            # This method ensures:
+            # 1. Vineyard "SMITH-VINEYARD" exists (or creates it)
+            # 2. Block "SMITH-VINEYARD-DEFAULT" exists (or creates it)
+            # 3. HarvestLot exists (or creates it)
+            # 4. Returns lot_id for fermentation.harvest_lot_id
+        """
+        logger.debug(
+            "ensure_harvest_lot_for_import_started",
+            winery_id=winery_id,
+            vineyard_name=vineyard_name,
+            grape_variety=grape_variety,
+            harvest_date=str(harvest_date)
+        )
+        
+        try:
+            # Normalize optional fields
+            vineyard_name = vineyard_name or "UNKNOWN"
+            grape_variety = grape_variety or "UNKNOWN"
+            
+            # Generate vineyard code from name
+            vineyard_code = vineyard_name.upper().replace(" ", "-")
+            
+            # Get or create vineyard
+            vineyard = await self._vineyard_repo.get_by_code(vineyard_code, winery_id)
+            if not vineyard:
+                vineyard_data = VineyardCreate(
+                    code=vineyard_code,
+                    name=vineyard_name,
+                    notes="Auto-generated for imported fermentations"
+                )
+                vineyard = await self._vineyard_repo.create(winery_id, vineyard_data)
+                logger.info(
+                    "vineyard_created_for_import",
+                    vineyard_id=vineyard.id,
+                    vineyard_code=vineyard.code,
+                    winery_id=winery_id
+                )
+            
+            # Get or create default block for vineyard
+            block = await self.get_or_create_default_block(vineyard.id, winery_id)
+            
+            # Create harvest lot code
+            lot_code = f"LOT-{vineyard.code}-{harvest_date.strftime('%Y%m%d')}"
+            
+            # Check if lot already exists
+            existing_lot = await self._harvest_lot_repo.get_by_code(lot_code, winery_id)
+            if existing_lot:
+                logger.debug(
+                    "reusing_existing_harvest_lot",
+                    lot_id=existing_lot.id,
+                    lot_code=existing_lot.code,
+                    winery_id=winery_id
+                )
+                return existing_lot
+            
+            # Create harvest lot (use weight_kg instead of harvest_mass_kg)
+            lot_data = HarvestLotCreate(
+                code=lot_code,
+                block_id=block.id,
+                grape_variety=grape_variety,
+                harvest_date=harvest_date,
+                weight_kg=float(harvest_mass_kg) if harvest_mass_kg else 0.0,
+                notes="Auto-generated for imported fermentations"
+            )
+            
+            created_lot = await self._harvest_lot_repo.create(winery_id, lot_data)
+            
+            logger.info(
+                "harvest_lot_created_for_import",
+                lot_id=created_lot.id,
+                lot_code=created_lot.code,
+                vineyard_id=vineyard.id,
+                block_id=block.id,
+                winery_id=winery_id
+            )
+            
+            return created_lot
+            
+        except Exception as e:
+            logger.error(
+                "ensure_harvest_lot_for_import_failed",
+                winery_id=winery_id,
+                vineyard_name=vineyard_name,
+                error=str(e)
+            )
+            raise
