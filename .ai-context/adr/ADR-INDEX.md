@@ -25,7 +25,8 @@
 | **[ADR-016](./ADR-016-winery-service-layer.md)** | Winery Service Layer Architecture | ✅ Implemented | 2025-12-29 | High |
 | **[ADR-017](./ADR-017-winery-api-design.md)** | Winery API Design & REST Endpoints | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-018](./ADR-018-seed-script-initial-data-bootstrap.md)** | Seed Script for Initial Data Bootstrap | ✅ Implemented | 2026-01-13 | High |
-| **[ADR-032](./ADR-032-historical-data-api-layer.md)** | Historical Data API Layer | 📋 Proposed | 2026-01-13 | High |
+| **[ADR-032](./ADR-032-historical-data-api-layer.md)** | Historical Data API Layer | ✅ Implemented | 2026-01-13 | High |
+| **[ADR-033](./ADR-033-code-coverage-improvement-strategy.md)** | Code Coverage Improvement Strategy | 📋 Draft | 2026-01-13 | High |
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 | **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Implemented | 2026-01-02 | Medium |
@@ -652,7 +653,35 @@
 5. ✅ ~~Implement ADR-016 (Winery Service Layer)~~ **COMPLETE**
 6. ✅ ~~Implement ADR-017 (Winery API Layer)~~ **COMPLETE**
 7. ✅ ~~Implement ADR-018 (Seed Script for Initial Data Bootstrap)~~ **COMPLETE** - 11 tests, 4 files, ~682 lines
-8. Continue with Historical Data, Analysis Engine, etc.
+8. ✅ ~~Implement ADR-032 (Historical Data API Layer)~~ **COMPLETE** - 1033/1033 tests passing (100%)
+9. 📋 Implement ADR-033 (Code Coverage Improvement Strategy) - Target: 56% → 80%
+
+---
+
+### ADR-032: Historical Data API Layer
+**Decision:** REST API for historical fermentation data segregation  
+**Status:** ✅ Implemented (Jan 13, 2026)  
+**Impact:** Enables Analysis Engine integration  
+**Key Points:**
+- 8 endpoints (list, get, samples, patterns, dashboard, import)
+- HistoricalDataService with pattern extraction
+- Multi-tenant filtering, data_source=HISTORICAL
+- 13 integration tests (100% passing)
+- 18 unit tests (100% passing)
+- Duration calculation from samples (no end_date field)
+
+### ADR-033: Code Coverage Improvement Strategy
+**Decision:** Phased approach to achieve 80% coverage minimum  
+**Status:** 📋 Draft (Jan 13, 2026)  
+**Impact:** Improve quality, security, and maintainability  
+**Key Points:**
+- Current coverage: 56% overall
+- Phase 1: API Layer (0% → 85%) - Security critical
+- Phase 2: Repository Layer (12-18% → 80%) - Data integrity
+- Phase 3: Service Layer (14-30% → 80%) - Business logic
+- Phase 4: ETL & Validation (25-30% → 80%) - Import quality
+- Estimated: 11 days development time
+- Target: 80% minimum coverage across all layers
 
 ---
 
