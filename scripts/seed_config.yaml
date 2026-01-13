@@ -1,0 +1,22 @@
+# Seed Configuration for Initial Data Bootstrap
+# ADR-018: Seed Script for Initial Data Bootstrap
+#
+# WARNING: The default password is "admin" - CHANGE THIS IN PRODUCTION!
+#
+# This configuration creates minimal required entities:
+# - 1 Winery (multi-tenancy root)
+# - 1 Admin User (system access)
+#
+# To run: python -m scripts.seed_initial_data
+
+winery:
+  code: "DEFAULT-WINERY"
+  name: "Default Winery"
+  location: "California, USA"
+  notes: "Default winery created by seed script. Configure your actual winery details in production."
+
+admin_user:
+  username: "admin"
+  email: "admin@example.com"
+  password: "admin"  # ⚠️ CHANGE THIS IN PRODUCTION!
+  full_name: "System Administrator"

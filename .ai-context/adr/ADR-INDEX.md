@@ -24,6 +24,7 @@
 | **[ADR-015](./ADR-015-fruit-origin-api-design.md)** | Fruit Origin API Design & REST Endpoints | ✅ Implemented | 2025-12-29 | High |
 | **[ADR-016](./ADR-016-winery-service-layer.md)** | Winery Service Layer Architecture | ✅ Implemented | 2025-12-29 | High |
 | **[ADR-017](./ADR-017-winery-api-design.md)** | Winery API Design & REST Endpoints | ✅ Implemented | 2026-01-13 | High |
+| **[ADR-018](./ADR-018-seed-script-initial-data-bootstrap.md)** | Seed Script for Initial Data Bootstrap | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 | **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Implemented | 2026-01-02 | Medium |
@@ -175,6 +176,46 @@
 - **Code reduction**: ~800-1,000 lines across 8 repository test files
 - **Time savings**: 50% faster test creation (45min → 15min for repositories)
 - **Pattern consistency**: 100% adoption in migrated tests
+
+### ADR-018: Seed Script for Initial Data Bootstrap
+**Decision:** Python seed script with YAML configuration for idempotent initial data creation  
+**Status:** ✅ **IMPLEMENTED** (Jan 13, 2026)  
+**Impact:** High - Unblocks production deployment and simplifies developer onboarding  
+**Implementation Results:**
+- **Test Coverage**: 11 tests (100% passing): 8 unit + 3 integration
+- **Files Created**: 4 files (~682 lines total)
+  - `scripts/seed_initial_data.py` (218 lines)
+  - `scripts/seed_config.yaml` (18 lines)
+  - `tests/scripts/test_seed_initial_data.py` (269 lines)
+  - `tests/scripts/test_seed_initial_data_integration.py` (177 lines)
+- **Implementation Time**: ~4 hours (TDD approach)
+**Key Points:**
+- **Scope**: Minimal MVP (1 winery + 1 admin user) ✅
+- **Location**: `scripts/seed_initial_data.py` (root level, system-wide) ✅
+- **Configuration**: `scripts/seed_config.yaml` (YAML for readability) ✅
+- **Idempotency**: Check-then-insert pattern (safe to run multiple times) ✅
+- **Default Credentials**: "admin"/"admin" with clear security warnings ✅
+- **TDD Approach**: 8 unit tests + 3 integration tests ✅
+- **Testing Results**:
+  - Phase 1: Write unit tests (RED) ✅
+  - Phase 2: Implement functions (GREEN) ✅ 8/8 passing
+  - Phase 3: Integration test with real database ✅ 3/3 passing
+  - Phase 4: Refactor and add logging ✅
+- **Dependencies**:
+  - WineryService from ADR-016 (create_winery)
+  - User entity from ADR-007 (admin user creation)
+  - pyyaml for config parsing
+- **Security**: 
+  - WARNING messages about default passwords
+  - Documentation for password rotation
+  - Future: Environment variable overrides for production
+- **Docker Ready**: Will integrate with docker-compose for containerized deployments
+- **Benefits**:
+  - Automated deployment pipelines
+  - Quick developer onboarding (one command to bootstrap)
+  - Consistent baseline across environments
+- **Future Enhancements**: Demo data mode (sample vineyard, fermentation)
+- **Estimated Effort**: 4-6 hours (1 day)
 
 ### ADR-027: Structured Logging & Observability Infrastructure
 **Decision:** Implement structlog for production-ready logging and observability  
@@ -572,8 +613,8 @@
 4. ✅ ~~Implement ADR-015 (Fruit Origin API Layer)~~ **COMPLETE**
 5. ✅ ~~Implement ADR-016 (Winery Service Layer)~~ **COMPLETE**
 6. ✅ ~~Implement ADR-017 (Winery API Layer)~~ **COMPLETE**
-7. 📋 **Seed Script for Initial Data Bootstrap** - Create initial winery + admin user for system startup
-8. Continue with ADR-018+ for Historical Data, Analysis Engine, etc.
+7. ✅ ~~Implement ADR-018 (Seed Script for Initial Data Bootstrap)~~ **COMPLETE** - 11 tests, 4 files, ~682 lines
+8. Continue with Historical Data, Analysis Engine, etc.
 
 ---
 
