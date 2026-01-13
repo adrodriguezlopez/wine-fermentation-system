@@ -26,6 +26,7 @@ from src.modules.fruit_origin.src.domain.dtos.harvest_lot_dtos import HarvestLot
 # Repositories
 from src.modules.fruit_origin.src.domain.repositories.vineyard_repository_interface import IVineyardRepository
 from src.modules.fruit_origin.src.domain.repositories.harvest_lot_repository_interface import IHarvestLotRepository
+from src.modules.fruit_origin.src.domain.repositories.vineyard_block_repository_interface import IVineyardBlockRepository
 
 # Errors (ADR-026)
 from src.shared.domain.errors import (
@@ -57,9 +58,11 @@ class TestVineyardOperations:
         mock_harvest_lot_repo: Mock
     ) -> FruitOriginService:
         """Service instance with mocked dependencies."""
+        mock_vineyard_block_repo = Mock(spec=IVineyardBlockRepository)
         return FruitOriginService(
             vineyard_repo=mock_vineyard_repo,
-            harvest_lot_repo=mock_harvest_lot_repo
+            harvest_lot_repo=mock_harvest_lot_repo,
+            vineyard_block_repo=mock_vineyard_block_repo
         )
     
     @pytest.fixture

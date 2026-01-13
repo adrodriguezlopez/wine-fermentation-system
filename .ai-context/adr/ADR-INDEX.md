@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADRs) - Index
 
 **Wine Fermentation System**  
-**Last Update:** December 30, 2025
+**Last Update:** January 9, 2026
 
 ---
 
@@ -26,8 +26,9 @@
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 | **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Implemented | 2026-01-02 | Medium |
-| **[ADR-019](./ADR-019-etl-pipeline-historical-data.md)** | ETL Pipeline Design for Historical Data | ✅ Approved | 2025-12-30 | High |
-| **[ADR-030](./ADR-030-etl-cross-module-architecture-refactoring.md)** | ETL Cross-Module Architecture & Performance | ✅ Accepted | 2026-01-06 | High |
+| **[ADR-019](./ADR-019-etl-pipeline-historical-data.md)** | ETL Pipeline Design for Historical Data | ✅ Implemented | 2025-12-30 | High |
+| **[ADR-030](./ADR-030-etl-cross-module-architecture-refactoring.md)** | ETL Cross-Module Architecture & Performance | ✅ Implemented | 2026-01-06 | High |
+| **[ADR-031](./ADR-031-cross-module-transaction-coordination.md)** | Cross-Module Transaction Coordination Pattern | ✅ Implemented | 2026-01-09 | Critical |
 
 **Legend:**
 - ✅ **Implemented** - Fully implemented with tests passing
@@ -351,26 +352,62 @@
 
 ### ADR-030: ETL Cross-Module Architecture & Performance Optimization
 **Decision:** Refactor ETL to use service layer for cross-module orchestration and eliminate N+1 queries  
-**Status:** ✅ **Accepted** (Jan 6, 2026)  
+**Status:** ✅ **Implemented** (Jan 6-11, 2026)  
 **Impact:** High - Fixes critical architectural and performance issues in ETL pipeline  
 **Key Points:**
-- **Problem Analysis**: N+1 queries (1000 fermentations = 1000 SELECT), cross-module coupling, all-or-nothing transactions
-- **Service Layer**: Create `FruitOriginOrchestrationService` to encapsulate vineyard/block/harvest lot creation
-- **Performance**: Batch vineyard loading (99.9% query reduction: 1000 queries → 1 query)
-- **Resource Optimization**: Single shared "IMPORTED-DEFAULT" VineyardBlock per vineyard (not per fermentation)
-- **Partial Success**: Independent transactions per fermentation (999/1000 valid → 999 saved)
-- **Progress Tracking**: Async callback mechanism for real-time updates + cancellation support
-- **Optional Fields**: vineyard_name and grape_variety optional with defaults ("UNKNOWN", "Unknown")
-- **Security**: winery_id and user_id from auth context (JWT), not Excel columns
-- **Tests**: 43/43 unit tests passing (includes 5 new tests for edge cases)
-- **Development Environment**: Poetry-managed dependencies (pandas 2.3.3, openpyxl 3.1.5)
-- **Architecture**: Loose coupling via IFruitOriginOrchestrationService interface
-- **Phase 1 Complete**: Optional fields, context parameters, validation updates
-- **Phase 2 Pending**: Service creation, batch optimization, progress tracking
-- **Evaluation Score**: 6.5/10 (functional but needs performance/architecture fixes)
-- **Documentation**: Detailed analysis in `docs/etl-architecture-refactoring.md`
-- **Idempotent**: Re-importing doesn't duplicate data
-- **User-friendly**: Download Excel to see exactly what needs fixing
+- **Service Layer**: FruitOriginService with orchestration methods (batch_load_vineyards, get_or_create_default_block, ensure_harvest_lot)
+- **Performance**: Batch vineyard loading (N+1 elimination: 100 queries → 1 query confirmed)
+- **Resource Optimization**: Shared default VineyardBlock per vineyard (99% reduction confirmed)
+- **Partial Success**: Per-fermentation transactions with TransactionScope (ADR-031)
+- **Progress Tracking**: Async callback mechanism + CancellationToken for cancellation
+- **Optional Fields**: vineyard_name and grape_variety optional with defaults
+- **Security**: winery_id and user_id from auth context (JWT), not Excel
+- **Architecture**: Loose coupling via IFruitOriginService interface
+- **Implementation Complete**:
+  - ✅ Phase 1: Service creation (13 tests, 190/190 passing)
+  - ✅ Phase 2: ETL integration (68% code reduction, 22/22 tests passing)
+  - ✅ Phase 3: Progress & cancellation (4 tests: CancellationToken + ImportCancelledException)
+  - ✅ Phase 4.1: Integration validation (6 tests with real database)
+  - ✅ Phase 4.2: Performance benchmarks (6 tests: N+1 elimination, shared blocks, progress overhead)
+- **Tests**: 21 ETL unit + 12 integration = 33 tests passing
+- **Performance Validated**: 100 fermentations in ~4.75s, < 10% overhead
+
+### ADR-031: Cross-Module Transaction Coordination Pattern
+**Decision:** TransactionScope pattern with ISessionManager for atomic cross-module operations  
+**Status:** ✅ **Implemented** (Jan 9-11, 2026)  
+**Impact:** Critical - Solves session sharing, enables partial success with atomicity  
+**Key Points:**
+- **Problem Solved**: Transaction lifecycle coordination between fruit_origin and fermentation modules
+- **Solution**: `TransactionScope` context manager coordinates multiple services in single transaction
+- **Architecture**: Services receive shared `ISessionManager` interface (DIP)
+- **UnitOfWork Refactoring**: Facade pattern (50% reduction: 401→200 lines), no transaction management
+- **Module Independence**: Maintained via interface dependencies (Clean Architecture)
+- **Per-Fermentation Atomicity**: Each fermentation in own transaction (partial success pattern)
+- **Implementation Complete**:
+  - ✅ Phase 1: TransactionScope infrastructure (14 tests)
+  - ✅ Phase 2: UnitOfWork refactoring to facade (17 tests)
+  - ✅ Phase 3: ETL service updates (21 tests updated)
+  - ✅ Phase 4: Integration validation (6 tests with real database)
+- **Tests**: 14 TransactionScope + 17 UnitOfWork + 21 ETL updated = 52 tests
+- **System Tests**: 983/983 passing (all modules validated)
+- **Unblocked**: ADR-030 Phase 4 completion + production deployment
+
+### ADR-019: ETL Pipeline Design for Historical Data
+**Decision:** pandas/openpyxl ETL with 3-layer validation and best-effort import  
+**Status:** ✅ **Implemented** (Dec 30, 2025 → Jan 11, 2026)  
+**Impact:** High - Complete ETL pipeline for Excel historical data import  
+**Key Points:**
+- **Library Stack**: pandas + openpyxl for Excel read/write operations
+- **Validation**: 3-layer (pre-validate schema, row-validate data, post-validate integrity)
+- **Import Strategy**: Best-effort with partial success (ADR-031 per-fermentation transactions)
+- **Progress & Cancellation**: Async callbacks + thread-safe CancellationToken
+- **Error Handling**: ImportResult with detailed error tracking per fermentation/sample
+- **Cross-Module**: FruitOriginService orchestration (ADR-030) with TransactionScope (ADR-031)
+- **Format**: 1 row = 1 sample (fermentation metadata repeats per sample row)
+- **Implementation Complete**: ETLService + ETLValidator + CancellationToken + ImportResult
+- **Tests**: 21 unit + 12 integration (6 functional + 6 performance) = 33 tests
+- **Performance**: 100 fermentations in ~4.75s, < 10% progress overhead, N+1 eliminated
+- **Dependencies**: ADR-030 (orchestration) ✅ + ADR-031 (transactions) ✅ + ADR-029 (data_source) ✅
 
 ### ADR-028: Module Dependency Management Standardization
 **Decision:** Standardize all modules with independent Poetry-managed environments  

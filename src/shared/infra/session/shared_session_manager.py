@@ -90,6 +90,45 @@ class SharedSessionManager(ISessionManager):
             ```
         """
         return _SharedSessionContext(self._session)
+    
+    async def close(self) -> None:
+        """
+        Close session manager - no-op for shared session.
+        
+        Session lifecycle managed by owner (UnitOfWork), not by this wrapper.
+        """
+        pass
+    
+    async def begin(self) -> None:
+        """
+        Begin transaction - no-op for shared session.
+        
+        Shared session already participates in active transaction
+        managed by owner. This method exists for ISessionManager
+        protocol compliance (ADR-031).
+        
+        Design Note: TransactionScope may call this, but SharedSessionManager
+        doesn't need to do anything since transaction already active.
+        """
+        pass
+    
+    async def commit(self) -> None:
+        """
+        Commit transaction - delegates to underlying session.
+        
+        Note: In UnitOfWork pattern, UnitOfWork typically manages commit.
+        This method exists for TransactionScope compatibility (ADR-031).
+        """
+        await self._session.commit()
+    
+    async def rollback(self) -> None:
+        """
+        Rollback transaction - delegates to underlying session.
+        
+        Note: In UnitOfWork pattern, UnitOfWork typically manages rollback.
+        This method exists for TransactionScope compatibility (ADR-031).
+        """
+        await self._session.rollback()
 
 
 class _SharedSessionContext:

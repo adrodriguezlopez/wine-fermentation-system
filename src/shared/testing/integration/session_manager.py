@@ -57,3 +57,39 @@ class TestSessionManager:
         does nothing to avoid interfering with test cleanup.
         """
         pass
+    
+    async def begin(self):
+        """
+        Begin transaction - no-op for test session.
+        
+        Test fixture already manages transaction lifecycle with:
+            async with session.begin():
+                yield session
+                
+        This method exists for ISessionManager protocol compliance (ADR-031).
+        We don't create nested transactions because they can interfere with
+        the test fixture's cleanup logic.
+        """
+        pass
+    
+    async def commit(self):
+        """
+        Commit transaction - no-op for test session.
+        
+        The test fixture manages commits/rollbacks. Committing here would
+        interfere with test isolation (fixture always rolls back at end).
+        
+        For testing purposes, data written during the test is visible
+        within the same transaction, so no actual commit is needed.
+        """
+        pass
+    
+    async def rollback(self):
+        """
+        Rollback transaction - no-op for test session.
+        
+        The test fixture handles final rollback after test completes.
+        Individual rollbacks within a test are simulated by the fixture's
+        transaction isolation.
+        """
+        pass

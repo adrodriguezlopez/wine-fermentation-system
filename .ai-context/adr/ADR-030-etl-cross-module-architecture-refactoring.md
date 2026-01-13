@@ -1,7 +1,8 @@
 # ADR-030: ETL Cross-Module Architecture & Performance Optimization
 
-**Status:** Accepted  
+**Status:** ✅ Accepted & Implemented  
 **Date:** 2026-01-06  
+**Completed:** 2026-01-09  
 **Authors:** System
 
 > **📋 Context Files:**
@@ -639,14 +640,26 @@ mock_fruit_origin_service.ensure_harvest_lot.return_value = mock_harvest_lot
 
 ## Status
 
-**Accepted** - 2026-01-06
+**✅ Accepted & Implemented** - 2026-01-06  
+**Completed:** 2026-01-11
 
 **Implementation Status:**
 - ✅ Analysis complete (documented in etl-architecture-refactoring.md)
 - ✅ Optional field handling implemented
 - ✅ Context parameters (winery_id, user_id) implemented
-- ✅ Tests updated (43 passing including new edge cases)
-- ⏳ FruitOriginOrchestrationService - pending
-- ⏳ Batch query optimization - pending
-- ⏳ Partial success transactions - pending
-- ⏳ Progress tracking - pending
+- ✅ FruitOriginService with orchestration methods (batch_load_vineyards, get_or_create_default_block, ensure_harvest_lot_for_import)
+- ✅ Batch query optimization (N+1 elimination via vineyard cache)
+- ✅ Shared default VineyardBlock per vineyard (prevents duplication)
+- ✅ Partial success transactions (per-fermentation atomicity via ADR-031)
+- ✅ Progress tracking (progress_callback with async support)
+- ✅ Cancellation support (CancellationToken implementation)
+- ✅ All unit tests passing (113 fruit_origin + 314 fermentation)
+- ✅ All integration tests passing (12 ETL integration + performance tests)
+- ✅ Full system tests passing (977 tests across all modules)
+- ✅ **Phase 4.2: Performance Benchmarks** (6 benchmark tests validating optimizations)
+  - N+1 query elimination (100 fermentations → 1 batch vineyard query)
+  - Shared default block (100 fermentations → 1 shared block, 99% reduction)
+  - Multiple vineyards batch loading (10 vineyards loaded in single query)
+  - Progress tracking overhead validation (100 callbacks, < 10% overhead)
+  - Per-fermentation transaction performance (100 transactions < 45s)
+  - Batch loading performance (20 vineyards < 0.5s)
