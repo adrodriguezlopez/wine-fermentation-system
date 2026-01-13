@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADRs) - Index
 
 **Wine Fermentation System**  
-**Last Update:** January 9, 2026
+**Last Update:** January 13, 2026
 
 ---
 
@@ -23,6 +23,7 @@
 | **[ADR-014](./ADR-014-fruit-origin-service-layer.md)** | Fruit Origin Service Layer Architecture | ✅ Implemented | 2025-12-27 | High |
 | **[ADR-015](./ADR-015-fruit-origin-api-design.md)** | Fruit Origin API Design & REST Endpoints | ✅ Implemented | 2025-12-29 | High |
 | **[ADR-016](./ADR-016-winery-service-layer.md)** | Winery Service Layer Architecture | ✅ Implemented | 2025-12-29 | High |
+| **[ADR-017](./ADR-017-winery-api-design.md)** | Winery API Design & REST Endpoints | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 | **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Implemented | 2026-01-02 | Medium |
@@ -276,7 +277,40 @@
 ### ADR-016: Winery Service Layer Architecture
 **Decision:** Service layer with WineryService implementing business logic and validation  
 **Status:** ✅ **COMPLETE** (All 5 Phases - Dec 29, 2025)  
-**Impact:** Complete service layer for Winery module with integration tests  
+**Impact:** Complete service layer for Winery module with integration tests
+
+### ADR-017: Winery API Design & REST Endpoints
+**Decision:** FastAPI REST API for winery management with admin namespace and role-based authorization  
+**Status:** ✅ **IMPLEMENTED** (Jan 13, 2026)  
+**Impact:** Complete API layer for Winery module with 100% test coverage  
+**Key Points:**
+- **6 REST Endpoints**: All core CRUD operations implemented
+  - POST /admin/wineries (create - ADMIN only)
+  - GET /admin/wineries (list with pagination - ADMIN only)
+  - GET /admin/wineries/{id} (get by ID - ADMIN or own winery)
+  - GET /admin/wineries/code/{code} (get by code - ADMIN or own winery)
+  - PATCH /admin/wineries/{id} (update - ADMIN or own winery)
+  - DELETE /admin/wineries/{id} (soft delete - ADMIN only)
+- **25 API Tests**: 100% passing (6 CREATE + 8 GET + 3 LIST + 5 UPDATE + 3 DELETE)
+- **Authorization Matrix**: 
+  - ADMIN: Full access to all operations
+  - Users: Can only GET/UPDATE their own winery
+  - Custom helper: `check_winery_access()` for flexible authorization
+- **Request/Response DTOs**: Pydantic v2 with validation
+  - WineryCreateRequest, WineryUpdateRequest (requests)
+  - WineryResponse, PaginatedWineriesResponse (responses)
+- **Error Handling**: Domain errors mapped to HTTP status codes
+  - 404: WineryNotFound
+  - 403: Unauthorized access (cross-winery or non-admin)
+  - 409: Duplicate code/name (IntegrityError, WineryNameAlreadyExists)
+  - 400: Business rule violations (has active data)
+- **Integration**: 
+  - JWT authentication via shared auth module (ADR-007)
+  - Structured logging with ADR-027
+  - FastAPI dependency injection for services
+- **Deployment**: main.py created for standalone API server
+- **Total Tests**: 104 Winery tests (44 unit + 35 integration + 25 API)
+- **Deferred**: Relationship endpoints (vineyards, fermentations) - optional future enhancement  
 **Key Points:**
 - **Phase 1-4**: Foundation complete (entity, repository, DTOs)
   - Winery entity with `code` field (business identifier)
@@ -537,8 +571,9 @@
 3. ✅ ~~Implement ADR-014 (Fruit Origin Service Layer)~~ **COMPLETE**
 4. ✅ ~~Implement ADR-015 (Fruit Origin API Layer)~~ **COMPLETE**
 5. ✅ ~~Implement ADR-016 (Winery Service Layer)~~ **COMPLETE**
-6. Implement ADR-017 (Winery API Layer)
-7. Continue with ADR-018+ for Historical Data, Analysis Engine, etc.
+6. ✅ ~~Implement ADR-017 (Winery API Layer)~~ **COMPLETE**
+7. 📋 **Seed Script for Initial Data Bootstrap** - Create initial winery + admin user for system startup
+8. Continue with ADR-018+ for Historical Data, Analysis Engine, etc.
 
 ---
 

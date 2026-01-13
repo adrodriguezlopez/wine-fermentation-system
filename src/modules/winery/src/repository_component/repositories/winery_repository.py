@@ -23,7 +23,7 @@ from src.modules.winery.src.domain.dtos.winery_dtos import (
     WineryUpdate,
 )
 from src.shared.infra.repository.base_repository import BaseRepository
-from shared.domain.errors import WineryError, WineryNotFound, WineryNameAlreadyExists, InvalidWineryData
+from src.shared.domain.errors import WineryError, WineryNotFound, WineryNameAlreadyExists, InvalidWineryData
 
 logger = get_logger(__name__)
 

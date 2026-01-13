@@ -54,9 +54,9 @@ Winery (root)
 
 ## Implementation status
 
-**Status:** � **SERVICE LAYER COMPLETE** (ADR-016 ✅)  
-**Last Updated:** December 29, 2025  
-**Total Tests:** 44 passing (22 repository + 22 service)
+**Status:** ✅ **API LAYER COMPLETE** (ADR-016 ✅ + ADR-017 ✅)  
+**Last Updated:** January 13, 2026  
+**Total Tests:** 104 passing (44 unit + 35 integration + 25 API)
 
 ### Component status
 - ✅ **Domain Layer**: Winery entity with SQLAlchemy mapping  
@@ -65,15 +65,27 @@ Winery (root)
 - ✅ **Repository Layer**: 22 unit tests passing (100%)  
   See: [repository_component component-context.md](src/repository_component/.ai-context/component-context.md)
 
-- ✅ **Service Layer**: 22 unit tests passing (100%) - ADR-016 ✅  
+- ✅ **Service Layer**: 22 unit tests + 17 integration tests (100%) - ADR-016 ✅  
   See: [service_component component-context.md](src/service_component/.ai-context/component-context.md)
   - WineryService with 9 methods
   - ValidationOrchestrator pattern
   - Cross-module deletion protection
   - Structured logging integration
 
+- ✅ **API Layer**: COMPLETE (ADR-017 ✅) - 25 API tests passing (100%)  
+  See: [api_component component-context.md](src/api_component/.ai-context/component-context.md)
+  - Admin namespace: `/api/v1/admin/wineries`
+  - 6 REST endpoints (CREATE, GET by ID, GET by code, LIST, UPDATE, DELETE)
+  - Role-based authorization (ADMIN vs users)
+  - 25 API tests (6 CREATE + 8 GET + 3 LIST + 5 UPDATE + 3 DELETE)
+  - Pydantic v2 request/response DTOs
+  - FastAPI dependency injection
+  - Integration with shared auth module
+
 ### Next steps
-- ⏭️ **Next**: API endpoints (ADR-017 - winery management REST endpoints)
+- ⏭️ **Current**: Integrate with main application (register router)
+- 📋 **Optional**: Seed script for bootstrap data
+- 🔮 **Future**: Relationship endpoints (vineyards, fermentations)
 - 🔮 **Future**: Advanced features (statistics, bulk operations, enhanced caching)
 
 ## Cross-module dependencies
@@ -122,10 +134,10 @@ fermentation = await session.get(Fermentation, fermentation_id)
 - Multi-location support
 
 ## Module components
-Currently only **Domain** component (entity). Future:
-- **Repository Component**: Data access for winery CRUD
-- **Service Component**: Business logic for winery management
-- **API Component**: Endpoints for winery operations
+- ✅ **Domain Component**: Winery entity with SQLAlchemy mapping
+- ✅ **Repository Component**: Data access for winery CRUD (ADR-009, ADR-016)
+- ✅ **Service Component**: Business logic for winery management (ADR-016)
+- 📋 **API Component**: Admin REST endpoints for winery operations (ADR-017 - proposed)
 
 ## Key architectural decisions
 See [ADR-004](/.ai-context/adr/ADR-004-harvest-module-consolidation.md):
@@ -140,9 +152,10 @@ See [ADR-004](/.ai-context/adr/ADR-004-harvest-module-consolidation.md):
 
 See: [ARCHITECTURAL_GUIDELINES.md](/.ai-context/ARCHITECTURAL_GUIDELINES.md) - Section "SQLAlchemy Import Best Practices"
 
-## Next steps
-1. Define repository interface in `src/domain/repositories/`
-2. Implement repository in `repository_component/`
-3. Create service layer for winery CRUD
-4. Add API endpoints for winery management
-5. Add access control (users can only access their winery's data)
+## Implementation roadmap
+1. ✅ Define repository interface in `src/domain/repositories/` (ADR-009)
+2. ✅ Implement repository in `repository_component/` (ADR-009, ADR-016)
+3. ✅ Create service layer for winery CRUD (ADR-016)
+4. 📋 Add API endpoints for winery management (ADR-017 - in progress)
+5. 📋 Add seed script for bootstrap (ADR-017 - Phase 3)
+6. 🔮 Future: Advanced features (statistics, audit trail, bulk operations)
