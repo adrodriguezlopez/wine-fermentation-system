@@ -152,14 +152,16 @@ class TestGetFermentationSecurity:
         service.get_fermentation.return_value = None  # Filtered by repository
         
         # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as exc_info:
             await get_fermentation(
                 fermentation_id=999,
                 current_user=user_context_winery_100,
                 service=service
             )
         
-        assert "not found" in str(exc_info.value).lower()
+        assert exc_info.value.status_code == 404
+        assert "not found" in str(exc_info.value.detail).lower()
     
     @pytest.mark.asyncio
     async def test_get_fermentation_cross_winery_defense_in_depth(
@@ -227,17 +229,17 @@ class TestGetFermentationSecurity:
         service.get_fermentation.return_value = None
         
         # Act & Assert
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as exc_info:
             await get_fermentation(
                 fermentation_id=999,
                 current_user=user_context_winery_100,
                 service=service
             )
         
-        assert exc_info.value.http_status == 404
+        assert exc_info.value.status_code == 404
         # Don't distinguish between "not found" vs "wrong winery"
-        assert "not found" in exc_info.value.message.lower()
+        assert "not found" in str(exc_info.value.detail).lower()
     
     @pytest.mark.asyncio
     async def test_get_fermentation_security_logging_format(
