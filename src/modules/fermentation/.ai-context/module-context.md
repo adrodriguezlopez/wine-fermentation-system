@@ -37,7 +37,14 @@
 
 ## Module components
 - **API Component**: REST endpoints for fermentation and sample operations
+  - **Fermentation Router**: CRUD operations for fermentation entities
+  - **Sample Router**: Sample data recording and retrieval
+  - **Historical Router** (📋 Proposed - ADR-032): Query historical data, pattern extraction, import management (8 endpoints, 33 API tests)
 - **Service Component**: Business logic and validation for fermentation workflows
+  - **FermentationService**: Create, update, retrieve fermentations with business rules
+  - **SampleService**: Add samples with chronology and value validation
+  - **ValidationOrchestrator**: Coordinate multiple validation services
+  - **HistoricalDataService** (📋 Proposed - ADR-032): Query historical fermentations, extract patterns, manage imports (4 methods, 12 unit tests)
 - **Repository Component**: Database access patterns for fermentation and sample data
   - **BaseRepository**: Infrastructure helpers (session management, error mapping, multi-tenant scoping, soft delete)
   - **Domain Interfaces**: `IFermentationRepository` with type-safe entities
@@ -46,8 +53,18 @@
 ## Implementation status
 
 **Status:** ✅ **Domain, Repository, Service, API & Integration Tests Complete**  
-**Last Updated:** 2025-12-30  
+**Last Updated:** 2026-01-13  
 **Reference:** ADR-006 (API Layer), ADR-005 (Service Layer), ADR-003 (Repository Layer), ADR-002 (Repository Architecture), ADR-011 Phase 3 (Integration Tests)
+
+**📋 Proposed Features (ADR-032 - Jan 13, 2026):**
+- **Historical Data API Layer**: REST API for querying imported historical fermentations
+  - 8 endpoints (list, get, samples, patterns, statistics, import management)
+  - New HistoricalDataService with pattern extraction and aggregation
+  - Import Management API (trigger ETL, list imports, get import details)
+  - 53 tests planned (12 service unit + 33 API + 8 integration)
+  - Unblocks Analysis Engine and completes ETL story (ADR-019)
+  - Multi-tenant security with winery_id scoping (ADR-025)
+  - Estimated: 9 hours (1 day)
 
 ### Completed Components
 

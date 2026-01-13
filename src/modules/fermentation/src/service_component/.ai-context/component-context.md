@@ -87,6 +87,14 @@
 - **BusinessRuleValidationService:** 9 tests (sugar trends, temperature ranges)
 - **ValidationService:** 19 tests (result patterns, error aggregation)
 
+**📋 Proposed Services (ADR-032 - Jan 13, 2026):**
+- **HistoricalDataService**: Query and aggregate historical fermentation data
+  - 4 methods: get_historical_fermentations, get_historical_fermentation_by_id, get_fermentation_samples, extract_patterns
+  - Multi-tenant security: Auto-scoped by winery_id
+  - Reuses: FermentationRepository, SampleRepository with `data_source='HISTORICAL'` filter
+  - Test plan: 12 unit tests, estimated 2 hours
+  - Part of Historical Data API Layer (ADR-032)
+
 **ETLService** ✅ COMPLETE (33 tests total)
 - **Methods:** 3 main (import_fermentations, _import_single_fermentation, _validate_csv_data) + 3 orchestration helpers
 - **Tests:** 21 unit + 12 integration = 33 tests

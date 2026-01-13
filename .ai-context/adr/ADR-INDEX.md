@@ -25,6 +25,7 @@
 | **[ADR-016](./ADR-016-winery-service-layer.md)** | Winery Service Layer Architecture | ✅ Implemented | 2025-12-29 | High |
 | **[ADR-017](./ADR-017-winery-api-design.md)** | Winery API Design & REST Endpoints | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-018](./ADR-018-seed-script-initial-data-bootstrap.md)** | Seed Script for Initial Data Bootstrap | ✅ Implemented | 2026-01-13 | High |
+| **[ADR-032](./ADR-032-historical-data-api-layer.md)** | Historical Data API Layer | 📋 Proposed | 2026-01-13 | High |
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 | **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Implemented | 2026-01-02 | Medium |
@@ -216,6 +217,43 @@
   - Consistent baseline across environments
 - **Future Enhancements**: Demo data mode (sample vineyard, fermentation)
 - **Estimated Effort**: 4-6 hours (1 day)
+
+### ADR-032: Historical Data API Layer
+**Decision:** Create REST API for querying historical fermentation data and managing ETL imports  
+**Status:** 📋 **PROPOSED** (Jan 13, 2026)  
+**Impact:** High - Unblocks Analysis Engine and completes ETL story  
+**Key Points:**
+- **Location**: Fermentation module (`api_component/historical/`) - Can extract to separate module if grows
+- **Service Layer**: New HistoricalDataService with 4 methods (pattern extraction, statistics, queries)
+- **API Endpoints**: 8 endpoints
+  - Historical fermentations CRUD (3 endpoints)
+  - Pattern extraction for analysis (1 endpoint)
+  - Statistics/aggregates (1 endpoint)
+  - Import management (3 endpoints: trigger, list, details)
+- **DTOs**: Separate HistoricalFermentationResponse, PatternResponse, ImportResponse
+- **Multi-Tenant**: Auto-scoped by winery_id, ADMIN or own winery access
+- **Reuses**: FermentationRepository, SampleRepository with `data_source='HISTORICAL'` filter
+- **TDD Plan**: 53 tests (12 service unit + 33 API + 8 integration)
+- **Dependencies**:
+  - ✅ ADR-019: ETL Pipeline complete
+  - ✅ ADR-030: FruitOriginService orchestration
+  - ✅ ADR-031: TransactionScope pattern
+  - ✅ ADR-029: data_source field in entities
+- **Benefits**:
+  - Enables Analysis Engine to fetch historical patterns
+  - Completes ETL story (import + query)
+  - Frontend can display historical data
+  - Import management UI possible
+- **Implementation Effort**: 9 hours (1 day)
+  - Service Layer: 2h
+  - DTOs: 1h
+  - API Router: 3h
+  - Integration Tests: 2h
+  - Documentation: 1h
+
+**Referencia:** Ver [ADR-032](./ADR-032-historical-data-api-layer.md)
+
+---
 
 ### ADR-027: Structured Logging & Observability Infrastructure
 **Decision:** Implement structlog for production-ready logging and observability  
