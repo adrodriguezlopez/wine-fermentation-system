@@ -1,19 +1,27 @@
 """
 HistoricalDataService - Service for querying historical fermentation data.
 
+⚠️ DEPRECATED (ADR-034): This service is being phased out.
+- 75% of functionality is redundant with FermentationService/SampleService
+- Use FermentationService.get_fermentations_by_winery(data_source="HISTORICAL") instead
+- Use PatternAnalysisService.extract_patterns() for pattern extraction
+- This class will be removed after deprecation period (2 weeks from January 15, 2026)
+
 Implements business logic for Historical Data API Layer (ADR-032).
 Provides read-only access to imported historical fermentations with pattern extraction.
 
-Implementation Status: 🔨 IN PROGRESS (January 13, 2026)
-Following TDD approach - implementing to satisfy 12 unit tests.
+Implementation Status: 🔨 DEPRECATED (January 15, 2026 - ADR-034)
+Replacement services implemented. See ADR-034 for migration guide.
 
 Related ADRs:
-- ADR-032: Historical Data API Layer
+- ADR-032: Historical Data API Layer (original implementation)
+- ADR-034: Historical Data Service Refactoring (deprecation & replacement)
 - ADR-019: ETL Pipeline Design
 - ADR-029: Data Source Field for Historical Tracking
 - ADR-025: Multi-Tenancy Architecture
 """
 
+import warnings
 from typing import List, Optional, Dict, Any, Tuple
 from datetime import date, datetime
 from statistics import mean
@@ -32,7 +40,18 @@ logger = get_logger(__name__)
 
 class HistoricalDataService:
     """
-    Service for querying and aggregating historical fermentation data.
+    ⚠️ DEPRECATED: Service for querying and aggregating historical fermentation data.
+    
+    **Deprecation Notice (ADR-034):**
+    This service has 75% redundancy with existing services and will be removed.
+    
+    **Migration Guide:**
+    - `get_historical_fermentations()` → Use `FermentationService.get_fermentations_by_winery(data_source="HISTORICAL")`
+    - `get_historical_fermentation_by_id()` → Use `FermentationService.get_fermentation()`
+    - `get_fermentation_samples()` → Use `SampleService.get_samples_by_fermentation()` with data_source filter
+    - `extract_patterns()` → Use `PatternAnalysisService.extract_patterns(data_source="HISTORICAL")`
+    
+    **Removal Date:** Approximately February 1, 2026 (2 weeks after deprecation)
     
     Responsibilities (per ADR-032):
     - Query historical fermentations with multi-tenant filtering
@@ -57,10 +76,20 @@ class HistoricalDataService:
         """
         Initialize service with repository dependencies.
         
+        ⚠️ DEPRECATED: Use FermentationService and PatternAnalysisService instead.
+        
         Args:
             fermentation_repo: Repository for fermentation data access
             sample_repo: Repository for sample data access
         """
+        warnings.warn(
+            "HistoricalDataService is deprecated (ADR-034). "
+            "Use FermentationService.get_fermentations_by_winery(data_source='HISTORICAL') "
+            "and PatternAnalysisService.extract_patterns() instead. "
+            "This class will be removed in approximately 2 weeks.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self._fermentation_repo = fermentation_repo
         self._sample_repo = sample_repo
     

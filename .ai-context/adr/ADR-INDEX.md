@@ -27,6 +27,7 @@
 | **[ADR-018](./ADR-018-seed-script-initial-data-bootstrap.md)** | Seed Script for Initial Data Bootstrap | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-032](./ADR-032-historical-data-api-layer.md)** | Historical Data API Layer | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-033](./ADR-033-code-coverage-improvement-strategy.md)** | Code Coverage Improvement Strategy | ✅ Implemented | 2026-01-15 | High |
+| **[ADR-034](./ADR-034-historical-data-service-refactoring.md)** | Historical Data Service Refactoring | 📋 Proposed | 2026-01-15 | Medium |
 
 ### ADR-033: Code Coverage Improvement Strategy
 **Decision:** Phased coverage improvement: API (85%), Repository (80%), Service (80%), ETL (80%)  
@@ -40,6 +41,19 @@
 - All targets exceeded or met
 - 100% test pass rate maintained (1,111/1,111)
 - Timeline: 2 days vs 11-day estimate (5.5x faster)
+
+### ADR-034: Historical Data Service Refactoring
+**Decision:** Eliminate 75% redundancy in HistoricalDataService, consolidate with existing services  
+**Status:** 📋 Proposed (January 15, 2026)  
+**Impact:** -150 lines duplicate code, clearer architecture, better maintainability  
+**Key Points:**
+- 3 of 4 methods duplicate FermentationService/SampleService
+- Only extract_patterns() has unique value
+- Refactor: Add data_source param to existing services + new PatternAnalysisService
+- Eliminates: ~200 lines code, 9 redundant tests, 2 duplicate endpoints
+- Maintains: 100% functionality, prepares for Analysis Engine (ADR-035)
+- Timeline: 3 days dev + 2 week deprecation period
+
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 | **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Implemented | 2026-01-02 | Medium |

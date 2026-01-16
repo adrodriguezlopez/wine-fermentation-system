@@ -32,7 +32,7 @@
    - **Total**: +78 tests in 2 days (5.5x faster than estimate)
 
 ### Módulos en Progreso 🔄
-- None currently
+- **Refactoring**: ADR-034 (Historical Data Service) - Eliminar redundancia
 
 ### Módulos Pendientes ⏳
 16. **Analysis Engine Module** - 0%
@@ -395,6 +395,45 @@ async with TransactionScope(session_manager):
 - ✅ **1033/1033 tests passing system-wide (100%)**
 
 **Referencia:** Ver [ADR-032](./ADR-032-historical-data-api-layer.md)
+
+---
+
+#### ADR-034: Historical Data Service Refactoring - Eliminar Redundancia 📋
+**Estado:** 📋 **PROPUESTO** (January 15, 2026)
+
+**Problema identificado:**
+Después de implementar ADR-032, se detectó que **75% del HistoricalDataService es redundante** con servicios existentes:
+- `get_historical_fermentations()` = `FermentationService.get_fermentations_by_winery()` + filtro
+- `get_historical_fermentation_by_id()` = **código idéntico** a `FermentationService.get_fermentation()`
+- `get_fermentation_samples()` = `SampleService.get_samples_by_fermentation()` + filtro
+- `extract_patterns()` = ✅ **único con valor real** (agregación estadística)
+
+**Decisión propuesta:**
+1. **Eliminar redundancia**: Agregar parámetro `data_source` opcional a servicios existentes
+2. **Extraer valor único**: Crear `PatternAnalysisService` solo con `extract_patterns()`
+3. **Deprecar y eliminar**: HistoricalDataService completo después de periodo de transición
+
+**Beneficios:**
+- ✅ **-200 líneas de código duplicado**
+- ✅ **-9 tests redundantes**
+- ✅ **-2 endpoints API duplicados**
+- ✅ Arquitectura más clara (un servicio por responsabilidad)
+- ✅ Más fácil de mantener (un solo punto de entrada)
+- ✅ Prepara para Analysis Engine (ADR-035)
+
+**Timeline estimado:**
+- Fase 1: Crear PatternAnalysisService (1 día)
+- Fase 2: Extender servicios existentes (1 día)
+- Fase 3: Deprecar HistoricalDataService (1 día)
+- Fase 4: Eliminar código deprecated (después de 2 semanas)
+
+**Lecciones aprendidas:**
+- ❌ No crear servicio separado solo para filtrar por un campo
+- ❌ Aplicar YAGNI (You Aren't Gonna Need It)
+- ✅ Detectar y corregir over-engineering temprano
+- ✅ Admitir errores de diseño y refactorizar
+
+**Referencia:** Ver [ADR-034](./ADR-034-historical-data-service-refactoring.md)
 
 ---
 

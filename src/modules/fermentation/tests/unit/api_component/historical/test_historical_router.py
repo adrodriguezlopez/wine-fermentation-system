@@ -4,7 +4,7 @@ Unit tests for Historical Data API Router.
 Tests all 8 endpoints with various scenarios using mocked service layer.
 Following TDD approach with comprehensive test coverage.
 
-Related ADR: ADR-032 (Historical Data API Layer)
+Related ADR: ADR-032 (Historical Data API Layer), ADR-034 (Refactoring)
 """
 import pytest
 from datetime import datetime, date
@@ -15,10 +15,16 @@ from fastapi import FastAPI
 
 from src.modules.fermentation.src.api_component.historical.routers.historical_router import (
     router,
-    get_historical_data_service,
     get_winery_id
 )
-from src.modules.fermentation.src.service_component.services.historical.historical_data_service import HistoricalDataService
+from src.modules.fermentation.src.api.dependencies import (
+    get_fermentation_service,
+    get_pattern_analysis_service,
+    get_sample_service
+)
+from src.modules.fermentation.src.service_component.interfaces.fermentation_service_interface import IFermentationService
+from src.modules.fermentation.src.service_component.interfaces.pattern_analysis_service_interface import IPatternAnalysisService
+from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
 from src.modules.fermentation.src.service_component.errors import NotFoundError
@@ -35,27 +41,48 @@ def app():
 
 
 @pytest.fixture
-def mock_service():
-    """Create a mock HistoricalDataService."""
-    service = create_autospec(HistoricalDataService, instance=True)
-    # Configure all methods as AsyncMock
-    service.get_historical_fermentations = AsyncMock()
-    service.get_historical_fermentation_by_id = AsyncMock()
-    service.get_fermentation_samples = AsyncMock()
+def mock_fermentation_service():
+    """Create a mock FermentationService."""
+    service = create_autospec(IFermentationService, instance=True)
+    service.get_fermentation = AsyncMock()
+    service.get_fermentations_by_winery = AsyncMock()
+    return service
+
+
+@pytest.fixture
+def mock_pattern_service():
+    """Create a mock PatternAnalysisService."""
+    service = create_autospec(IPatternAnalysisService, instance=True)
     service.extract_patterns = AsyncMock()
     return service
 
 
 @pytest.fixture
-def client(app, mock_service):
+def mock_sample_service():
+    """Create a mock SampleService."""
+    service = create_autospec(ISampleService, instance=True)
+    service.get_samples_by_fermentation = AsyncMock()
+    return service
+
+
+@pytest.fixture
+def client(app, mock_fermentation_service, mock_pattern_service, mock_sample_service):
     """Create test client with dependency overrides."""
-    async def override_get_service():
-        return mock_service
+    async def override_get_fermentation_service():
+        return mock_fermentation_service
+    
+    async def override_get_pattern_service():
+        return mock_pattern_service
+    
+    async def override_get_sample_service():
+        return mock_sample_service
     
     async def override_get_winery_id():
         return 1
     
-    app.dependency_overrides[get_historical_data_service] = override_get_service
+    app.dependency_overrides[get_fermentation_service] = override_get_fermentation_service
+    app.dependency_overrides[get_pattern_analysis_service] = override_get_pattern_service
+    app.dependency_overrides[get_sample_service] = override_get_sample_service
     app.dependency_overrides[get_winery_id] = override_get_winery_id
     
     with TestClient(app) as client:
@@ -106,10 +133,10 @@ class TestListHistoricalFermentations:
     """Test cases for listing historical fermentations endpoint."""
     
     @pytest.mark.asyncio
-    async def test_list_returns_paginated_response_with_filters(self, client, mock_service, mock_fermentation):
+    async def test_list_returns_paginated_response_with_filters(self, client, mock_fermentation_service, mock_fermentation):
         """Test listing fermentations with filters returns paginated response."""
         # Arrange
-        mock_service.get_historical_fermentations.return_value = [mock_fermentation]
+        mock_fermentation_service.get_fermentations_by_winery.return_value = [mock_fermentation]
         
         # Act
         response = client.get(
@@ -136,19 +163,19 @@ class TestListHistoricalFermentations:
         assert data["items"][0]["winery_id"] == 1
         assert data["items"][0]["status"] == "completed"
         
-        # Verify service was called with correct parameters
-        mock_service.get_historical_fermentations.assert_called_once()
-        call_kwargs = mock_service.get_historical_fermentations.call_args.kwargs
+        # Verify service was called with correct parameters (ADR-034: uses get_fermentations_by_winery)
+        mock_fermentation_service.get_fermentations_by_winery.assert_called_once()
+        call_kwargs = mock_fermentation_service.get_fermentations_by_winery.call_args.kwargs
         assert call_kwargs["winery_id"] == 1
-        assert "start_date_from" in call_kwargs["filters"]
-        assert call_kwargs["limit"] == 100
-        assert call_kwargs["offset"] == 0
+        assert call_kwargs["data_source"] == "HISTORICAL"  # ADR-034
+        assert call_kwargs["status"] == "completed"
+        assert call_kwargs["include_completed"] == True
     
     @pytest.mark.asyncio
-    async def test_list_with_minimal_parameters(self, client, mock_service, mock_fermentation):
+    async def test_list_with_minimal_parameters(self, client, mock_fermentation_service, mock_fermentation):
         """Test listing fermentations with only required parameters."""
         # Arrange
-        mock_service.get_historical_fermentations.return_value = [mock_fermentation]
+        mock_fermentation_service.get_fermentations_by_winery.return_value = [mock_fermentation]
         
         # Act
         response = client.get("/api/fermentation/historical")
@@ -158,17 +185,16 @@ class TestListHistoricalFermentations:
         data = response.json()
         assert len(data["items"]) == 1
         
-        # Verify service called with empty filters
-        call_kwargs = mock_service.get_historical_fermentations.call_args.kwargs
-        assert call_kwargs["filters"] == {}
-        assert call_kwargs["limit"] == 100  # Default
-        assert call_kwargs["offset"] == 0  # Default
+        # Verify service called with data_source='HISTORICAL' (ADR-034)
+        call_kwargs = mock_fermentation_service.get_fermentations_by_winery.call_args.kwargs
+        assert call_kwargs["data_source"] == "HISTORICAL"
+        assert call_kwargs["include_completed"] == True
     
     @pytest.mark.asyncio
-    async def test_list_handles_service_errors(self, client, mock_service):
+    async def test_list_handles_service_errors(self, client, mock_fermentation_service):
         """Test that service errors are handled gracefully."""
         # Arrange
-        mock_service.get_historical_fermentations.side_effect = Exception("Database error")
+        mock_fermentation_service.get_fermentations_by_winery.side_effect = Exception("Database error")
         
         # Act
         response = client.get("/api/fermentation/historical")
@@ -184,10 +210,10 @@ class TestGetHistoricalFermentation:
     """Test cases for getting a single historical fermentation endpoint."""
     
     @pytest.mark.asyncio
-    async def test_get_returns_fermentation_when_found(self, client, mock_service, mock_fermentation):
+    async def test_get_returns_fermentation_when_found(self, client, mock_fermentation_service, mock_fermentation):
         """Test getting a fermentation by ID returns the entity."""
         # Arrange
-        mock_service.get_historical_fermentation_by_id.return_value = mock_fermentation
+        mock_fermentation_service.get_fermentation.return_value = mock_fermentation
         
         # Act
         response = client.get("/api/fermentation/historical/1")
@@ -199,19 +225,17 @@ class TestGetHistoricalFermentation:
         assert data["winery_id"] == 1
         assert data["status"] == "completed"
         
-        # Verify service was called
-        mock_service.get_historical_fermentation_by_id.assert_called_once_with(
+        # Verify service was called (ADR-034: uses get_fermentation directly)
+        mock_fermentation_service.get_fermentation.assert_called_once_with(
             fermentation_id=1,
             winery_id=1
         )
     
     @pytest.mark.asyncio
-    async def test_get_returns_404_when_not_found(self, client, mock_service):
+    async def test_get_returns_404_when_not_found(self, client, mock_fermentation_service):
         """Test that 404 is returned when fermentation doesn't exist."""
         # Arrange
-        mock_service.get_historical_fermentation_by_id.side_effect = NotFoundError(
-            "Fermentation with ID 999 not found"
-        )
+        mock_fermentation_service.get_fermentation.return_value = None
         
         # Act
         response = client.get("/api/fermentation/historical/999")
@@ -221,10 +245,10 @@ class TestGetHistoricalFermentation:
         assert "not found" in response.json()["detail"].lower()
     
     @pytest.mark.asyncio
-    async def test_get_handles_service_errors(self, client, mock_service):
+    async def test_get_handles_service_errors(self, client, mock_fermentation_service):
         """Test that service errors are handled gracefully."""
         # Arrange
-        mock_service.get_historical_fermentation_by_id.side_effect = Exception("Database error")
+        mock_fermentation_service.get_fermentation.side_effect = Exception("Database error")
         
         # Act
         response = client.get("/api/fermentation/historical/1")
@@ -240,10 +264,11 @@ class TestGetFermentationSamples:
     """Test cases for getting fermentation samples endpoint."""
     
     @pytest.mark.asyncio
-    async def test_get_samples_returns_list(self, client, mock_service, mock_sample):
+    async def test_get_samples_returns_list(self, client, mock_fermentation_service, mock_sample_service, mock_fermentation, mock_sample):
         """Test getting samples returns list of samples."""
         # Arrange
-        mock_service.get_fermentation_samples.return_value = [mock_sample]
+        mock_fermentation_service.get_fermentation.return_value = mock_fermentation
+        mock_sample_service.get_samples_by_fermentation.return_value = [mock_sample]
         
         # Act
         response = client.get("/api/fermentation/historical/1/samples")
@@ -257,19 +282,21 @@ class TestGetFermentationSamples:
         assert data[0]["fermentation_id"] == 1
         assert data[0]["sample_type"] == "density"
         
-        # Verify service was called
-        mock_service.get_fermentation_samples.assert_called_once_with(
+        # Verify services were called (ADR-034)
+        mock_fermentation_service.get_fermentation.assert_called_once_with(
+            fermentation_id=1,
+            winery_id=1
+        )
+        mock_sample_service.get_samples_by_fermentation.assert_called_once_with(
             fermentation_id=1,
             winery_id=1
         )
     
     @pytest.mark.asyncio
-    async def test_get_samples_returns_404_when_fermentation_not_found(self, client, mock_service):
+    async def test_get_samples_returns_404_when_fermentation_not_found(self, client, mock_fermentation_service, mock_sample_service):
         """Test that 404 is returned when fermentation doesn't exist."""
         # Arrange
-        mock_service.get_fermentation_samples.side_effect = NotFoundError(
-            "Fermentation with ID 999 not found"
-        )
+        mock_fermentation_service.get_fermentation.return_value = None
         
         # Act
         response = client.get("/api/fermentation/historical/999/samples")
@@ -278,10 +305,10 @@ class TestGetFermentationSamples:
         assert response.status_code == 404
     
     @pytest.mark.asyncio
-    async def test_get_samples_handles_service_errors(self, client, mock_service):
+    async def test_get_samples_handles_service_errors(self, client, mock_fermentation_service, mock_sample_service):
         """Test that service errors are handled gracefully."""
         # Arrange
-        mock_service.get_fermentation_samples.side_effect = Exception("Database error")
+        mock_fermentation_service.get_fermentation.side_effect = Exception("Database error")
         
         # Act
         response = client.get("/api/fermentation/historical/1/samples")
@@ -296,7 +323,7 @@ class TestExtractPatterns:
     """Test cases for pattern extraction endpoint."""
     
     @pytest.mark.asyncio
-    async def test_extract_patterns_returns_aggregated_metrics(self, client, mock_service):
+    async def test_extract_patterns_returns_aggregated_metrics(self, client, mock_pattern_service):
         """Test pattern extraction returns aggregated metrics."""
         # Arrange
         patterns_dict = {
@@ -310,7 +337,7 @@ class TestExtractPatterns:
             "completed_count": 95,
             "stuck_count": 5
         }
-        mock_service.extract_patterns.return_value = patterns_dict
+        mock_pattern_service.extract_patterns.return_value = patterns_dict
         
         # Act
         response = client.get(
@@ -329,17 +356,18 @@ class TestExtractPatterns:
         assert data["avg_initial_density"] == 1.102
         assert data["success_rate"] == 0.95
         
-        # Verify service was called
-        mock_service.extract_patterns.assert_called_once()
-        call_kwargs = mock_service.extract_patterns.call_args.kwargs
+        # Verify service was called (ADR-034: uses PatternAnalysisService)
+        mock_pattern_service.extract_patterns.assert_called_once()
+        call_kwargs = mock_pattern_service.extract_patterns.call_args.kwargs
         assert call_kwargs["winery_id"] == 1
+        assert call_kwargs["data_source"] == "HISTORICAL"  # ADR-034
         assert call_kwargs["fruit_origin_id"] == 5
         # date_range is now a tuple (start_date, end_date)
         assert call_kwargs["date_range"][0] == date(2024, 1, 1)
         assert call_kwargs["date_range"][1] == date(2024, 12, 31)
     
     @pytest.mark.asyncio
-    async def test_extract_patterns_with_minimal_filters(self, client, mock_service):
+    async def test_extract_patterns_with_minimal_filters(self, client, mock_pattern_service):
         """Test pattern extraction with no filters."""
         # Arrange
         patterns_dict = {
@@ -353,7 +381,7 @@ class TestExtractPatterns:
             "completed_count": 0,
             "stuck_count": 0
         }
-        mock_service.extract_patterns.return_value = patterns_dict
+        mock_pattern_service.extract_patterns.return_value = patterns_dict
         
         # Act
         response = client.get("/api/fermentation/historical/patterns/extract")
@@ -363,16 +391,17 @@ class TestExtractPatterns:
         data = response.json()
         assert data["total_fermentations"] == 50
         
-        # Verify service called with None filters
-        call_kwargs = mock_service.extract_patterns.call_args.kwargs
+        # Verify service called with HISTORICAL data_source (ADR-034)
+        call_kwargs = mock_pattern_service.extract_patterns.call_args.kwargs
+        assert call_kwargs["data_source"] == "HISTORICAL"
         assert call_kwargs["fruit_origin_id"] is None
         assert call_kwargs["date_range"] is None
     
     @pytest.mark.asyncio
-    async def test_extract_patterns_handles_service_errors(self, client, mock_service):
+    async def test_extract_patterns_handles_service_errors(self, client, mock_pattern_service):
         """Test that service errors are handled gracefully."""
         # Arrange
-        mock_service.extract_patterns.side_effect = Exception("Database error")
+        mock_pattern_service.extract_patterns.side_effect = Exception("Database error")
         
         # Act
         response = client.get("/api/fermentation/historical/patterns/extract")
@@ -387,7 +416,7 @@ class TestGetDashboardStatistics:
     """Test cases for dashboard statistics endpoint."""
     
     @pytest.mark.asyncio
-    async def test_get_statistics_returns_dashboard_metrics(self, client, mock_service):
+    async def test_get_statistics_returns_dashboard_metrics(self, client, mock_pattern_service):
         """Test getting statistics returns dashboard metrics."""
         # Arrange
         patterns_dict = {
@@ -401,7 +430,7 @@ class TestGetDashboardStatistics:
             "completed_count": 460,
             "stuck_count": 40
         }
-        mock_service.extract_patterns.return_value = patterns_dict
+        mock_pattern_service.extract_patterns.return_value = patterns_dict
         
         # Act
         response = client.get("/api/fermentation/historical/statistics/dashboard")
@@ -412,12 +441,17 @@ class TestGetDashboardStatistics:
         assert data["total_fermentations"] == 500
         assert data["avg_duration_days"] == 15.2
         assert data["success_rate"] == 0.92
+        
+        # Verify uses PatternAnalysisService (ADR-034)
+        mock_pattern_service.extract_patterns.assert_called_once()
+        call_kwargs = mock_pattern_service.extract_patterns.call_args.kwargs
+        assert call_kwargs["data_source"] == "HISTORICAL"
     
     @pytest.mark.asyncio
-    async def test_get_statistics_handles_service_errors(self, client, mock_service):
+    async def test_get_statistics_handles_service_errors(self, client, mock_pattern_service):
         """Test that service errors are handled gracefully."""
         # Arrange
-        mock_service.extract_patterns.side_effect = Exception("Database error")
+        mock_pattern_service.extract_patterns.side_effect = Exception("Database error")
         
         # Act
         response = client.get("/api/fermentation/historical/statistics/dashboard")

@@ -2,6 +2,9 @@
 Fixtures for Historical Data API integration tests.
 
 Provides fixtures for testing the API layer with real database.
+
+Updated for ADR-034: Now uses FermentationService, PatternAnalysisService, and SampleService
+instead of deprecated HistoricalDataService.
 """
 import pytest
 import pytest_asyncio
@@ -11,10 +14,22 @@ from fastapi import FastAPI
 
 from src.modules.fermentation.src.api_component.historical.routers.historical_router import (
     router,
-    get_historical_data_service,
     get_winery_id
 )
-from src.modules.fermentation.src.service_component.services.historical.historical_data_service import HistoricalDataService
+# ADR-034: Use new services instead of HistoricalDataService
+from src.modules.fermentation.src.api.dependencies import (
+    get_fermentation_service,
+    get_pattern_analysis_service,
+    get_sample_service
+)
+from src.modules.fermentation.src.service_component.services.fermentation_service import FermentationService
+from src.modules.fermentation.src.service_component.services.pattern_analysis_service import PatternAnalysisService
+from src.modules.fermentation.src.service_component.services.sample_service import SampleService
+from src.modules.fermentation.src.service_component.validators.fermentation_validator import FermentationValidator
+from src.modules.fermentation.src.service_component.services.validation_orchestrator import ValidationOrchestrator
+from src.modules.fermentation.src.service_component.services.chronology_validation_service import ChronologyValidationService
+from src.modules.fermentation.src.service_component.services.value_validation_service import ValueValidationService
+from src.modules.fermentation.src.service_component.services.business_rule_validation_service import BusinessRuleValidationService
 from src.modules.fermentation.src.repository_component.repositories.fermentation_repository import FermentationRepository
 from src.modules.fermentation.src.repository_component.repositories.sample_repository import SampleRepository
 from src.shared.infra.repository.fastapi_session_manager import FastAPISessionManager
@@ -30,28 +45,76 @@ def app():
 
 
 @pytest_asyncio.fixture
-async def historical_service(db_session):
-    """Create HistoricalDataService with real repositories."""
+async def fermentation_service(db_session):
+    """Create FermentationService with real repositories (ADR-034)."""
+    session_manager = FastAPISessionManager(db_session)
+    fermentation_repo = FermentationRepository(session_manager)
+    validator = FermentationValidator()
+    
+    return FermentationService(
+        fermentation_repo=fermentation_repo,
+        validator=validator
+    )
+
+
+@pytest_asyncio.fixture
+async def pattern_analysis_service(db_session):
+    """Create PatternAnalysisService with real repositories (ADR-034)."""
     session_manager = FastAPISessionManager(db_session)
     fermentation_repo = FermentationRepository(session_manager)
     sample_repo = SampleRepository(session_manager)
     
-    return HistoricalDataService(
+    return PatternAnalysisService(
         fermentation_repo=fermentation_repo,
         sample_repo=sample_repo
     )
 
 
 @pytest_asyncio.fixture
-async def test_client(app, historical_service, test_user):
-    """Create async test client with dependency overrides."""
-    def override_service():
-        return historical_service
+async def sample_service(db_session):
+    """Create SampleService with real repositories (ADR-034)."""
+    session_manager = FastAPISessionManager(db_session)
+    sample_repo = SampleRepository(session_manager)
+    fermentation_repo = FermentationRepository(session_manager)
+    
+    # Create validation orchestrator
+    chronology_validator = ChronologyValidationService(sample_repository=sample_repo)
+    value_validator = ValueValidationService()
+    business_rules_validator = BusinessRuleValidationService(
+        sample_repository=sample_repo,
+        fermentation_repository=fermentation_repo
+    )
+    validation_orchestrator = ValidationOrchestrator(
+        chronology_validator=chronology_validator,
+        value_validator=value_validator,
+        business_rules_validator=business_rules_validator
+    )
+    
+    return SampleService(
+        sample_repo=sample_repo,
+        validation_orchestrator=validation_orchestrator,
+        fermentation_repo=fermentation_repo
+    )
+
+
+@pytest_asyncio.fixture
+async def test_client(app, fermentation_service, pattern_analysis_service, sample_service, test_user):
+    """Create async test client with dependency overrides (ADR-034)."""
+    def override_fermentation_service():
+        return fermentation_service
+    
+    def override_pattern_service():
+        return pattern_analysis_service
+    
+    def override_sample_service():
+        return sample_service
     
     def override_winery_id():
         return test_user.winery_id
     
-    app.dependency_overrides[get_historical_data_service] = override_service
+    app.dependency_overrides[get_fermentation_service] = override_fermentation_service
+    app.dependency_overrides[get_pattern_analysis_service] = override_pattern_service
+    app.dependency_overrides[get_sample_service] = override_sample_service
     app.dependency_overrides[get_winery_id] = override_winery_id
     
     async with AsyncClient(app=app, base_url="http://test") as client:

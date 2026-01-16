@@ -254,7 +254,8 @@ class FermentationService(IFermentationService):
         self,
         winery_id: int,
         status: Optional[str] = None,
-        include_completed: bool = False
+        include_completed: bool = False,
+        data_source: Optional[str] = None
     ) -> List[Fermentation]:
         """
         Retrieve fermentations for a winery with optional filters.
@@ -263,6 +264,7 @@ class FermentationService(IFermentationService):
             winery_id: ID of the winery (multi-tenant scoping)
             status: Optional FermentationStatus filter (applied post-fetch)
             include_completed: Whether to include completed fermentations (default: False)
+            data_source: Optional data source filter (SYSTEM, HISTORICAL, MIGRATED) - ADR-034
         
         Returns:
             List[Fermentation]: List of fermentations matching criteria
@@ -273,25 +275,39 @@ class FermentationService(IFermentationService):
         Business Logic:
             1. Delegates to repository for base filtering:
                - Multi-tenant isolation (winery_id filtering)
+               - Data source filtering if provided (ADR-034)
                - Completed fermentation filtering based on include_completed
                - Soft-delete filtering (deleted_at IS NULL)
             2. Applies status filtering in-memory if provided
             3. Returns empty list if no matches (not None, not exception)
         
         Status: ✅ Implemented via TDD (2025-10-18)
+        Updated: January 15, 2026 (ADR-034 - add data_source parameter)
         """
         logger.debug(
             "fetching_fermentations_by_winery",
             winery_id=winery_id,
             status_filter=status,
-            include_completed=include_completed
+            include_completed=include_completed,
+            data_source=data_source
         )
         
         # Fetch from repository with base filters
-        fermentations = await self._fermentation_repo.get_by_winery(
-            winery_id=winery_id,
-            include_completed=include_completed
-        )
+        # If data_source is specified, use list_by_data_source (ADR-034)
+        if data_source:
+            fermentations = await self._fermentation_repo.list_by_data_source(
+                winery_id=winery_id,
+                data_source=data_source,
+                include_deleted=False
+            )
+            # Apply include_completed filter in-memory
+            if not include_completed:
+                fermentations = [f for f in fermentations if f.status != "COMPLETED"]
+        else:
+            fermentations = await self._fermentation_repo.get_by_winery(
+                winery_id=winery_id,
+                include_completed=include_completed
+            )
         
         # Apply status filter if provided (in-memory filtering)
         if status is not None:
@@ -301,7 +317,8 @@ class FermentationService(IFermentationService):
             "fermentations_retrieved_by_winery",
             winery_id=winery_id,
             count=len(fermentations),
-            status_filter=status
+            status_filter=status,
+            data_source=data_source
         )
         
         return fermentations
