@@ -61,10 +61,18 @@
 
 ## Implementation status
 
-**Status:** ✅ **Service Layer Complete** (Ready for API integration)  
-**Reference:** ADR-005-service-layer-interfaces.md
+**Status:** ✅ **Service Layer Complete** (API integration complete)  
+**Last Updated:** 2026-01-15  
+**Reference:** ADR-005-service-layer-interfaces.md, ADR-033 (Coverage Improvement)
 
-**Note:** All business logic and validation implemented. Waiting for API layer to expose via HTTP endpoints.
+**Coverage Status (ADR-033 Phase 3):**
+- **FermentationService**: 84% coverage (target 80% EXCEEDED)
+- **SampleService**: 84% coverage (target 80% EXCEEDED)
+- **ValidationOrchestrator**: 90% coverage (EXCELLENT)
+- **Overall Service Layer**: 84% average
+- **ETL Layer**: 95% coverage (target 80% EXCELLENCE +15%)
+
+**Note:** All business logic and validation implemented with comprehensive test coverage. API layer integration complete.
 
 ### Implemented Components
 

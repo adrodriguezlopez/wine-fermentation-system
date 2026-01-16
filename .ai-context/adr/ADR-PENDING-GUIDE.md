@@ -1,37 +1,47 @@
 # Guía de ADRs Pendientes para Completar el MVP
 
 **Fecha de creación:** 16 de diciembre de 2025  
-**Última actualización:** 30 de diciembre de 2025  
+**Última actualización:** 13 de enero de 2026  
 **Propósito:** Identificar decisiones arquitectónicas necesarias para completar el MVP del Wine Fermentation System
 
 ---
 
-## Estado Actual del Proyecto: 75-80% Completo ✅
+## Estado Actual del Proyecto: 87% Completo ✅
 
 ### Módulos Completados ✅
-1. **Authentication Module** - 100% (159 tests)
-2. **Fermentation Management Module** - 100% (456 tests: 314 unit + 55 integration + 87 API)
+1. **Authentication Module** - 100% (183 tests: 159 unit + 24 integration)
+2. **Fermentation Management Module** - 100% (584 tests: 422 unit + 75 integration + 87 API)
 3. **Structured Logging Infrastructure** - 100% (ADR-027 ✅)
 4. **Module Dependency Management** - 100% (ADR-028 ✅)
 5. **Error Handling Strategy** - 100% (ADR-026 ✅) - December 26, 2025
 6. **Multi-Tenancy Security (LIGHT)** - 100% (ADR-025 ✅) - December 23, 2025
 7. **Fruit Origin Service Layer** - 100% (ADR-014 ✅) - December 27, 2025
 8. **Fruit Origin API Layer** - 100% (ADR-015 ✅) - December 29, 2025
-9. **Integration Test Infrastructure** - 100% (ADR-011 ✅ Phase 3) - December 30, 2025
-10. **ETL Pipeline for Historical Data** - 100% (ADR-019 ✅ + ADR-030 ✅ + ADR-031 ✅) - January 11, 2026
+9. **Winery Service Layer** - 100% (ADR-016 ✅) - December 29, 2025
+10. **Winery API Layer** - 100% (ADR-017 ✅) - January 13, 2026
+11. **Integration Test Infrastructure** - 100% (ADR-011 ✅ Phase 3) - December 30, 2025
+12. **ETL Pipeline for Historical Data** - 100% (ADR-019 ✅ + ADR-030 ✅ + ADR-031 ✅) - January 11, 2026
+13. **Seed Script for Initial Data** - 100% (ADR-018 ✅) - January 13, 2026
+14. **Historical Data API Layer** - 100% (ADR-032 ✅) - January 13, 2026
+15. **Code Coverage Improvement** - 100% (ADR-033 ✅) - January 15, 2026
+   - **API Layer**: 44% → 97% (+53 points, 19 tests added)
+   - **Repository Layer**: 12-18% → 82% (+64-70 points, ~20 tests)
+   - **Service Layer**: 14-30% → 84% (+54-70 points, ~25 tests)
+   - **ETL Layer**: 30% → 95% (+65 points, ~14 tests, EXCELLENCE)
+   - **Overall**: 56% → 87% (+31 points)
+   - **Total**: +78 tests in 2 days (5.5x faster than estimate)
 
-### Módulos Parcialmente Completados 🟡
-11. **Winery Module** - 95% (79 tests) - Repository ✅ + Service Layer ✅ + Integration Tests ✅, Falta API
-12. **Shared Module** - 100% (52 tests) - Testing utilities ✅
+### Módulos en Progreso 🔄
+- None currently
 
 ### Módulos Pendientes ⏳
-13. **Historical Data Module (API Layer)** - ETL ✅, Falta API endpoints
-14. **Analysis Engine Module** - 0%
-15. **Action Tracking Module** - 0%
-16. **Frontend Module** - 0%
+16. **Analysis Engine Module** - 0%
+17. **Action Tracking Module** - 0%
+18. **Frontend Module** - 0%
 
-**Tests Passing:** 983/983 (100%) ✅  
-**Last Update:** January 11, 2026 (ADR-019, ADR-030, ADR-031 Complete)
+**Tests Passing:** 1,111/1,111 (100%) ✅  
+**Code Coverage:** 87% (Target: 80%) ✅  
+**Last Update:** January 15, 2026 (ADR-033 Completed)
 
 ---
 
@@ -338,6 +348,100 @@ async with TransactionScope(session_manager):
 - Memory < 500MB por import
 
 **Referencia:** Ver [ADR-019](./ADR-019-etl-pipeline-historical-data.md)
+
+---
+
+#### ADR-032: Historical Data API Layer ✅
+**Estado:** ✅ **IMPLEMENTADO** (January 13, 2026)
+
+**Decisión implementada:**
+- **API Endpoints**: 8 endpoints REST para acceso a datos históricos
+  - GET `/api/fermentation/historical` - List con filtros y paginación
+  - GET `/api/fermentation/historical/{id}` - Get por ID con multi-tenant
+  - GET `/api/fermentation/historical/{id}/samples` - Samples de una fermentación
+  - GET `/api/fermentation/historical/patterns/extract` - Pattern extraction para Analysis Engine
+  - GET `/api/fermentation/historical/statistics/dashboard` - Dashboard metrics
+  - POST `/api/fermentation/historical/import/trigger` - Trigger import (placeholder)
+  - GET `/api/fermentation/historical/import/jobs/{id}` - Job status (placeholder)
+  - GET `/api/fermentation/historical/import/jobs` - List jobs (placeholder)
+
+- **HistoricalDataService**: Lógica de negocio para datos históricos
+  - Multi-tenant filtering (winery_id scoping)
+  - Data source segregation (HISTORICAL only)
+  - Pattern extraction con aggregations (avg density, sugar, duration, success rate)
+  - Dashboard statistics (total fermentations, success rate, avg duration)
+  - Duration calculation desde samples (sin campo end_date)
+
+- **Response DTOs**: 5 DTOs para respuestas estructuradas
+  - HistoricalFermentationResponse (17 campos)
+  - HistoricalSampleResponse (8 campos)
+  - PatternResponse (8 métricas agregadas)
+  - StatisticsResponse (3 métricas de dashboard)
+  - ImportJobResponse (placeholder)
+
+**Implementación completa:**
+- ✅ historical_router.py con 8 endpoints (455 líneas)
+- ✅ HistoricalDataService con 6 métodos (382 líneas)
+- ✅ 5 Response DTOs (240 líneas)
+- ✅ 13 integration tests (100% passing)
+- ✅ 18 unit tests (100% passing)
+- ✅ Multi-tenant security enforcement
+- ✅ Error handling con logging estructurado
+- ✅ Paginación y filtros (data_source, status, date_range, fruit_origin)
+
+**Tests Passing:**
+- ✅ 13 integration tests (API component)
+- ✅ 18 unit tests (router + service)
+- ✅ **1033/1033 tests passing system-wide (100%)**
+
+**Referencia:** Ver [ADR-032](./ADR-032-historical-data-api-layer.md)
+
+---
+
+#### ADR-033: Code Coverage Improvement Strategy 📋
+**Estado:** 📋 **DRAFT** (January 13, 2026)
+
+**Propuesta:**
+- **Objetivo**: Mejorar cobertura de código de 56% a 80% minimum
+- **Enfoque**: Implementación por fases priorizando impacto de negocio
+- **Duración estimada**: 11 días (4 fases)
+
+**Gaps de cobertura identificados:**
+
+**Fase 1: API Layer (0-9% → 85%)** - Prioridad P0 (Seguridad Crítica)
+- sample_router.py: 0% (72 statements) - Endpoints públicos sin tests
+- main.py: 0% (34 statements) - Entry point sin tests
+- dependencies.py: 0% (48 statements) - Inyección de dependencias sin tests
+- error_handlers.py: 0% (54 statements) - Manejo de errores global sin tests
+
+**Fase 2: Repository Layer (12-18% → 80%)** - Prioridad P1 (Integridad de Datos)
+- sample_repository.py: 12.2% (166/189 missing)
+- fermentation_repository.py: 17% (88/106 missing)
+- lot_source_repository.py: 18.3% (58/71 missing)
+
+**Fase 3: Service Layer (14-30% → 80%)** - Prioridad P1 (Lógica de Negocio)
+- historical_data_service.py: 14.5% (94/110 missing)
+- fermentation_service.py: 16% (110/131 missing)
+- sample_service.py: 23% (77/100 missing)
+
+**Fase 4: ETL & Validation (25-30% → 80%)** - Prioridad P2 (Calidad de Imports)
+- etl_validator.py: 25.3% (168/225 missing)
+- etl_service.py: 29.9% (89/127 missing)
+
+**Métricas de éxito:**
+- [ ] Coverage general: 56% → 80%
+- [ ] API layer: 0-9% → 85%
+- [ ] Repository layer: 12-18% → 80%
+- [ ] Service layer: 14-30% → 80%
+- [ ] ETL components: 25-30% → 80%
+- [ ] Todos los tests pasando (1033/1033 - 100%)
+- [ ] Tiempo de ejecución < 30 segundos
+
+**Impacto:**
+- Alto: Reduce riesgos de seguridad, calidad y mantenibilidad
+- Crítico para: Refactoring seguro, detección temprana de bugs, onboarding de equipo
+
+**Referencia:** Ver [ADR-033](./ADR-033-code-coverage-improvement-strategy.md)
 
 ---
 
