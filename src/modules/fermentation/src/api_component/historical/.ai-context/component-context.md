@@ -9,7 +9,7 @@
 
 **Position in module**: Presentation layer exposing HTTP endpoints with JWT authentication, multi-tenant authorization (winery_id scoping), request/response serialization, and read-only access to historical fermentation data with `data_source='HISTORICAL'` filter.
 
-**Architectural Decision:** Following ADR-032, this component implements FastAPI router with separate endpoints namespace (`/api/v1/historical`) for historical data operations, reusing existing FermentationRepository and SampleRepository with data source filtering, and providing aggregated pattern extraction specifically designed for Analysis Engine consumption.
+**Architectural Decision:** Following ADR-032 and ADR-034, this component implements FastAPI router with separate endpoints namespace (`/api/v1/historical`) for historical data operations. ADR-034 refactored service dependencies: replaced redundant HistoricalDataService with FermentationService (data_source="HISTORICAL"), SampleService, and new PatternAnalysisService for statistical aggregation. This eliminates 75% code redundancy while maintaining all endpoint functionality.
 
 ## Architecture pattern
 **RESTful API Pattern** with FastAPI framework, dependency injection, and multi-tenant authorization.
@@ -71,10 +71,14 @@
 - Import job tracking and progress monitoring
 
 ### **Uses (Internal Dependencies)**
-- **Service Component**: HistoricalDataService for business logic (4 methods: get_historical_fermentations, get_historical_fermentation_by_id, get_fermentation_samples, extract_patterns)
+- **Service Component (ADR-034 Refactored)**: 
+  - **FermentationService**: get_fermentations_by_winery(data_source="HISTORICAL"), get_fermentation() for fermentation queries
+  - **SampleService**: get_samples_by_fermentation() with data_source filtering for sample queries
+  - **PatternAnalysisService**: extract_patterns(data_source="HISTORICAL") for statistical aggregation
+  - ~~HistoricalDataService~~ (DEPRECATED - removed redundancy, see ADR-034)
 - **Repository Component**: 
-  - FermentationRepository (with `data_source='HISTORICAL'` filter) for fermentation queries
-  - SampleRepository (with `data_source='HISTORICAL'` filter) for sample queries
+  - FermentationRepository (via services with `data_source='HISTORICAL'` filter)
+  - SampleRepository (via services with `data_source='HISTORICAL'` filter)
 - **ETL Service** (service_component): ETLService for import triggers (ADR-019)
 - **Auth Module** (shared/auth): `get_current_user` dependency for authentication and authorization
 - **Domain Entities**: Fermentation, BaseSample for type hints and response serialization

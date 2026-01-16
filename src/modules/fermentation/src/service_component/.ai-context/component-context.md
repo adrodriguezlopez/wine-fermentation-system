@@ -95,9 +95,25 @@
 - **BusinessRuleValidationService:** 9 tests (sugar trends, temperature ranges)
 - **ValidationService:** 19 tests (result patterns, error aggregation)
 
-**📋 Proposed Services (ADR-032 - Jan 13, 2026):**
-- **HistoricalDataService**: Query and aggregate historical fermentation data
-  - 4 methods: get_historical_fermentations, get_historical_fermentation_by_id, get_fermentation_samples, extract_patterns
+**PatternAnalysisService** ✅ COMPLETE (ADR-034 - Jan 15, 2026)
+- **Methods:** 1 (extract_patterns - statistical aggregation from fermentation datasets)
+- **Tests:** Integrated with historical API tests
+- **Status:** New service extracted from HistoricalDataService refactoring
+- **Purpose:** Pattern extraction for Analysis Engine (avg metrics, success rates, duration analysis)
+- **Compliance:** Single Responsibility Principle - only pattern aggregation logic
+
+**FermentationService Enhancement** ✅ UPDATED (ADR-034 - Jan 15, 2026)
+- **New Parameter:** data_source filter added to get_fermentations_by_winery()
+- **Purpose:** Enables filtering by SYSTEM, HISTORICAL, or MIGRATED data source
+- **Impact:** Eliminates need for separate HistoricalDataService wrapper
+- **Backward Compatible:** Optional parameter, existing calls unchanged
+
+**⚠️ DEPRECATED (ADR-034 - Jan 15, 2026):**
+- **HistoricalDataService**: 75% redundant with FermentationService + SampleService
+  - Marked for removal: ~February 1, 2026 (2-week deprecation period)
+  - Migration: Use FermentationService.get_fermentations_by_winery(data_source="HISTORICAL")
+  - Only unique logic (extract_patterns) moved to PatternAnalysisService
+  - Reason: Over-engineering - confused data filter with architectural boundary
   - Multi-tenant security: Auto-scoped by winery_id
   - Reuses: FermentationRepository, SampleRepository with `data_source='HISTORICAL'` filter
   - Test plan: 12 unit tests, estimated 2 hours

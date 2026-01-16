@@ -4,7 +4,7 @@ API Router for Historical Data endpoints.
 Provides REST API for querying historical fermentation data, extracting patterns,
 and managing ETL imports.
 
-Related ADR: ADR-032 (Historical Data API Layer)
+Related ADR: ADR-032 (Historical Data API Layer), ADR-034 (Refactoring)
 """
 from typing import Dict, Any, Optional
 from datetime import date
@@ -12,7 +12,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Header
 from fastapi.responses import JSONResponse
 
 from src.shared.wine_fermentator_logging import get_logger
-from src.modules.fermentation.src.service_component.services.historical.historical_data_service import HistoricalDataService
+from src.modules.fermentation.src.service_component.interfaces.fermentation_service_interface import IFermentationService
+from src.modules.fermentation.src.service_component.interfaces.pattern_analysis_service_interface import IPatternAnalysisService
+from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
 from src.modules.fermentation.src.api_component.historical.schemas.requests.historical_requests import (
     HistoricalFermentationQueryRequest,
     PatternExtractionRequest
@@ -27,6 +29,30 @@ from src.modules.fermentation.src.api_component.historical.schemas.responses.his
     ImportTriggerResponse
 )
 from src.modules.fermentation.src.service_component.errors import NotFoundError
+
+# Import actual dependencies (ADR-034)
+from src.modules.fermentation.src.api.dependencies import (
+    get_fermentation_service,
+    get_pattern_analysis_service,
+    get_sample_service
+)
+
+# For backward compatibility with existing tests (ADR-034 - deprecated)
+# TODO: Remove after test migration
+def get_historical_data_service():
+    """
+    ⚠️ DEPRECATED: Placeholder for backward compatibility.
+    
+    Tests should be updated to use:
+    - get_fermentation_service() for fermentation queries
+    - get_pattern_analysis_service() for pattern extraction
+    - get_sample_service() for sample queries
+    """
+    raise NotImplementedError(
+        "HistoricalDataService is deprecated (ADR-034). "
+        "Use FermentationService, PatternAnalysisService, or SampleService instead."
+    )
+
 
 logger = get_logger(__name__)
 
@@ -45,16 +71,6 @@ def get_winery_id(x_winery_id: int = Header(..., alias="X-Winery-ID")) -> int:
     return x_winery_id
 
 
-def get_historical_data_service() -> HistoricalDataService:
-    """Dependency injection for HistoricalDataService.
-    
-    TODO: Implement proper dependency injection with repository instances.
-    This is a placeholder that will be replaced with actual DI container.
-    """
-    # This will be replaced with proper DI in integration
-    raise NotImplementedError("Service dependency injection not yet configured")
-
-
 @router.get(
     "",
     response_model=PaginatedHistoricalFermentationsResponse,
@@ -70,9 +86,12 @@ async def list_historical_fermentations(
     status: Optional[str] = Query(None, description="Filter by fermentation status"),
     limit: int = Query(100, ge=1, le=1000, description="Items per page"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
-    service: HistoricalDataService = Depends(get_historical_data_service)
+    service: IFermentationService = Depends(get_fermentation_service)
 ) -> PaginatedHistoricalFermentationsResponse:
-    """List historical fermentations with filters and pagination."""
+    """List historical fermentations with filters and pagination.
+    
+    ADR-034: Uses FermentationService with data_source='HISTORICAL' filter.
+    """
     logger.info(
         "Listing historical fermentations",
         extra={
@@ -88,32 +107,40 @@ async def list_historical_fermentations(
         }
     )
     
-    # Build filters dict
-    filters = {}
-    if start_date_from:
-        filters["start_date_from"] = start_date_from
-    if start_date_to:
-        filters["start_date_to"] = start_date_to
-    if fruit_origin_id:
-        filters["fruit_origin_id"] = fruit_origin_id
-    if status:
-        filters["status"] = status
-    
     try:
-        # Get fermentations from service
-        fermentations = await service.get_historical_fermentations(
+        # Get fermentations from service with data_source='HISTORICAL' (ADR-034)
+        fermentations = await service.get_fermentations_by_winery(
             winery_id=winery_id,
-            filters=filters,
-            limit=limit,
-            offset=offset
+            status=status,
+            include_completed=True,  # Historical data includes completed fermentations
+            data_source="HISTORICAL"  # ADR-034: Filter by data source
         )
+        
+        # Apply additional filters in-memory (TODO: push to service layer)
+        from datetime import datetime
+        if start_date_from:
+            fermentations = [
+                f for f in fermentations
+                if f.start_date and (
+                    f.start_date.date() if isinstance(f.start_date, datetime) else f.start_date
+                ) >= start_date_from
+            ]
+        if start_date_to:
+            fermentations = [
+                f for f in fermentations
+                if f.start_date and (
+                    f.start_date.date() if isinstance(f.start_date, datetime) else f.start_date
+                ) <= start_date_to
+            ]
+        if fruit_origin_id:
+            fermentations = [f for f in fermentations if f.fruit_origin_id == fruit_origin_id]
+        
+        # Apply pagination
+        total = len(fermentations)
+        fermentations = fermentations[offset:offset + limit]
         
         # Convert to response DTOs
         items = [HistoricalFermentationResponse.from_entity(f) for f in fermentations]
-        
-        # For now, total equals the returned count (pagination TODO: add total count to service)
-        # In production, service should return (items, total_count) tuple
-        total = len(items) + offset  # Approximate
         
         logger.info(
             "Retrieved historical fermentations",
@@ -177,19 +204,32 @@ async def list_import_jobs(
 async def get_historical_fermentation(
     fermentation_id: int,
     winery_id: int = Depends(get_winery_id),
-    service: HistoricalDataService = Depends(get_historical_data_service)
+    service: IFermentationService = Depends(get_fermentation_service)
 ) -> HistoricalFermentationResponse:
-    """Get a single historical fermentation by ID."""
+    """Get a single historical fermentation by ID.
+    
+    ADR-034: Uses FermentationService.get_fermentation() directly.
+    """
     logger.info(
         "Getting historical fermentation",
         extra={"winery_id": winery_id, "fermentation_id": fermentation_id}
     )
     
     try:
-        fermentation = await service.get_historical_fermentation_by_id(
+        fermentation = await service.get_fermentation(
             fermentation_id=fermentation_id,
             winery_id=winery_id
         )
+        
+        if not fermentation:
+            logger.warning(
+                "Historical fermentation not found",
+                extra={"winery_id": winery_id, "fermentation_id": fermentation_id}
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Fermentation with ID {fermentation_id} not found"
+            )
         
         logger.info(
             "Retrieved historical fermentation",
@@ -198,15 +238,8 @@ async def get_historical_fermentation(
         
         return HistoricalFermentationResponse.from_entity(fermentation)
         
-    except NotFoundError as e:
-        logger.warning(
-            "Historical fermentation not found",
-            extra={"winery_id": winery_id, "fermentation_id": fermentation_id}
-        )
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(
             "Error getting historical fermentation",
@@ -229,40 +262,60 @@ async def get_historical_fermentation(
 async def get_fermentation_samples(
     fermentation_id: int,
     winery_id: int = Depends(get_winery_id),
-    service: HistoricalDataService = Depends(get_historical_data_service)
+    fermentation_service: IFermentationService = Depends(get_fermentation_service),
+    sample_service: ISampleService = Depends(get_sample_service)
 ) -> list[HistoricalSampleResponse]:
-    """Get all samples for a historical fermentation."""
+    """Get all samples for a historical fermentation.
+    
+    ADR-034: Uses SampleService with data_source filter.
+    """
     logger.info(
         "Getting fermentation samples",
         extra={"winery_id": winery_id, "fermentation_id": fermentation_id}
     )
     
     try:
-        samples = await service.get_fermentation_samples(
+        # Verify fermentation exists and belongs to winery
+        fermentation = await fermentation_service.get_fermentation(
             fermentation_id=fermentation_id,
             winery_id=winery_id
         )
+        
+        if not fermentation:
+            logger.warning(
+                "Historical fermentation not found for samples",
+                extra={"winery_id": winery_id, "fermentation_id": fermentation_id}
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Fermentation with ID {fermentation_id} not found"
+            )
+        
+        # Get samples using SampleService
+        samples = await sample_service.get_samples_by_fermentation(
+            fermentation_id=fermentation_id,
+            winery_id=winery_id
+        )
+        
+        # Filter by data_source='HISTORICAL' (ADR-034)
+        historical_samples = [
+            s for s in samples
+            if getattr(s, 'data_source', 'HISTORICAL') == 'HISTORICAL'
+        ]
         
         logger.info(
             "Retrieved fermentation samples",
             extra={
                 "winery_id": winery_id,
                 "fermentation_id": fermentation_id,
-                "count": len(samples)
+                "count": len(historical_samples)
             }
         )
         
-        return [HistoricalSampleResponse.from_entity(s) for s in samples]
+        return [HistoricalSampleResponse.from_entity(s) for s in historical_samples]
         
-    except NotFoundError as e:
-        logger.warning(
-            "Historical fermentation not found for samples",
-            extra={"winery_id": winery_id, "fermentation_id": fermentation_id}
-        )
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(
             "Error getting fermentation samples",
@@ -287,10 +340,11 @@ async def extract_patterns(
     fruit_origin_id: Optional[int] = Query(None, description="Filter by fruit origin"),
     start_date: Optional[date] = Query(None, description="Start date for analysis range"),
     end_date: Optional[date] = Query(None, description="End date for analysis range"),
-    service: HistoricalDataService = Depends(get_historical_data_service)
+    service: IPatternAnalysisService = Depends(get_pattern_analysis_service)
 ) -> PatternResponse:
     """Extract aggregated patterns from historical fermentation data.
     
+    ADR-034: Uses dedicated PatternAnalysisService.
     This endpoint is designed for the Analysis Engine to consume historical
     patterns for predictive modeling and recommendations.
     """
@@ -309,9 +363,10 @@ async def extract_patterns(
         if start_date and end_date:
             date_range = (start_date, end_date)
         
-        # Extract patterns from service
+        # Extract patterns from service (ADR-034)
         patterns_dict = await service.extract_patterns(
             winery_id=winery_id,
+            data_source="HISTORICAL",  # ADR-034: Explicit data source
             fruit_origin_id=fruit_origin_id,
             date_range=date_range
         )
@@ -348,10 +403,11 @@ async def extract_patterns(
 )
 async def get_dashboard_statistics(
     winery_id: int = Depends(get_winery_id),
-    service: HistoricalDataService = Depends(get_historical_data_service)
+    service: IPatternAnalysisService = Depends(get_pattern_analysis_service)
 ) -> StatisticsResponse:
     """Get aggregated statistics for dashboard display.
     
+    ADR-034: Uses PatternAnalysisService.extract_patterns().
     TODO: This endpoint needs a dedicated service method for dashboard-specific
     metrics. For now, it reuses extract_patterns() which may not have all needed fields.
     """
@@ -361,10 +417,11 @@ async def get_dashboard_statistics(
     )
     
     try:
-        # Reuse pattern extraction for now
+        # Reuse pattern extraction for now (ADR-034)
         # TODO: Create dedicated get_statistics() method in service
         patterns_dict = await service.extract_patterns(
             winery_id=winery_id,
+            data_source="HISTORICAL",  # ADR-034: Explicit data source
             fruit_origin_id=None,
             date_range=None
         )

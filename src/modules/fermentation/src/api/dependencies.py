@@ -36,6 +36,10 @@ from src.modules.fermentation.src.service_component.services.value_validation_se
 from src.modules.fermentation.src.service_component.interfaces.business_rule_validation_service_interface import IBusinessRuleValidationService
 from src.modules.fermentation.src.service_component.services.business_rule_validation_service import BusinessRuleValidationService
 
+# Pattern Analysis Service (ADR-034)
+from src.modules.fermentation.src.service_component.interfaces.pattern_analysis_service_interface import IPatternAnalysisService
+from src.modules.fermentation.src.service_component.services.pattern_analysis_service import PatternAnalysisService
+
 
 def get_fermentation_validator() -> IFermentationValidator:
     """
@@ -235,4 +239,31 @@ async def get_unit_of_work(
     """
     session_manager = FastAPISessionManager(session)
     return UnitOfWork(session_manager)
+
+
+# ======================================================================================
+# Pattern Analysis Service (ADR-034)
+# ======================================================================================
+
+async def get_pattern_analysis_service(
+    fermentation_repo: Annotated[IFermentationRepository, Depends(get_fermentation_repository)],
+    sample_repo: Annotated[ISampleRepository, Depends(get_sample_repository)]
+) -> IPatternAnalysisService:
+    """
+    Dependency: Get pattern analysis service instance with injected dependencies.
+    
+    ADR-034: New service extracted from HistoricalDataService.
+    Provides statistical aggregation and pattern extraction for Analysis Engine.
+    
+    Args:
+        fermentation_repo: Fermentation repository (auto-injected with PostgreSQL session)
+        sample_repo: Sample repository (auto-injected with PostgreSQL session)
+        
+    Returns:
+        IPatternAnalysisService: Service instance with REAL database persistence
+    """
+    return PatternAnalysisService(
+        fermentation_repo=fermentation_repo,
+        sample_repo=sample_repo
+    )
 

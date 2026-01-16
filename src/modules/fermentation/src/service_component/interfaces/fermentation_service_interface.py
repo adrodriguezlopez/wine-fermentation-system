@@ -178,7 +178,8 @@ class IFermentationService(ABC):
         self,
         winery_id: int,
         status: Optional[FermentationStatus] = None,
-        include_completed: bool = False
+        include_completed: bool = False,
+        data_source: Optional[str] = None
     ) -> List[Fermentation]:
         """
         Retrieves fermentations for a winery with optional filters.
@@ -187,12 +188,14 @@ class IFermentationService(ABC):
         1. Applies winery scoping
         2. Filters by status if provided
         3. Optionally includes/excludes completed fermentations
-        4. Returns list ordered by start_date DESC
+        4. Filters by data source if provided (ADR-034)
+        5. Returns list ordered by start_date DESC
 
         Args:
             winery_id: ID of the winery
             status: Optional status filter
             include_completed: Whether to include completed fermentations
+            data_source: Optional data source filter (SYSTEM, HISTORICAL, MIGRATED) - ADR-034
 
         Returns:
             List[Fermentation]: List of fermentations matching criteria
