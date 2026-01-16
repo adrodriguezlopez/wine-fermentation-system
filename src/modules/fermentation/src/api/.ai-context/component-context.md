@@ -78,6 +78,23 @@
   - [x] aiosqlite dependency added
   - [x] All fixture tests passing
 
+### ADR-033 Phase 1: API Layer Coverage ✅ **COMPLETED** (January 15, 2026)
+- [x] **fermentation_router.py**: 44% → 97% coverage (+53 points)
+  - 24 tests total (5 initial + 19 new tests)
+  - 11/11 endpoints covered (POST create, POST blend, GET by ID, GET list, PATCH update, PATCH status, PATCH complete, DELETE, POST validate, GET timeline, GET statistics)
+  - Coverage: 124/128 statements (only 4 lines uncovered)
+  - All tests passing: 24/24 ✅
+- [x] **API Layer Target**: 85% → **97% EXCEEDED** ✅
+- [x] Testing patterns established:
+  - AsyncMock for async service methods
+  - Mock for synchronous validation
+  - HTTPException assertions (not direct service errors)
+  - @handle_service_errors decorator validation
+  - Multi-tenancy enforcement tests
+- [x] Documentation: component-context.md updated
+- [x] Commit: `feat: Complete fermentation_router tests - 97% coverage`
+- [x] Reference: ADR-033-code-coverage-improvement-strategy.md
+
 ### Phase 1: Schemas (In Progress - Nov 8, 2025)
 - [x] Response schemas (FermentationResponse, SampleResponse) ✅
   - [x] `FermentationResponse` with Pydantic v2 validation

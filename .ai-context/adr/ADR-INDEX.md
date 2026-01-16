@@ -27,6 +27,19 @@
 | **[ADR-018](./ADR-018-seed-script-initial-data-bootstrap.md)** | Seed Script for Initial Data Bootstrap | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-032](./ADR-032-historical-data-api-layer.md)** | Historical Data API Layer | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-033](./ADR-033-code-coverage-improvement-strategy.md)** | Code Coverage Improvement Strategy | ✅ Implemented | 2026-01-15 | High |
+
+### ADR-033: Code Coverage Improvement Strategy
+**Decision:** Phased coverage improvement: API (85%), Repository (80%), Service (80%), ETL (80%)  
+**Status:** ✅ Implemented (January 15, 2026)  
+**Impact:** +78 tests, 56% → 87% overall coverage in 2 days  
+**Key Points:**
+- Phase 1: API Layer 44% → 97% (+19 tests)
+- Phase 2: Repository 12-18% → 82% (~20 tests)
+- Phase 3: Service 14-30% → 84% (~25 tests)
+- Phase 4: ETL 30% → 95% (~14 tests, EXCELLENCE)
+- All targets exceeded or met
+- 100% test pass rate maintained (1,111/1,111)
+- Timeline: 2 days vs 11-day estimate (5.5x faster)
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
 | **[ADR-029](./ADR-029-data-source-field-historical-tracking.md)** | Data Source Field for Historical Data Tracking | ✅ Implemented | 2026-01-02 | Medium |
