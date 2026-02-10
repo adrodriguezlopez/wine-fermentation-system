@@ -55,18 +55,20 @@
 ### Protocol Engine (ADR-035) - ✅ PHASE 1 COMPLETE
 **Purpose**: Master template definitions for fermentation protocols with step tracking and execution monitoring.
 
-- **Domain Layer** (4 entities):
+**Status**: 29/29 tests PASSING ✅ | 903/903 system tests PASSING ✅
+
+- **Domain Layer** (4 entities, 595 LOC):
   - **FermentationProtocol**: Master protocol template with version control
   - **ProtocolStep**: Sequenced steps with dependencies and criticality
   - **ProtocolExecution**: Execution tracking with compliance scoring
   - **StepCompletion**: Audit trail with skip justification
   
-- **Enum Layer** (3 enums):
+- **Enum Layer** (3 enums, 20 values):
   - **StepType**: 14 protocol step types (temperature, nutrients, monitoring, process)
   - **ProtocolExecutionStatus**: NOT_STARTED, ACTIVE, COMPLETED, ABANDONED
   - **SkipReason**: 5 reasons for step skipping
   
-- **Repository Layer** (4 async repositories):
+- **Repository Layer** (4 async repositories, 460 LOC):
   - **FermentationProtocolRepository**: 9 methods for protocol CRUD and queries
   - **ProtocolStepRepository**: 7 methods for step management
   - **ProtocolExecutionRepository**: 8 methods for execution tracking
@@ -79,8 +81,14 @@
   - 14 enum validation tests
   - 15 repository contract tests
   - 24 integration tests (complex workflows, constraints, relationships)
-  
-**Details**: See [protocol-module-context.md](./protocol-module-context.md) and [protocol-domain-model.md](./protocol-domain-model.md)
+
+**Key Design Decisions** (See ADR-035):
+- Module Independence: No cross-module ORM relationships (prevents initialization failures)
+- Audit fields (created_by_user_id, verified_by_user_id) as plain integers
+- Async architecture with SQLAlchemy AsyncSession
+- Database FK constraints with selective ORM relationships
+
+**Reference**: See [ADR-035-protocol-data-model-schema.md](../../.ai-context/adr/ADR-035-protocol-data-model-schema.md) for full implementation details
 
 **Next Phase**: API Layer with endpoints for protocol CRUD and execution tracking (Proposed - ADR-035 Phase 2)
 
