@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion
 from src.modules.fermentation.src.domain.enums.step_type import SkipReason
-from src.modules.fermentation.src.repository_component.step_completion_repository_interface import (
+from src.modules.fermentation.src.domain.repositories.step_completion_repository_interface import (
     IStepCompletionRepository
 )
 
