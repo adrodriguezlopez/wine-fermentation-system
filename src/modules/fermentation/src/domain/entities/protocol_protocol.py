@@ -78,10 +78,10 @@ class FermentationProtocol(BaseEntity):
         foreign_keys="ProtocolExecution.protocol_id"
     )
     
-    created_by: Mapped["User"] = relationship(
+    created_by: Mapped[Optional["User"]] = relationship(
         "User",
         foreign_keys=[created_by_user_id],
-        lazy="joined",
+        lazy="select",
         back_populates=None
     )
     
