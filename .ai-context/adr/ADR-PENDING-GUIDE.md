@@ -30,12 +30,15 @@
    - **ETL Layer**: 30% → 95% (+65 points, ~14 tests, EXCELLENCE)
    - **Overall**: 56% → 87% (+31 points)
    - **Total**: +78 tests in 2 days (5.5x faster than estimate)
+16. **Historical Data Service Refactoring** - 100% (ADR-034 ✅) - January 15, 2026
+   - Eliminated 75% redundancy, added PatternAnalysisService
+   - Consolidated duplicate methods into existing services
+   - -150 lines code, clearer architecture
 
 ### Módulos en Progreso 🔄
-- **Refactoring**: ADR-034 (Historical Data Service) - Eliminar redundancia
+- **Analysis Engine Module**: ADR-020 - Phase 1: Domain + Repository (In Progress: January 16, 2026)
 
 ### Módulos Pendientes ⏳
-16. **Analysis Engine Module** - 0%
 17. **Action Tracking Module** - 0%
 18. **Frontend Module** - 0%
 
@@ -484,50 +487,72 @@ Después de implementar ADR-032, se detectó que **75% del HistoricalDataService
 
 ---
 
-### 4. Analysis Engine Module - Completo
+### 4. Analysis Engine Module - 🔄 IN PROGRESS
 
-#### ADR-020: Analysis Engine Architecture & Algorithms
-**Decisión a tomar:** Arquitectura del motor de análisis y algoritmos de comparación
+#### ADR-020: Analysis Engine Architecture & Algorithms ✅ DOCUMENTED - 🔄 IMPLEMENTING
+**Status:** Architecture complete, Phase 1 (Domain + Repository) in progress (January 16, 2026)
+
+**Decisión tomada:** Arquitectura del motor de análisis y algoritmos de comparación
 
 **Contexto:**
 - Core del valor del sistema: detectar anomalías y generar recomendaciones
-- Debe comparar fermentación actual vs patrones históricos
-- Necesita calcular "normalidad" y detectar desviaciones
-- Genera alertas cuando hay problemas potenciales
+- Compara fermentación actual vs patrones históricos (PatternAnalysisService de ADR-034)
+- Calcula "normalidad" y detecta desviaciones con hybrid algorithm
+- Genera recomendaciones basadas en templates validados por enólogo
 
-**Aspectos a decidir:**
+**Arquitectura Definida:**
 
-**Domain Layer:**
-- Entidades: Analysis, Anomaly, Recommendation, Alert
-- Value Objects: ComparisonResult, DeviationScore, ConfidenceLevel
-- Enums: AnomalyType, SeverityLevel, AlertStatus
+**Domain Layer:** (Phase 1 - EN PROGRESO)
+- **Entities**: Analysis, Anomaly, Recommendation, RecommendationTemplate
+- **Value Objects**: ComparisonResult, DeviationScore, ConfidenceLevel
+- **Enums**: AnomalyType (8 types), SeverityLevel (3), AnalysisStatus (4), RecommendationCategory (6)
+- **Repositories**: 4 interfaces + SQLAlchemy implementations
 
-**Service Layer:**
-- ComparisonService: Comparar fermentación vs históricos
-- AnomalyDetectionService: Detectar desviaciones significativas
-- RecommendationService: Generar sugerencias basadas en análisis
-- AlertService: Crear y gestionar alertas
+**Service Layer:** (Phase 2 - PENDIENTE - Esperando validación enólogo)
+- **AnalysisOrchestratorService**: Coordina flujo completo de análisis
+- **ComparisonService**: Compara fermentación vs históricos (usa PatternAnalysisService)
+- **AnomalyDetectionService**: Detecta desviaciones con hybrid algorithm (YAML rules + statistical)
+- **RecommendationService**: Genera sugerencias desde templates con ranking por efectividad
+- **RuleConfigService**: Carga y valida reglas desde anomaly_rules.yaml
 
-**Algorithms a definir:**
-- Método de comparación (¿estadístico? ¿machine learning simple?)
-- Cálculo de desviación (Z-score, percentiles, etc.)
-- Umbral de anomalía (¿cuándo es "preocupante"?)
-- Generación de recomendaciones (¿reglas hardcoded? ¿basadas en resultados históricos?)
+**Algorithms Definidos:**
+- **Comparison**: Varietal (P1) → fruit_origin (P2) → fermentation_type (P3) → initial_density (P4)
+- **Detection**: YAML rules ALWAYS + Z-score/percentiles if ≥10 historical samples
+- **Confidence**: LOW (<5), MEDIUM (5-15), HIGH (15-30), VERY_HIGH (>30) - always visible
+- **Recommendations**: Template-based con ranking por success rate histórico
 
-**API Layer:**
-- `/api/v1/fermentations/{id}/analysis` - Análisis completo de fermentación
-- `/api/v1/fermentations/{id}/anomalies` - Listar anomalías detectadas
-- `/api/v1/fermentations/{id}/recommendations` - Obtener recomendaciones
-- `/api/v1/alerts` - Gestionar alertas
+**API Layer:** (Phase 3 - PENDIENTE)
+- **POST** `/api/v1/fermentations/{id}/analyze` - Ejecutar análisis completo
+- **GET** `/api/v1/fermentations/{id}/analyses` - Listar análisis históricos
+- **GET** `/api/v1/fermentations/{id}/analyses/latest` - Último análisis
+- **GET** `/api/v1/analyses/{id}` - Análisis específico con anomalies + recommendations
+- **GET** `/api/v1/analyses/{id}/anomalies` - Solo anomalías
+- **GET** `/api/v1/analyses/{id}/recommendations` - Solo recomendaciones
+- **PATCH** `/api/v1/anomalies/{id}/resolve` - Marcar anomalía como resuelta
+- **PATCH** `/api/v1/recommendations/{id}/apply` - Marcar recomendación como aplicada
 
-**Temas críticos:**
-- Performance: análisis debe ser rápido (< 2 segundos)
-- Precisión vs false positives (balance)
-- Actualización en tiempo real (¿cada nuevo sample dispara análisis?)
-- Evolución del motor (¿cómo mejoramos algoritmos sin romper API?)
+**Temas Resueltos:**
+- ✅ Performance target: < 2 segundos (cache + query optimization)
+- ✅ Trigger strategy: Phase 1 on-demand (POST), Phase 2 event-driven
+- ✅ Confidence transparency: always show, reliability = honesty
+- ✅ YAML-driven rules: configurable thresholds sin redeployment
+
+**Bloqueadores Actuales:**
+- ⏳ Waiting for enologist validation (see `preguntas-enologo.md`):
+  - Numerical thresholds (3 days? 15°C? 2 points density?)
+  - Top 3 most critical/frequent anomalies
+  - Initial recommendation templates (5-10 protocols)
+  - Varietal data availability confirmation
+
+**Implementation Timeline:**
+- **Phase 1** (Domain + Repository): 3-4 days - IN PROGRESS ✅
+- **Phase 2** (Service Layer): 4 days - BLOCKED (awaiting enologist)
+- **Phase 3** (Orchestration + API): 3 days - PENDING
+- **Phase 4** (Seed Data + E2E): 2 days - PENDING
+- **Phase 5** (Documentation + Deployment): 1 day - PENDING
 
 **Impacto:**
-- Muy Alto: Este es el diferenciador clave del sistema
+- **Critical**: Este es el diferenciador clave del sistema - transforma de CRUD a intelligent decision support
 
 ---
 

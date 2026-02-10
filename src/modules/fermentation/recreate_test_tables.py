@@ -25,6 +25,10 @@ from src.modules.winery.src.domain.entities.winery import Winery
 from src.modules.fruit_origin.src.domain.entities.vineyard import Vineyard
 from src.modules.fruit_origin.src.domain.entities.vineyard_block import VineyardBlock
 from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot
+from src.modules.analysis_engine.src.domain.entities.analysis import Analysis
+from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly
+from src.modules.analysis_engine.src.domain.entities.recommendation import Recommendation
+from src.modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate
 
 async def recreate_all_tables():
     engine = create_async_engine(

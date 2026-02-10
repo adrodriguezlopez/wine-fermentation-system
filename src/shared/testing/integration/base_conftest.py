@@ -110,10 +110,15 @@ def create_integration_fixtures(config: IntegrationTestConfig) -> Dict[str, Any]
         from src.shared.infra.orm.base_entity import Base
         from sqlalchemy.ext.asyncio import create_async_engine
         
+        # check_same_thread is SQLite-specific, don't use it for PostgreSQL
+        connect_args = {}
+        if "sqlite" in config.test_database_url.lower():
+            connect_args = {"check_same_thread": False}
+        
         engine = create_async_engine(
             config.test_database_url,
             echo=False,
-            connect_args={"check_same_thread": False},
+            connect_args=connect_args,
         )
         
         # Register models - importing ensures they're in Base.metadata
