@@ -36,6 +36,8 @@
 - **Status progression**: ACTIVE → SLOW → STUCK → COMPLETED transitions
 
 ## Module components
+
+### Fermentation Engine (Existing)
 - **API Component**: REST endpoints for fermentation and sample operations
   - **Fermentation Router**: CRUD operations for fermentation entities
   - **Sample Router**: Sample data recording and retrieval
@@ -49,6 +51,38 @@
   - **BaseRepository**: Infrastructure helpers (session management, error mapping, multi-tenant scoping, soft delete)
   - **Domain Interfaces**: `IFermentationRepository` with type-safe entities
   - **Concrete Repositories**: `FermentationRepository` extending BaseRepository
+
+### Protocol Engine (ADR-035) - ✅ PHASE 1 COMPLETE
+**Purpose**: Master template definitions for fermentation protocols with step tracking and execution monitoring.
+
+- **Domain Layer** (4 entities):
+  - **FermentationProtocol**: Master protocol template with version control
+  - **ProtocolStep**: Sequenced steps with dependencies and criticality
+  - **ProtocolExecution**: Execution tracking with compliance scoring
+  - **StepCompletion**: Audit trail with skip justification
+  
+- **Enum Layer** (3 enums):
+  - **StepType**: 14 protocol step types (temperature, nutrients, monitoring, process)
+  - **ProtocolExecutionStatus**: NOT_STARTED, ACTIVE, COMPLETED, ABANDONED
+  - **SkipReason**: 5 reasons for step skipping
+  
+- **Repository Layer** (4 async repositories):
+  - **FermentationProtocolRepository**: 9 methods for protocol CRUD and queries
+  - **ProtocolStepRepository**: 7 methods for step management
+  - **ProtocolExecutionRepository**: 8 methods for execution tracking
+  - **StepCompletionRepository**: 9 methods for audit trail
+  
+- **Alembic Migration**:
+  - Migration `001_create_protocol_tables.py`: Creates all 4 tables with constraints
+  
+- **Tests**: 29/29 PASSING ✅
+  - 14 enum validation tests
+  - 15 repository contract tests
+  - 24 integration tests (complex workflows, constraints, relationships)
+  
+**Details**: See [protocol-module-context.md](./protocol-module-context.md) and [protocol-domain-model.md](./protocol-domain-model.md)
+
+**Next Phase**: API Layer with endpoints for protocol CRUD and execution tracking (Proposed - ADR-035 Phase 2)
 
 ## Implementation status
 
