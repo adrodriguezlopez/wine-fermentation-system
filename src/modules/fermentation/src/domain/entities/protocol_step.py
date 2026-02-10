@@ -83,7 +83,7 @@ class ProtocolStep(BaseEntity):
     
     dependency: Mapped[Optional["ProtocolStep"]] = relationship(
         "ProtocolStep",
-        remote_side=[id],
+        remote_side="[ProtocolStep.id]",
         foreign_keys=[depends_on_step_id],
         lazy="joined"
     )

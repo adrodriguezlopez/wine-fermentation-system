@@ -16,7 +16,6 @@ from src.modules.fermentation.src.domain.enums.step_type import SkipReason
 if TYPE_CHECKING:
     from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
     from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
-    from src.shared.auth.domain.entities.user import User
 
 
 class StepCompletion(BaseEntity):
@@ -47,7 +46,7 @@ class StepCompletion(BaseEntity):
                                               nullable=False, index=True)
     step_id: Mapped[int] = mapped_column(ForeignKey("protocol_steps.id"), 
                                         nullable=False, index=True)
-    verified_by_user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    verified_by_user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # Audit: who verified - no FK to avoid module dependencies
     
     # Completion details
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # When was it done?
@@ -77,12 +76,6 @@ class StepCompletion(BaseEntity):
         "ProtocolStep",
         back_populates="completions",
         foreign_keys=[step_id],
-        lazy="joined"
-    )
-    
-    verified_by: Mapped[Optional["User"]] = relationship(
-        "User",
-        foreign_keys=[verified_by_user_id],
         lazy="joined"
     )
     

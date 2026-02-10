@@ -14,7 +14,6 @@ from src.shared.infra.orm.base_entity import BaseEntity
 from src.modules.fermentation.src.domain.enums.step_type import ProtocolExecutionStatus
 
 if TYPE_CHECKING:
-    from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
     from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol
     from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion
 
@@ -63,12 +62,6 @@ class ProtocolExecution(BaseEntity):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     
     # Relationships
-    fermentation: Mapped["Fermentation"] = relationship(
-        "Fermentation",
-        foreign_keys=[fermentation_id],
-        lazy="joined"
-    )
-    
     protocol: Mapped["FermentationProtocol"] = relationship(
         "FermentationProtocol",
         back_populates="executions",

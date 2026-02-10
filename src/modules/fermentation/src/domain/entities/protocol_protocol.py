@@ -13,7 +13,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.shared.infra.orm.base_entity import BaseEntity
 
 if TYPE_CHECKING:
-    from src.shared.auth.domain.entities.user import User
     from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
     from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
 
@@ -38,7 +37,7 @@ class FermentationProtocol(BaseEntity):
     
     # Foreign keys
     winery_id: Mapped[int] = mapped_column(ForeignKey("wineries.id"), nullable=False, index=True)
-    created_by_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_by_user_id: Mapped[int] = mapped_column(Integer, nullable=False)  # Audit: user who created - no FK to avoid module dependencies
     
     # Varietal identification
     varietal_code: Mapped[str] = mapped_column(String(10), nullable=False)  # "PN", "CH", "CS"
@@ -76,13 +75,6 @@ class FermentationProtocol(BaseEntity):
         cascade="all, delete-orphan",
         lazy="select",
         foreign_keys="ProtocolExecution.protocol_id"
-    )
-    
-    created_by: Mapped[Optional["User"]] = relationship(
-        "User",
-        foreign_keys=[created_by_user_id],
-        lazy="select",
-        back_populates=None
     )
     
     def __repr__(self) -> str:

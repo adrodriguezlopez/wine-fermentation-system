@@ -51,6 +51,8 @@ $testResults = @{
     FruitOriginIntegration = $null
     FruitOriginAPI = $null
     AnalysisEngineIntegration = $null
+    ProtocolUnit = $null
+    ProtocolIntegration = $null
     FermentationUnit = $null
     FermentationIntegration = $null
     FermentationAPI = $null
@@ -298,6 +300,94 @@ Write-Host "Running: Analysis Engine - Integration Tests (SKIPPED)" -ForegroundC
 Write-Host "--------------------------------------------" -ForegroundColor Yellow
 Write-Host "[SKIP] Analysis Engine - Integration Tests: Requires manual execution from root" -ForegroundColor Yellow
 $testResults.AnalysisEngineIntegration = @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
+
+# Run Protocol (ADR-035) Unit Tests (enums + repositories)
+Write-Host "`n"
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+Write-Host "Running: Protocol (ADR-035) - Unit Tests" -ForegroundColor Yellow
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+
+try {
+    Push-Location "src/modules/fermentation"
+    $output = & poetry run pytest tests/unit/test_protocol_enums.py tests/unit/test_protocol_repositories.py -q --tb=line 2>&1
+    $exitCode = $LASTEXITCODE
+    Pop-Location
+} catch {
+    Write-Host "[FAIL] Protocol Unit Tests: Exception occurred" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    $testResults.ProtocolUnit = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+    $allPassed = $false
+}
+
+if ($exitCode -eq 0) {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+passed" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        if ($summaryText -match '(\d+)\s+passed') {
+            $passed = [int]($Matches[1])
+        }
+        Write-Host "[PASS] Protocol (ADR-035) - Unit Tests: $passed tests passed" -ForegroundColor Green
+        $testResults.ProtocolUnit = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+    } else {
+        Write-Host "[WARN] Protocol Unit Tests: Could not parse test count" -ForegroundColor Yellow
+        $testResults.ProtocolUnit = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+        $allPassed = $false
+    }
+} else {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error)" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+        $failed = 0
+        if ($summaryText -match '(\d+)\s+failed') { $failed = [int]($Matches[1]) }
+        Write-Host "[FAIL] Protocol (ADR-035) - Unit Tests: $passed passed, $failed failed" -ForegroundColor Red
+        $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+        $testResults.ProtocolUnit = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
+        $allPassed = $false
+    }
+}
+
+# Run Protocol (ADR-035) Integration Tests
+if (-not $Quick) {
+    Write-Host "`n"
+    Write-Host "--------------------------------------------" -ForegroundColor Yellow
+    Write-Host "Running: Protocol (ADR-035) - Integration Tests" -ForegroundColor Yellow
+    Write-Host "--------------------------------------------" -ForegroundColor Yellow
+    
+    try {
+        Push-Location "src/modules/fermentation"
+        $output = & poetry run pytest tests/integration/test_protocol_integration.py -q --tb=line 2>&1
+        $exitCode = $LASTEXITCODE
+        Pop-Location
+    } catch {
+        Write-Host "[FAIL] Protocol Integration Tests: Exception occurred" -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        $testResults.ProtocolIntegration = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+        $allPassed = $false
+    }
+    
+    if ($exitCode -eq 0) {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|skipped)" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            Write-Host "[PASS] Protocol (ADR-035) - Integration Tests: $passed tests passed" -ForegroundColor Green
+            $testResults.ProtocolIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+        }
+    } else {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error|skipped)" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            Write-Host "[FAIL] Protocol (ADR-035) - Integration Tests: Import errors detected" -ForegroundColor Yellow
+            $testResults.ProtocolIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+        }
+    }
+}
 
 # Run Fermentation Unit Tests
 Write-Host "`n"
