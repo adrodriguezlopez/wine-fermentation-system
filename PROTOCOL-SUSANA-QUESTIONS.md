@@ -1,4 +1,4 @@
-# Uncertainties for Susana (Enologist) - Protocol Implementation
+# Uncertainties Enologist - Protocol Implementation
 
 **Date**: February 7, 2026  
 **Purpose**: Validate assumptions before implementing Protocol Compliance Engine  

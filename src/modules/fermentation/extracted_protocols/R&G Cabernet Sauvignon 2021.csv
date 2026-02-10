@@ -1,0 +1,21 @@
+varietal_name,varietal_code,color,protocol_name,version,step_order,step_type,description,expected_day,tolerance_hours,is_critical,duration_minutes
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,1,YEAST_INOCULATION,Inoculate with BM45 yeast (robust strain). Use 20g/hL at 24°C,0,2,True,120
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,2,TEMPERATURE_CHECK,Set fermentation at 24-26°C for Cabernet (warmer than Pinot),0,6,True,15
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,3,BRIX_READING,Initial Brix (expect 25-26 for Cabernet),1,8,True,15
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,4,PUNCH_DOWN,Punch down cap 2x daily (strong cap management needed),1,6,True,45
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,5,H2S_CHECK,"Monitor for H2S (lower risk than Pinot, but check anyway)",2,12,False,10
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,6,DAP_ADDITION,Add DAP at 1/3 sugar depletion (~17 Brix). Apply 75-150 mg/L,3,6,True,45
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,7,TEMPERATURE_CHECK,Maintain 24-26°C fermentation temperature,4,6,False,15
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,8,BRIX_READING,Monitor Brix at 1/3 fermentation (~13 Brix),5,8,True,15
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,9,PUNCH_DOWN,Continue punch-down 2x daily,7,6,True,45
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,10,VISUAL_INSPECTION,Assess color development and tannin extraction,10,12,False,30
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,11,BRIX_READING,Monitor at 2/3 fermentation (~8 Brix),12,8,True,15
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,12,PUNCH_DOWN,Reduce punch-down to 1x daily after 2/3 fermentation,13,6,True,40
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,13,BRIX_READING,Final gravity (<1 Brix = dry),20,8,True,15
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,14,EXTENDED_MACERATION,Post-fermentation skin contact for 7-10 days (Cabernet specialty),21,24,False,10080
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,15,SO2_ADDITION,Add SO2 after post-fermentation maceration ends. Target 60-80 mg/L free SO2,28,4,True,30
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,16,PRESSING,Press pomace. Blend free run and press wines,28,4,True,360
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,17,RACKING,Initial racking off gross lees,35,12,False,120
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,18,MLF_INOCULATION,Inoculate with malolactic bacteria (typical for Cabernet),36,24,False,30
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,19,TEMPERATURE_CHECK,Maintain 18-22°C during MLF,45,12,False,15
+Cabernet Sauvignon,CS,RED,CS-2021-Standard,1.0,20,VISUAL_INSPECTION,Monitor MLF completion (6-12 weeks typical),90,48,False,30

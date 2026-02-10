@@ -1,0 +1,195 @@
+{
+  "winery": "R&G",
+  "varietal_code": "PN",
+  "varietal_name": "Pinot Noir",
+  "year": 2021,
+  "color": "RED",
+  "protocol_name": "PN-2021-Standard",
+  "version": "1.0",
+  "expected_duration_days": 20,
+  "description": "Standard Pinot Noir fermentation protocol for Napa Valley conditions. Emphasis on H2S management and gentle extraction.",
+  "steps": [
+    {
+      "step_order": 1,
+      "step_type": "YEAST_INOCULATION",
+      "description": "Inoculate with Rc212 yeast at 20\u00b0C. Use 20g/hL dry yeast rehydrated at 35\u00b0C",
+      "expected_day": 0,
+      "tolerance_hours": 2,
+      "is_critical": true,
+      "duration_minutes": 120
+    },
+    {
+      "step_order": 2,
+      "step_type": "TEMPERATURE_CHECK",
+      "description": "Check fermentation temperature - maintain 18-22\u00b0C",
+      "expected_day": 0,
+      "tolerance_hours": 6,
+      "is_critical": false,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 3,
+      "step_type": "H2S_CHECK",
+      "description": "Check for H2S smell (rotten egg). Pinot Noir is HIGH RISK varietal",
+      "expected_day": 1,
+      "tolerance_hours": 6,
+      "is_critical": true,
+      "duration_minutes": 10
+    },
+    {
+      "step_order": 4,
+      "step_type": "BRIX_READING",
+      "description": "Measure Brix (expect ~24). Record gravity for 1/3 completion tracking",
+      "expected_day": 1,
+      "tolerance_hours": 8,
+      "is_critical": true,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 5,
+      "step_type": "DAP_ADDITION",
+      "description": "Add DAP (Di-ammonium phosphate) at 1/3 sugar depletion (~16 Brix). Apply 75-150 mg/L",
+      "expected_day": 2,
+      "tolerance_hours": 4,
+      "is_critical": true,
+      "duration_minutes": 45
+    },
+    {
+      "step_order": 6,
+      "step_type": "PUNCH_DOWN",
+      "description": "Punch down cap 2x daily (morning + evening). Duration 30-40 minutes each",
+      "expected_day": 1,
+      "tolerance_hours": 6,
+      "is_critical": false,
+      "duration_minutes": 40
+    },
+    {
+      "step_order": 7,
+      "step_type": "H2S_CHECK",
+      "description": "Daily H2S monitoring - critical for Pinot Noir",
+      "expected_day": 3,
+      "tolerance_hours": 6,
+      "is_critical": true,
+      "duration_minutes": 10
+    },
+    {
+      "step_order": 8,
+      "step_type": "TEMPERATURE_CHECK",
+      "description": "Maintain 18-22\u00b0C. Increase ventilation if above 22\u00b0C",
+      "expected_day": 3,
+      "tolerance_hours": 6,
+      "is_critical": false,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 9,
+      "step_type": "BRIX_READING",
+      "description": "Check Brix at 1/2 fermentation (~12 Brix)",
+      "expected_day": 5,
+      "tolerance_hours": 8,
+      "is_critical": true,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 10,
+      "step_type": "NUTRIENT_ADDITION",
+      "description": "Add yeast nutrient if fermentation slowing (apply 0.5g/L Fermaid K or equivalent)",
+      "expected_day": 6,
+      "tolerance_hours": 6,
+      "is_critical": false,
+      "duration_minutes": 30
+    },
+    {
+      "step_order": 11,
+      "step_type": "PUNCH_DOWN",
+      "description": "Continue punch-down 2x daily through fermentation",
+      "expected_day": 7,
+      "tolerance_hours": 6,
+      "is_critical": false,
+      "duration_minutes": 40
+    },
+    {
+      "step_order": 12,
+      "step_type": "H2S_CHECK",
+      "description": "H2S monitoring continues daily",
+      "expected_day": 9,
+      "tolerance_hours": 6,
+      "is_critical": true,
+      "duration_minutes": 10
+    },
+    {
+      "step_order": 13,
+      "step_type": "BRIX_READING",
+      "description": "Monitor Brix approaching dry (~2-3 Brix)",
+      "expected_day": 12,
+      "tolerance_hours": 8,
+      "is_critical": true,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 14,
+      "step_type": "VISUAL_INSPECTION",
+      "description": "Assess color, tannin extraction, cap condition",
+      "expected_day": 13,
+      "tolerance_hours": 12,
+      "is_critical": false,
+      "duration_minutes": 30
+    },
+    {
+      "step_order": 15,
+      "step_type": "BRIX_READING",
+      "description": "Final gravity check (<1 Brix = dry)",
+      "expected_day": 15,
+      "tolerance_hours": 8,
+      "is_critical": true,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 16,
+      "step_type": "SO2_ADDITION",
+      "description": "Add SO2 after press. Target 50-75 mg/L free SO2",
+      "expected_day": 16,
+      "tolerance_hours": 4,
+      "is_critical": true,
+      "duration_minutes": 30
+    },
+    {
+      "step_order": 17,
+      "step_type": "PRESSING",
+      "description": "Press pomace. Separate free run and press wines",
+      "expected_day": 16,
+      "tolerance_hours": 4,
+      "is_critical": true,
+      "duration_minutes": 360
+    },
+    {
+      "step_order": 18,
+      "step_type": "RACKING",
+      "description": "Initial racking off gross lees after pressing",
+      "expected_day": 20,
+      "tolerance_hours": 12,
+      "is_critical": false,
+      "duration_minutes": 120
+    },
+    {
+      "step_order": 19,
+      "step_type": "MLF_INOCULATION",
+      "description": "Inoculate with malolactic bacteria (optional for Pinot Noir, enhances complexity)",
+      "expected_day": 21,
+      "tolerance_hours": 24,
+      "is_critical": false,
+      "duration_minutes": 30
+    },
+    {
+      "step_order": 20,
+      "step_type": "VISUAL_INSPECTION",
+      "description": "Final check - monitor MLF progress over next 2-3 months",
+      "expected_day": 45,
+      "tolerance_hours": 48,
+      "is_critical": false,
+      "duration_minutes": 30
+    }
+  ],
+  "extracted_at": "2026-02-09T22:04:51.332595",
+  "source": "Template (PDF is scanned image - manual extraction recommended later)"
+}
