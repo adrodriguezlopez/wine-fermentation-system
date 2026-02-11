@@ -3,7 +3,7 @@ Repository Interface for StepCompletion
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime
 from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion
 
@@ -75,4 +75,15 @@ class IStepCompletionRepository(ABC):
         verified_by_user_id: Optional[int] = None
     ) -> StepCompletion:
         """Record a skipped step"""
+        pass    
+    @abstractmethod
+    async def list_by_execution_paginated(
+        self, execution_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[StepCompletion], int]:
+        """
+        Get completions for an execution with pagination.
+        
+        Returns:
+            Tuple of (completions list, total count)
+        """
         pass

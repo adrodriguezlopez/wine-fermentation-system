@@ -3,7 +3,7 @@ Repository Interface for ProtocolStep
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
 
 
@@ -43,4 +43,16 @@ class IProtocolStepRepository(ABC):
     @abstractmethod
     async def get_by_order(self, protocol_id: int, step_order: int) -> Optional[ProtocolStep]:
         """Get step by protocol and order"""
+        pass
+    
+    @abstractmethod
+    async def list_by_protocol_paginated(
+        self, protocol_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[ProtocolStep], int]:
+        """
+        Get steps for a protocol with pagination.
+        
+        Returns:
+            Tuple of (steps list, total count)
+        """
         pass

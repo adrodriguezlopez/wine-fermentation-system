@@ -7,8 +7,8 @@ Handles audit log entries for protocol step execution.
 """
 
 from datetime import datetime
-from typing import List, Optional
-from sqlalchemy import select, and_
+from typing import List, Optional, Tuple
+from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion
@@ -229,3 +229,35 @@ class StepCompletionRepository(IStepCompletionRepository):
         )
         
         return await self.create(completion)
+    
+    async def list_by_execution_paginated(
+        self, execution_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[StepCompletion], int]:
+        """
+        Get completions for an execution with pagination.
+        
+        Args:
+            execution_id: Execution ID
+            page: Page number (1-indexed)
+            page_size: Number of results per page
+            
+        Returns:
+            Tuple of (completions list, total count)
+        """
+        # Get total count
+        count_stmt = select(func.count(StepCompletion.id)).where(
+            StepCompletion.execution_id == execution_id
+        )
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalars().first() or 0
+        
+        # Get paginated results
+        offset = (page - 1) * page_size
+        stmt = select(StepCompletion).where(
+            StepCompletion.execution_id == execution_id
+        ).order_by(StepCompletion.created_at).offset(offset).limit(page_size)
+        
+        result = await self.session.execute(stmt)
+        completions = result.scalars().all()
+        
+        return completions, total_count

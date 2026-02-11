@@ -5,8 +5,8 @@ Async repository for ProtocolExecution entity persistence.
 Uses SQLAlchemy async session for database operations.
 """
 
-from typing import List, Optional
-from sqlalchemy import select
+from typing import List, Optional, Tuple
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
@@ -160,3 +160,35 @@ class ProtocolExecutionRepository(IProtocolExecutionRepository):
         
         result = await self.session.execute(stmt)
         return result.scalars().all()
+    
+    async def list_by_winery_paginated(
+        self, winery_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[ProtocolExecution], int]:
+        """
+        Get executions for a winery with pagination.
+        
+        Args:
+            winery_id: Winery ID
+            page: Page number (1-indexed)
+            page_size: Number of results per page
+            
+        Returns:
+            Tuple of (executions list, total count)
+        """
+        # Get total count
+        count_stmt = select(func.count(ProtocolExecution.id)).where(
+            ProtocolExecution.winery_id == winery_id
+        )
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalars().first() or 0
+        
+        # Get paginated results
+        offset = (page - 1) * page_size
+        stmt = select(ProtocolExecution).where(
+            ProtocolExecution.winery_id == winery_id
+        ).order_by(ProtocolExecution.id.desc()).offset(offset).limit(page_size)
+        
+        result = await self.session.execute(stmt)
+        executions = result.scalars().all()
+        
+        return executions, total_count

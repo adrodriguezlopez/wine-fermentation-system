@@ -5,8 +5,8 @@ Async repository for ProtocolStep entity persistence.
 Uses SQLAlchemy async session for database operations.
 """
 
-from typing import List, Optional
-from sqlalchemy import select
+from typing import List, Optional, Tuple
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
@@ -142,3 +142,35 @@ class ProtocolStepRepository(IProtocolStepRepository):
         )
         result = await self.session.execute(stmt)
         return result.scalars().first()
+    
+    async def list_by_protocol_paginated(
+        self, protocol_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[ProtocolStep], int]:
+        """
+        Get steps for a protocol with pagination.
+        
+        Args:
+            protocol_id: Protocol ID
+            page: Page number (1-indexed)
+            page_size: Number of results per page
+            
+        Returns:
+            Tuple of (steps list, total count)
+        """
+        # Get total count
+        count_stmt = select(func.count(ProtocolStep.id)).where(
+            ProtocolStep.protocol_id == protocol_id
+        )
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalars().first() or 0
+        
+        # Get paginated results
+        offset = (page - 1) * page_size
+        stmt = select(ProtocolStep).where(
+            ProtocolStep.protocol_id == protocol_id
+        ).order_by(ProtocolStep.step_order).offset(offset).limit(page_size)
+        
+        result = await self.session.execute(stmt)
+        steps = result.scalars().all()
+        
+        return steps, total_count

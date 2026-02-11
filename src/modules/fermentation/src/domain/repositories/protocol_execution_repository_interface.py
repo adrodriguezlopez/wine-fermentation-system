@@ -3,8 +3,9 @@ Repository Interface for ProtocolExecution
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
+from src.modules.fermentation.src.domain.enums.step_type import ProtocolExecutionStatus
 
 
 class IProtocolExecutionRepository(ABC):
@@ -48,4 +49,15 @@ class IProtocolExecutionRepository(ABC):
     @abstractmethod
     async def get_active_by_winery(self, winery_id: int) -> List[ProtocolExecution]:
         """Get all active protocol executions for a winery"""
+        pass    
+    @abstractmethod
+    async def list_by_winery_paginated(
+        self, winery_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[ProtocolExecution], int]:
+        """
+        Get executions for a winery with pagination.
+        
+        Returns:
+            Tuple of (executions list, total count)
+        """
         pass
