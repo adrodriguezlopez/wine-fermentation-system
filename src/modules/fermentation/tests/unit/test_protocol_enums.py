@@ -15,41 +15,33 @@ from src.modules.fermentation.src.domain.enums.step_type import (
 class TestStepTypeEnum:
     """Test StepType enum values."""
     
-    def test_step_type_has_yeast_inoculation(self):
-        """Verify YEAST_INOCULATION is in StepType."""
-        assert hasattr(StepType, 'YEAST_INOCULATION')
-        assert StepType.YEAST_INOCULATION.value == 'YEAST_INOCULATION'
+    def test_step_type_has_initialization(self):
+        """Verify INITIALIZATION is in StepType."""
+        assert hasattr(StepType, 'INITIALIZATION')
+        assert StepType.INITIALIZATION.value == 'INITIALIZATION'
     
     def test_step_type_has_all_expected_values(self):
-        """Verify StepType enum has all expected step types."""
+        """Verify StepType enum has all expected step type categories.
+        
+        DESIGN NOTE: StepType contains CATEGORIES of work (Feb 10, 2026):
+        - Specific step details go in ProtocolStep.description
+        - Example: INITIALIZATION category, "Yeast Inoculation - Red Star Premier" description
+        """
         expected_types = {
-            'YEAST_INOCULATION',
-            'COLD_SOAK',
-            'TEMPERATURE_CHECK',
-            'H2S_CHECK',
-            'BRIX_READING',
-            'VISUAL_INSPECTION',
-            'DAP_ADDITION',
-            'NUTRIENT_ADDITION',
-            'SO2_ADDITION',
-            'MLF_INOCULATION',
-            'PUNCH_DOWN',
-            'PUMP_OVER',
-            'PRESSING',
-            'EXTENDED_MACERATION',
-            'SETTLING',
-            'RACKING',
-            'FILTERING',
-            'CLARIFICATION',
-            'CATA_TASTING'
+            'INITIALIZATION',      # Pre-fermentation setup
+            'MONITORING',          # Observation & measurement
+            'ADDITIONS',           # Nutrient & SO2 additions
+            'CAP_MANAGEMENT',      # Punch down, pump over
+            'POST_FERMENTATION',   # Pressing, racking, filtering, etc.
+            'QUALITY_CHECK'        # Tasting & analysis
         }
         
         enum_values = {e.name for e in StepType}
         assert enum_values == expected_types, f"Missing or extra types: {enum_values.symmetric_difference(expected_types)}"
     
     def test_step_type_count(self):
-        """Verify StepType has exactly 19 values."""
-        assert len(list(StepType)) == 19
+        """Verify StepType has exactly 6 category values."""
+        assert len(list(StepType)) == 6
 
 
 class TestProtocolExecutionStatusEnum:

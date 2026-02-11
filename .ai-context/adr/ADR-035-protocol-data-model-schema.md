@@ -76,8 +76,8 @@ class ProtocolStep(BaseEntity):
     id: int
     protocol_id: int  # Foreign key
     step_order: int  # 1, 2, 3, ... (must be unique per protocol)
-    step_type: StepType  # Enum
-    description: str  # "Add DAP at 1/3 sugar depletion"
+    step_type: StepType  # Category enum (INITIALIZATION, MONITORING, etc.)
+    description: str  # Specific step: "Yeast Inoculation - Red Star Premier Cuvée"
     
     # Timing
     expected_day: int  # Which day? (0=crush day, 1=next day, etc.)
@@ -110,29 +110,44 @@ class ProtocolStep(BaseEntity):
 - ✅ `tolerance_hours` captures Napa-specific timing requirements
 - ✅ `can_repeat_daily` handles steps like temperature checks (multiple/day)
 - ✅ `depends_on_step_id` models hard dependencies
+- ✅ **NEW**: `step_type` is a category (not a specific step name)
+- ✅ **NEW**: `description` stores the specific step details (yeast type, nutrient brand, etc.)
+- ✅ Extensible: Add new steps without modifying enum
 - ✅ Flexible enough for reds vs whites differences
 
-**Step Type Examples (Enum)**:
+**Design Rationale** (Updated Feb 10, 2026):
+Previously, `StepType` contained specific step names (YEAST_INOCULATION, H2S_CHECK, etc.), making the enum rigid. Now:
+- `StepType` = **Category** (what kind of work)
+- `description` = **Specific step** (which exact action + details)
+
+This allows:
+- Different yeast types in INITIALIZATION category
+- Different nutrient additions in ADDITIONS category
+- Protocol flexibility without enum changes
+- Better extensibility for future winemaking practices
+
+**Step Type Categories (Enum)**:
 ```python
 class StepType(str, Enum):
-    YEAST_INOCULATION = "YEAST_INOCULATION"
-    H2S_CHECK = "H2S_CHECK"
-    TEMPERATURE_CHECK = "TEMPERATURE_CHECK"
-    BRIX_READING = "BRIX_READING"
-    DAP_ADDITION = "DAP_ADDITION"
-    NUTRIENT_ADDITION = "NUTRIENT_ADDITION"
-    PUNCH_DOWN = "PUNCH_DOWN"
-    PUMP_OVER = "PUMP_OVER"
-    SO2_ADDITION = "SO2_ADDITION"
-    PRESSING = "PRESSING"
-    COLD_SOAK = "COLD_SOAK"
-    MLF_INOCULATION = "MLF_INOCULATION"
-    VISUAL_INSPECTION = "VISUAL_INSPECTION"
-    CATA_TASTING = "CATA_TASTING"
-    RACKING = "RACKING"
-    FILTERING = "FILTERING"
-    CLARIFICATION = "CLARIFICATION"
+    """Category/type of fermentation work"""
+    INITIALIZATION = "INITIALIZATION"      # Pre-fermentation setup
+    MONITORING = "MONITORING"              # Observation & measurement
+    ADDITIONS = "ADDITIONS"                # Nutrient & SO2 additions
+    CAP_MANAGEMENT = "CAP_MANAGEMENT"      # Punch down, pump over
+    POST_FERMENTATION = "POST_FERMENTATION"  # Pressing, racking, filtering
+    QUALITY_CHECK = "QUALITY_CHECK"        # Tasting, analysis
 ```
+
+**Examples**:
+| Category | Description |
+|----------|-------------|
+| INITIALIZATION | "Yeast Inoculation - Red Star Premier Cuvée" |
+| INITIALIZATION | "Cold Soak - 48 hours at 55°F" |
+| MONITORING | "Temperature Check - Target 65-75°F" |
+| MONITORING | "H2S Check - Use copper strip test" |
+| ADDITIONS | "DAP Addition - 1/3 sugar depletion" |
+| CAP_MANAGEMENT | "Punch Down - Manual, 3x daily" |
+| POST_FERMENTATION | "Racking - From primary to secondary" |
 
 ---
 

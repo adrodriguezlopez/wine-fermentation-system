@@ -23,12 +23,24 @@ class ProtocolStep(BaseEntity):
     Single step within a fermentation protocol.
     
     Each step defines:
-    - What needs to be done (step_type)
+    - Category of work (step_type: INITIALIZATION, MONITORING, ADDITIONS, etc.)
+    - Specific details (description: includes yeast type, nutrient brand, etc.)
     - When it should happen (expected_day, tolerance_hours)
     - How critical it is (is_critical, criticality_score)
     - Duration and dependencies
     
-    Example: "DAP Addition at 1/3 sugar depletion"
+    DESIGN (Feb 10, 2026):
+    - step_type = CATEGORY (e.g., INITIALIZATION) - fixed enum values
+    - description = SPECIFIC STEP (e.g., "Yeast Inoculation - Red Star Premier Cuvée")
+    
+    This allows flexibility: new yeasts/nutrients can be added via description
+    without modifying the StepType enum.
+    
+    Examples:
+    - Type: INITIALIZATION, Description: "Cold Soak - 48 hours at 55°F"
+    - Type: MONITORING, Description: "Temperature Check - Target 65-75°F"
+    - Type: ADDITIONS, Description: "DAP Addition - 1/3 sugar depletion"
+    - Type: CAP_MANAGEMENT, Description: "Punch Down - Manual, 3x daily"
     """
     
     __tablename__ = "protocol_steps"

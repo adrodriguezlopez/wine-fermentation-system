@@ -75,7 +75,8 @@ class TestProtocolStepEntity:
         step = ProtocolStep(
             protocol_id=1,
             step_order=1,
-            step_type=StepType.YEAST_INOCULATION,
+            step_type=StepType.INITIALIZATION,
+            description="Yeast Inoculation - Red Star Premier Cuvée",
             expected_day=0,
             tolerance_hours=4,
             duration_minutes=120,
@@ -86,7 +87,8 @@ class TestProtocolStepEntity:
         
         assert step.protocol_id == 1
         assert step.step_order == 1
-        assert step.step_type == StepType.YEAST_INOCULATION
+        assert step.step_type == StepType.INITIALIZATION
+        assert step.description == "Yeast Inoculation - Red Star Premier Cuvée"
         assert step.expected_day == 0
         assert step.tolerance_hours == 4
         assert step.duration_minutes == 120
@@ -104,7 +106,8 @@ class TestProtocolStepEntity:
             step = ProtocolStep(
                 protocol_id=1,
                 step_order=1,
-                step_type=StepType.TEMPERATURE_CHECK,
+                step_type=StepType.MONITORING,
+                description="Temperature Check - Target 65-75°F",
                 expected_day=0,
                 criticality_score=score
             )
@@ -205,27 +208,18 @@ class TestStepTypeEnum:
     """Test StepType enum values."""
     
     def test_step_type_enum_has_all_values(self):
-        """Verify StepType enum has all expected step types."""
+        """Verify StepType enum has all expected step type CATEGORIES.
+        
+        DESIGN NOTE (Feb 10, 2026): StepType contains categories, not specific steps.
+        Specific details go in ProtocolStep.description field.
+        """
         expected_types = {
-            'YEAST_INOCULATION',
-            'COLD_SOAK',
-            'TEMPERATURE_CHECK',
-            'H2S_CHECK',
-            'BRIX_READING',
-            'VISUAL_INSPECTION',
-            'DAP_ADDITION',
-            'NUTRIENT_ADDITION',
-            'SO2_ADDITION',
-            'MLF_INOCULATION',
-            'PUNCH_DOWN',
-            'PUMP_OVER',
-            'PRESSING',
-            'EXTENDED_MACERATION',
-            'SETTLING',
-            'RACKING',
-            'FILTERING',
-            'CLARIFICATION',
-            'CATA_TASTING'
+            'INITIALIZATION',
+            'MONITORING',
+            'ADDITIONS',
+            'CAP_MANAGEMENT',
+            'POST_FERMENTATION',
+            'QUALITY_CHECK'
         }
         
         enum_values = {e.name for e in StepType}
@@ -238,6 +232,7 @@ class TestStepTypeEnum:
                 protocol_id=1,
                 step_order=1,
                 step_type=step_type,
+                description="Sample step description",
                 expected_day=0
             )
             assert step.step_type == step_type
@@ -338,7 +333,8 @@ class TestEntityDefaults:
         step = ProtocolStep(
             protocol_id=1,
             step_order=1,
-            step_type=StepType.TEMPERATURE_CHECK,
+            step_type=StepType.MONITORING,
+            description="Temperature monitoring step",
             expected_day=0,
             is_critical=False,  # Explicitly set since default is at DB level
             can_repeat_daily=False  # Explicitly set since default is at DB level
@@ -422,7 +418,8 @@ class TestEntityValidation:
         step = ProtocolStep(
             protocol_id=1,
             step_order=5,
-            step_type=StepType.TEMPERATURE_CHECK,
+            step_type=StepType.MONITORING,
+            description="Temperature check - maintain 65-75°F",
             expected_day=3
         )
         assert isinstance(step.step_order, int)

@@ -1,46 +1,38 @@
 """
 Protocol Step Type Enumerations
 
-Defines all possible fermentation step types that can appear in a protocol.
-Based on Napa Valley winemaking best practices.
+Defines fermentation step categories for protocols.
+
+DESIGN NOTE (Feb 10, 2026):
+- StepType enum contains CATEGORIES of work, not specific steps
+- Specific step details (yeast type, nutrient brand, etc.) go in ProtocolStep.description
+- This allows flexibility: add new steps without modifying the enum
+- Example: Both "Red Star Premier" and "EC-1118" yeasts use INITIALIZATION category
 """
 
 from enum import Enum
 
 
 class StepType(str, Enum):
-    """All possible fermentation protocol step types"""
+    """Categories of fermentation protocol work"""
     
-    # Initialization
-    YEAST_INOCULATION = "YEAST_INOCULATION"
-    COLD_SOAK = "COLD_SOAK"
+    # Pre-fermentation setup (cold soak, inoculation, etc.)
+    INITIALIZATION = "INITIALIZATION"
     
-    # Monitoring
-    TEMPERATURE_CHECK = "TEMPERATURE_CHECK"
-    H2S_CHECK = "H2S_CHECK"
-    BRIX_READING = "BRIX_READING"
-    VISUAL_INSPECTION = "VISUAL_INSPECTION"
+    # Observation & measurement (temperature, brix, H2S checks, visual inspection)
+    MONITORING = "MONITORING"
     
-    # Additions
-    DAP_ADDITION = "DAP_ADDITION"
-    NUTRIENT_ADDITION = "NUTRIENT_ADDITION"
-    SO2_ADDITION = "SO2_ADDITION"
-    MLF_INOCULATION = "MLF_INOCULATION"
+    # Nutrient & SO2 additions (DAP, MLF, other additions)
+    ADDITIONS = "ADDITIONS"
     
-    # Cap Management
-    PUNCH_DOWN = "PUNCH_DOWN"
-    PUMP_OVER = "PUMP_OVER"
+    # Cap management during active fermentation (punch down, pump over)
+    CAP_MANAGEMENT = "CAP_MANAGEMENT"
     
-    # Post-Fermentation
-    PRESSING = "PRESSING"
-    EXTENDED_MACERATION = "EXTENDED_MACERATION"
-    SETTLING = "SETTLING"
-    RACKING = "RACKING"
-    FILTERING = "FILTERING"
-    CLARIFICATION = "CLARIFICATION"
+    # Post-fermentation processing (pressing, racking, filtering, settling, clarification, extended maceration)
+    POST_FERMENTATION = "POST_FERMENTATION"
     
-    # Tasting/Quality
-    CATA_TASTING = "CATA_TASTING"
+    # Tasting & quality analysis
+    QUALITY_CHECK = "QUALITY_CHECK"
 
 
 class ProtocolExecutionStatus(str, Enum):
