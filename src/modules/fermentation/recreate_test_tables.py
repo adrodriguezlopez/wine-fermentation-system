@@ -29,6 +29,10 @@ from src.modules.analysis_engine.src.domain.entities.analysis import Analysis
 from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly
 from src.modules.analysis_engine.src.domain.entities.recommendation import Recommendation
 from src.modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate
+from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol
+from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
+from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
+from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion
 
 async def recreate_all_tables():
     engine = create_async_engine(
