@@ -335,6 +335,7 @@ class CompletionCreate:
         execution_id: Parent execution
         step_id: Step being completed
         completed_at: When step was completed
+        completed_by_user_id: User who completed the step
         was_skipped: Whether step was skipped
         skip_reason: Why step was skipped (if applicable)
         skip_notes: Notes about skip
@@ -347,6 +348,7 @@ class CompletionCreate:
     step_id: int
     was_skipped: bool = False
     completed_at: Optional[datetime] = None
+    completed_by_user_id: Optional[int] = None
     is_on_schedule: bool = True
     days_late: int = 0
     skip_reason: Optional[str] = None
@@ -384,6 +386,7 @@ class CompletionResponse:
         execution_id: Parent execution
         step_id: Completed step
         completed_at: When completed
+        completed_by_user_id: User who completed
         was_skipped: If step was skipped
         skip_reason: Skip reason
         skip_notes: Skip notes
@@ -401,6 +404,7 @@ class CompletionResponse:
     days_late: int
     created_at: datetime
     completed_at: Optional[datetime] = None
+    completed_by_user_id: Optional[int] = None
     skip_reason: Optional[str] = None
     skip_notes: Optional[str] = None
     verified_by_user_id: Optional[int] = None

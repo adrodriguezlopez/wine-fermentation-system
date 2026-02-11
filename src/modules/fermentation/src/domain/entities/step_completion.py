@@ -26,6 +26,7 @@ class StepCompletion(BaseEntity):
     - When was the step actually completed?
     - Was it on-time or late?
     - Was it skipped? Why?
+    - Who completed it?
     - Who verified it?
     
     Multiple StepCompletion records per step are allowed
@@ -46,6 +47,7 @@ class StepCompletion(BaseEntity):
                                               nullable=False, index=True)
     step_id: Mapped[int] = mapped_column(ForeignKey("protocol_steps.id"), 
                                         nullable=False, index=True)
+    completed_by_user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # Audit: who completed the step - no FK to avoid module dependencies
     verified_by_user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # Audit: who verified - no FK to avoid module dependencies
     
     # Completion details
