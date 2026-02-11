@@ -27,22 +27,47 @@ PRIORITY_PROTOCOLS = [
     "R&G Cabernet Sauvignon 2021.pdf",
 ]
 
-# Step type patterns to detect from text
+# Step type patterns to detect from text (Feb 10, 2026: Updated to use StepType categories)
+# Maps detected text patterns to new category-based StepType enum values
 STEP_PATTERNS = {
-    "YEAST_INOCULATION": [r"inocul", r"pitch", r"yeast", r"starter"],
-    "H2S_CHECK": [r"h2s", r"hydrogen sulfide", r"smell", r"rotten egg"],
-    "TEMPERATURE_CHECK": [r"temperatur", r"temp\b", r"cool", r"ferment.*temp"],
-    "BRIX_READING": [r"brix", r"sugar", r"density", r"sg\b", r"gravity"],
-    "DAP_ADDITION": [r"dap\b", r"diammon", r"nutrient.*addition"],
-    "NUTRIENT_ADDITION": [r"nutrient", r"yeast nutrient", r"feeding"],
-    "PUNCH_DOWN": [r"punch.*down", r"punchdown", r"cap\s+management"],
-    "PUMP_OVER": [r"pump.*over", r"pumpover", r"recircul"],
-    "SO2_ADDITION": [r"so2\b", r"sulfite", r"sulfur"],
-    "PRESSING": [r"press", r"dry(?:ing)?"],
-    "COLD_SOAK": [r"cold.*soak", r"pre-soak"],
-    "RACKING": [r"rack", r"transfer", r"clarif"],
-    "MLF_INOCULATION": [r"mlf\b", r"malo.*lactic", r"malolactic"],
-    "VISUAL_INSPECTION": [r"inspect", r"observe", r"check.*appearance"],
+    # INITIALIZATION steps
+    "INITIALIZATION": [
+        r"inocul", r"pitch", r"yeast", r"starter",  # YEAST_INOCULATION
+        r"cold.*soak", r"pre-soak"                   # COLD_SOAK
+    ],
+    
+    # MONITORING steps
+    "MONITORING": [
+        r"temperatur", r"temp\b", r"cool", r"ferment.*temp",  # TEMPERATURE_CHECK
+        r"h2s", r"hydrogen sulfide", r"smell", r"rotten egg",  # H2S_CHECK
+        r"brix", r"sugar", r"density", r"sg\b", r"gravity"     # BRIX_READING
+    ],
+    
+    # ADDITIONS steps
+    "ADDITIONS": [
+        r"dap\b", r"diammon", r"nutrient.*addition",           # DAP_ADDITION
+        r"nutrient", r"yeast nutrient", r"feeding",            # NUTRIENT_ADDITION
+        r"so2\b", r"sulfite", r"sulfur",                       # SO2_ADDITION
+        r"mlf\b", r"malo.*lactic", r"malolactic"               # MLF_INOCULATION
+    ],
+    
+    # CAP_MANAGEMENT steps
+    "CAP_MANAGEMENT": [
+        r"punch.*down", r"punchdown", r"cap\s+management",    # PUNCH_DOWN
+        r"pump.*over", r"pumpover", r"recircul"               # PUMP_OVER
+    ],
+    
+    # POST_FERMENTATION steps
+    "POST_FERMENTATION": [
+        r"press", r"dry(?:ing)?",                             # PRESSING
+        r"rack", r"transfer", r"clarif"                       # RACKING
+    ],
+    
+    # QUALITY_CHECK steps
+    "QUALITY_CHECK": [
+        r"inspect", r"observe", r"check.*appearance",         # VISUAL_INSPECTION
+        r"tast", r"flavor"                                     # CATA_TASTING
+    ],
 }
 
 class ProtocolExtractor:
@@ -164,21 +189,27 @@ class ProtocolExtractor:
         return steps
     
     def _is_critical(self, step_type: str) -> bool:
-        """Determine if step is critical to protocol"""
-        critical_steps = {
-            "YEAST_INOCULATION", "H2S_CHECK", "BRIX_READING",
-            "DAP_ADDITION", "PRESSING", "SO2_ADDITION"
+        """Determine if step is critical to protocol (Feb 10, 2026: Updated for category-based types)"""
+        # Most MONITORING and ADDITIONS steps are critical
+        # CAP_MANAGEMENT is typically not critical
+        critical_categories = {
+            "INITIALIZATION",  # Yeast inoculation is critical
+            "MONITORING",      # Temperature, H2S, Brix checks are critical
+            "ADDITIONS",       # Nutrient additions are critical
+            "POST_FERMENTATION"  # Pressing is critical
         }
-        return step_type in critical_steps
+        return step_type in critical_categories
     
     def _tolerance_for_step(self, step_type: str) -> int:
-        """Get tolerance window for step type"""
-        # Critical steps have tight tolerances
+        """Get tolerance window for step type (Feb 10, 2026: Updated for category-based types)"""
+        # Different categories have different tolerance windows
         tolerances = {
-            "H2S_CHECK": 6,  # 6 hour window
-            "YEAST_INOCULATION": 2,  # 2 hour window
-            "BRIX_READING": 8,  # 8 hour window
-            "PRESSING": 4,  # 4 hour window
+            "INITIALIZATION": 2,      # Very tight for yeast inoculation
+            "MONITORING": 6,          # Moderate for checks
+            "ADDITIONS": 4,           # Tight for nutrient additions
+            "CAP_MANAGEMENT": 12,     # More flexible for punch down/pump over
+            "POST_FERMENTATION": 12,  # Flexible for racking/settling
+            "QUALITY_CHECK": 24,      # Very flexible for tasting
         }
         return tolerances.get(step_type, 12)  # Default 12 hours
     
