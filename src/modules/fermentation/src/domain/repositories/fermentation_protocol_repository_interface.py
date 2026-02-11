@@ -5,7 +5,7 @@ Defines contracts for protocol data access.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol
 
 
@@ -52,4 +52,28 @@ class IFermentationProtocolRepository(ABC):
     @abstractmethod
     async def get_by_varietal(self, winery_id: int, varietal_code: str) -> List[FermentationProtocol]:
         """Get all protocol versions for a varietal"""
+        pass
+    
+    @abstractmethod
+    async def list_by_winery_paginated(
+        self, winery_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[FermentationProtocol], int]:
+        """
+        Get protocols for a winery with pagination.
+        
+        Returns:
+            Tuple of (protocols list, total count)
+        """
+        pass
+    
+    @abstractmethod
+    async def list_active_by_winery_paginated(
+        self, winery_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[FermentationProtocol], int]:
+        """
+        Get active protocols for a winery with pagination.
+        
+        Returns:
+            Tuple of (protocols list, total count)
+        """
         pass
