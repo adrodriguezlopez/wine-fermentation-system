@@ -1,13 +1,9 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
-from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import Optional
+from sqlalchemy import ForeignKey, String, Integer
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.shared.infra.orm.base_entity import BaseEntity
-
-if TYPE_CHECKING:
-    from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
-    from src.shared.auth.domain.entities.user import User
 
 
 class BaseSample(BaseEntity):
@@ -32,7 +28,7 @@ class BaseSample(BaseEntity):
     )
     recorded_at: Mapped[datetime] = mapped_column(nullable=False, index=True)
     recorded_by_user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), nullable=False
+        Integer, nullable=False  # Audit: user who recorded - no FK to avoid module dependencies
     )
     is_deleted: Mapped[bool] = mapped_column(
         default=False, nullable=False
@@ -45,19 +41,5 @@ class BaseSample(BaseEntity):
     # Measurement data
     value: Mapped[float] = mapped_column(nullable=False)
     units: Mapped[str] = mapped_column(String(20), nullable=False)  # e.g. g/L
-
-    # Relationships - using fully qualified paths and Mapped types for consistency
-    # Note: No back_populates for single-table inheritance to avoid mapper confusion
-    # Note: lazy='noload' prevents auto-loading which can cause mapper configuration issues across modules
-    fermentation: Mapped["Fermentation"] = relationship(
-        "Fermentation",
-        lazy="noload",
-        viewonly=True
-    )
-    recorded_by_user: Mapped["User"] = relationship(
-        "User",
-        lazy="noload",
-        viewonly=True
-    )
 
     __mapper_args__ = {"polymorphic_identity": "base", "polymorphic_on": sample_type}

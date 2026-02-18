@@ -1,0 +1,195 @@
+{
+  "winery": "R&G",
+  "varietal_code": "CS",
+  "varietal_name": "Cabernet Sauvignon",
+  "year": 2021,
+  "color": "RED",
+  "protocol_name": "CS-2021-Standard",
+  "version": "1.0",
+  "expected_duration_days": 28,
+  "description": "Standard Cabernet Sauvignon fermentation protocol. Extended maceration for tannin development.",
+  "steps": [
+    {
+      "step_order": 1,
+      "step_type": "YEAST_INOCULATION",
+      "description": "Inoculate with BM45 yeast (robust strain). Use 20g/hL at 24\u00b0C",
+      "expected_day": 0,
+      "tolerance_hours": 2,
+      "is_critical": true,
+      "duration_minutes": 120
+    },
+    {
+      "step_order": 2,
+      "step_type": "TEMPERATURE_CHECK",
+      "description": "Set fermentation at 24-26\u00b0C for Cabernet (warmer than Pinot)",
+      "expected_day": 0,
+      "tolerance_hours": 6,
+      "is_critical": true,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 3,
+      "step_type": "BRIX_READING",
+      "description": "Initial Brix (expect 25-26 for Cabernet)",
+      "expected_day": 1,
+      "tolerance_hours": 8,
+      "is_critical": true,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 4,
+      "step_type": "PUNCH_DOWN",
+      "description": "Punch down cap 2x daily (strong cap management needed)",
+      "expected_day": 1,
+      "tolerance_hours": 6,
+      "is_critical": true,
+      "duration_minutes": 45
+    },
+    {
+      "step_order": 5,
+      "step_type": "H2S_CHECK",
+      "description": "Monitor for H2S (lower risk than Pinot, but check anyway)",
+      "expected_day": 2,
+      "tolerance_hours": 12,
+      "is_critical": false,
+      "duration_minutes": 10
+    },
+    {
+      "step_order": 6,
+      "step_type": "DAP_ADDITION",
+      "description": "Add DAP at 1/3 sugar depletion (~17 Brix). Apply 75-150 mg/L",
+      "expected_day": 3,
+      "tolerance_hours": 6,
+      "is_critical": true,
+      "duration_minutes": 45
+    },
+    {
+      "step_order": 7,
+      "step_type": "TEMPERATURE_CHECK",
+      "description": "Maintain 24-26\u00b0C fermentation temperature",
+      "expected_day": 4,
+      "tolerance_hours": 6,
+      "is_critical": false,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 8,
+      "step_type": "BRIX_READING",
+      "description": "Monitor Brix at 1/3 fermentation (~13 Brix)",
+      "expected_day": 5,
+      "tolerance_hours": 8,
+      "is_critical": true,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 9,
+      "step_type": "PUNCH_DOWN",
+      "description": "Continue punch-down 2x daily",
+      "expected_day": 7,
+      "tolerance_hours": 6,
+      "is_critical": true,
+      "duration_minutes": 45
+    },
+    {
+      "step_order": 10,
+      "step_type": "VISUAL_INSPECTION",
+      "description": "Assess color development and tannin extraction",
+      "expected_day": 10,
+      "tolerance_hours": 12,
+      "is_critical": false,
+      "duration_minutes": 30
+    },
+    {
+      "step_order": 11,
+      "step_type": "BRIX_READING",
+      "description": "Monitor at 2/3 fermentation (~8 Brix)",
+      "expected_day": 12,
+      "tolerance_hours": 8,
+      "is_critical": true,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 12,
+      "step_type": "PUNCH_DOWN",
+      "description": "Reduce punch-down to 1x daily after 2/3 fermentation",
+      "expected_day": 13,
+      "tolerance_hours": 6,
+      "is_critical": true,
+      "duration_minutes": 40
+    },
+    {
+      "step_order": 13,
+      "step_type": "BRIX_READING",
+      "description": "Final gravity (<1 Brix = dry)",
+      "expected_day": 20,
+      "tolerance_hours": 8,
+      "is_critical": true,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 14,
+      "step_type": "EXTENDED_MACERATION",
+      "description": "Post-fermentation skin contact for 7-10 days (Cabernet specialty)",
+      "expected_day": 21,
+      "tolerance_hours": 24,
+      "is_critical": false,
+      "duration_minutes": 10080
+    },
+    {
+      "step_order": 15,
+      "step_type": "SO2_ADDITION",
+      "description": "Add SO2 after post-fermentation maceration ends. Target 60-80 mg/L free SO2",
+      "expected_day": 28,
+      "tolerance_hours": 4,
+      "is_critical": true,
+      "duration_minutes": 30
+    },
+    {
+      "step_order": 16,
+      "step_type": "PRESSING",
+      "description": "Press pomace. Blend free run and press wines",
+      "expected_day": 28,
+      "tolerance_hours": 4,
+      "is_critical": true,
+      "duration_minutes": 360
+    },
+    {
+      "step_order": 17,
+      "step_type": "RACKING",
+      "description": "Initial racking off gross lees",
+      "expected_day": 35,
+      "tolerance_hours": 12,
+      "is_critical": false,
+      "duration_minutes": 120
+    },
+    {
+      "step_order": 18,
+      "step_type": "MLF_INOCULATION",
+      "description": "Inoculate with malolactic bacteria (typical for Cabernet)",
+      "expected_day": 36,
+      "tolerance_hours": 24,
+      "is_critical": false,
+      "duration_minutes": 30
+    },
+    {
+      "step_order": 19,
+      "step_type": "TEMPERATURE_CHECK",
+      "description": "Maintain 18-22\u00b0C during MLF",
+      "expected_day": 45,
+      "tolerance_hours": 12,
+      "is_critical": false,
+      "duration_minutes": 15
+    },
+    {
+      "step_order": 20,
+      "step_type": "VISUAL_INSPECTION",
+      "description": "Monitor MLF completion (6-12 weeks typical)",
+      "expected_day": 90,
+      "tolerance_hours": 48,
+      "is_critical": false,
+      "duration_minutes": 30
+    }
+  ],
+  "extracted_at": "2026-02-09T22:04:51.336600",
+  "source": "Template (PDF is scanned image - manual extraction recommended later)"
+}

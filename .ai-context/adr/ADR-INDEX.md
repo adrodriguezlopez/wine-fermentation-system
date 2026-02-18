@@ -27,7 +27,15 @@
 | **[ADR-018](./ADR-018-seed-script-initial-data-bootstrap.md)** | Seed Script for Initial Data Bootstrap | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-032](./ADR-032-historical-data-api-layer.md)** | Historical Data API Layer | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-033](./ADR-033-code-coverage-improvement-strategy.md)** | Code Coverage Improvement Strategy | ✅ Implemented | 2026-01-15 | High |
-| **[ADR-034](./ADR-034-historical-data-service-refactoring.md)** | Historical Data Service Refactoring | 📋 Proposed | 2026-01-15 | Medium |
+| **[ADR-034](./ADR-034-historical-data-service-refactoring.md)** | Historical Data Service Refactoring | ✅ Implemented | 2026-01-15 | Medium |
+| **[ADR-020](./ADR-020-analysis-engine-architecture.md)** | Analysis Engine Architecture | 🔄 In Progress | 2026-01-16 | Critical |
+| **[ADR-021](./ADR-021-protocol-compliance-engine.md)** | Fermentation Protocol Compliance Engine | 📋 Proposed | 2026-02-06 | High |
+| **[ADR-035](./ADR-035-protocol-data-model-schema.md)** | Protocol Data Model & Schema Design | ✅ Approved | 2026-02-09 | Critical |
+| **[ADR-036](./ADR-036-compliance-scoring-algorithm.md)** | Protocol Compliance Scoring Algorithm | ✅ Approved | 2026-02-09 | Critical |
+| **[ADR-037](./ADR-037-protocol-analysis-integration.md)** | Protocol-Analysis Engine Integration | ✅ Approved | 2026-02-09 | High |
+| **[ADR-038](./ADR-038-deviation-detection-strategy.md)** | Protocol Deviation Detection Strategy | ✅ Approved | 2026-02-09 | High |
+| **[ADR-039](./ADR-039-protocol-template-management.md)** | Protocol Template Management & Customization | ✅ Approved | 2026-02-09 | High |
+| **[ADR-040](./ADR-040-notifications-alerts.md)** | Protocol Notifications & Alerts Strategy | ✅ Approved | 2026-02-09 | Medium |
 
 ### ADR-033: Code Coverage Improvement Strategy
 **Decision:** Phased coverage improvement: API (85%), Repository (80%), Service (80%), ETL (80%)  
@@ -44,15 +52,28 @@
 
 ### ADR-034: Historical Data Service Refactoring
 **Decision:** Eliminate 75% redundancy in HistoricalDataService, consolidate with existing services  
-**Status:** 📋 Proposed (January 15, 2026)  
+**Status:** ✅ Implemented (January 15, 2026)  
 **Impact:** -150 lines duplicate code, clearer architecture, better maintainability  
 **Key Points:**
 - 3 of 4 methods duplicate FermentationService/SampleService
 - Only extract_patterns() has unique value
 - Refactor: Add data_source param to existing services + new PatternAnalysisService
 - Eliminates: ~200 lines code, 9 redundant tests, 2 duplicate endpoints
-- Maintains: 100% functionality, prepares for Analysis Engine (ADR-035)
-- Timeline: 3 days dev + 2 week deprecation period
+- Maintains: 100% functionality, prepares for Analysis Engine (ADR-020)
+- Timeline: 1 day (all completed January 15, 2026)
+
+### ADR-020: Analysis Engine Architecture
+**Decision:** Intelligent anomaly detection and recommendation system for fermentations  
+**Status:** 🔄 In Progress (January 16, 2026) - Phase 1: Domain + Repository  
+**Impact:** Core value add - transforms system from CRUD to intelligent decision support  
+**Key Points:**
+- Hybrid algorithm: YAML-driven rules + statistical analysis (Z-score/percentiles)
+- 8 anomaly types: stuck fermentation, temperature issues, volatile acidity, H₂S, etc.
+- Template-based recommendations with effectiveness tracking
+- Comparison priority: Varietal (P1) → fruit_origin (P2) → fermentation_type (P3)
+- Confidence levels (LOW/MEDIUM/HIGH/VERY_HIGH) always visible - transparency = reliability
+- Awaiting enologist validation for thresholds before Phase 2 (Service Layer)
+- Timeline: Phase 1 (3-4 days), Phase 2-5 pending expert input (9-10 days)
 
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |

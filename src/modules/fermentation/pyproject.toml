@@ -26,6 +26,7 @@ colorama = "^0.4.6"
 shared = {path = "../../shared", develop = true}
 pandas = "^2.3.3"
 openpyxl = "^3.1.5"
+pdfplumber = "^0.10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
@@ -62,6 +63,7 @@ plugins = ["sqlalchemy.ext.mypy.plugin"]
 [tool.pytest.ini_options]
 pythonpath = ["src", "../../../", "../../shared"]
 addopts = "--tb=short -v"
+asyncio_mode = "auto"
 markers = [
     "unit: Unit tests (fast, no database)",
     "integration: Integration tests (slower, requires database)",

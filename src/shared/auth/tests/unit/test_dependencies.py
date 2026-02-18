@@ -64,6 +64,7 @@ class TestGetCurrentUser:
         with pytest.raises(InvalidTokenError):
             await get_current_user(mock_credentials, mock_auth_service)
 
+    @pytest.mark.asyncio
     async def test_get_current_user_expired_token(self):
         """Test that expired token raises TokenExpiredError (ADR-026)."""
         # Arrange
@@ -76,6 +77,7 @@ class TestGetCurrentUser:
         with pytest.raises(TokenExpiredError):
             await get_current_user(mock_credentials, mock_auth_service)
 
+    @pytest.mark.asyncio
     async def test_get_current_user_no_credentials(self):
         """Test that missing credentials raises InvalidTokenError (ADR-026)."""
         # Arrange
@@ -188,6 +190,7 @@ class TestRequireRole:
         with pytest.raises(InsufficientPermissions):
             await dependency(user_context)
 
+    @pytest.mark.asyncio
     async def test_require_role_viewer_cannot_access_admin(self):
         """Test that VIEWER role cannot access ADMIN-only endpoints (ADR-026)."""
         # Arrange

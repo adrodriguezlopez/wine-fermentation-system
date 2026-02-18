@@ -1,0 +1,19 @@
+varietal_name,varietal_code,color,protocol_name,version,step_order,step_type,description,expected_day,tolerance_hours,is_critical,duration_minutes
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,1,COLD_SOAK,Pre-fermentation cold soak at 10°C for 6-12 hours to enhance aromatics,0,6,False,720
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,2,TEMPERATURE_CHECK,Bring must to 14-16°C for fermentation start,0,4,True,30
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,3,YEAST_INOCULATION,Inoculate with EC1118 or VL1 yeast. Use 20g/hL,0,2,True,60
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,4,BRIX_READING,Initial Brix reading (expect 22-23 for Chardonnay),1,8,True,15
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,5,TEMPERATURE_CHECK,Maintain 14-16°C cold fermentation,1,6,True,15
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,6,DAP_ADDITION,Add DAP at 1/3 sugar depletion (~15 Brix). Apply 75 mg/L,3,6,True,30
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,7,VISUAL_INSPECTION,"Check fermentation vigor, color of wine",3,12,False,20
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,8,BRIX_READING,Monitor Brix at 1/2 fermentation (~11 Brix),5,8,True,15
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,9,TEMPERATURE_CHECK,Maintain cool fermentation 14-16°C,7,6,True,15
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,10,NUTRIENT_ADDITION,Add yeast nutrient if fermentation slow. Apply Fermaid K 0.5g/L,8,6,False,30
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,11,BRIX_READING,Final gravity check (<1 Brix for dry Chardonnay),13,8,True,15
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,12,SO2_ADDITION,Add SO2 after fermentation complete. Target 30-40 mg/L free SO2,14,4,True,30
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,13,SETTLING,Allow settling at 10-12°C for 1-2 weeks before racking,15,24,False,1440
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,14,RACKING,Rack off gross lees after settling,22,12,False,120
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,15,MLF_INOCULATION,Inoculate with malolactic bacteria (recommended for Chardonnay). Use Oenococcus oeni,23,24,True,30
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,16,TEMPERATURE_CHECK,Maintain 16-18°C during MLF (takes 4-8 weeks),30,12,True,15
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,17,VISUAL_INSPECTION,Monitor MLF progress (decreasing malic acid levels),60,48,False,30
+Chardonnay,CH,WHITE,CH-2021-Standard,1.0,18,RACKING,Final racking after MLF completion,90,48,False,120

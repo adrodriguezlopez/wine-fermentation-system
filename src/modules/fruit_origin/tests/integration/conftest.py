@@ -4,6 +4,7 @@ Fixtures for fruit_origin module integration tests.
 Uses shared testing infrastructure from src/shared/testing/integration.
 """
 
+import pytest
 import pytest_asyncio
 from src.shared.testing.integration import create_integration_fixtures, IntegrationTestConfig
 from src.shared.testing.integration.fixtures import create_repository_fixture
@@ -15,10 +16,30 @@ from src.modules.fruit_origin.src.repository_component.repositories.vineyard_rep
 from src.modules.fruit_origin.src.repository_component.repositories.vineyard_block_repository import VineyardBlockRepository
 from src.modules.fruit_origin.src.repository_component.repositories.harvest_lot_repository import HarvestLotRepository
 
+# Import fermentation models to ensure their tables are created
+# This resolves cross-module FK constraints in the test database
+from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
+from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
+from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
+from src.shared.auth.domain.entities.user import User
+
 # Configure integration test fixtures for fruit_origin module
+# NOTE: Including fermentation models to satisfy FK constraints on harvest_lots
 config = IntegrationTestConfig(
     module_name="fruit_origin",
-    models=[Winery, Vineyard, VineyardBlock, HarvestLot]
+    models=[
+        # Fruit origin models
+        Winery, 
+        Vineyard, 
+        VineyardBlock, 
+        HarvestLot,
+        # Shared models needed for FK constraints
+        User,
+        # Fermentation models needed for FK constraints
+        Fermentation,
+        FermentationNote,
+        FermentationLotSource
+    ]
 )
 
 # Create standard fixtures (test_models, db_engine, db_session)
@@ -105,3 +126,6 @@ async def test_harvest_lot(test_models, db_session, test_winery, test_vineyard_b
     db_session.add(harvest_lot)
     await db_session.flush()
     return harvest_lot
+
+
+

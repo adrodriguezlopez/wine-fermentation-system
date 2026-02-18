@@ -41,7 +41,7 @@ from src.modules.fermentation.src.service_component.errors import (
     DuplicateError,
     BusinessRuleViolation
 )
-from shared.domain.errors import CrossWineryAccessDenied
+from src.shared.domain.errors import CrossWineryAccessDenied
 from src.modules.fermentation.src.api.dependencies import get_fermentation_service, get_sample_service, get_unit_of_work
 from src.modules.fermentation.src.api.error_handlers import handle_service_errors
 
