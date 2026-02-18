@@ -11,7 +11,7 @@ DTOs for:
 - StepCompletion (mark steps completed)
 
 Validation:
-- Semantic versioning (regex: ^\d+\.\d+$)
+- Semantic versioning (regex: r'^\\d+\\.\\d+$')
 - Positive durations
 - Criticality score 0-100
 - Skip reason required when skipped
@@ -292,6 +292,26 @@ class ExecutionStart:
 
 
 @dataclass
+class ExecutionUpdate:
+    """
+    DTO for updating protocol execution status and scores.
+    
+    Attributes:
+        status: New execution status (NOT_STARTED, ACTIVE, PAUSED, COMPLETED, ABANDONED)
+        compliance_score: Updated compliance score (0-100)
+        notes: Optional notes about execution
+    """
+    status: Optional[str] = None
+    compliance_score: Optional[float] = None
+    notes: Optional[str] = None
+    
+    def __post_init__(self):
+        """Validate execution update data."""
+        if self.compliance_score is not None:
+            validate_score_range(self.compliance_score, "compliance_score")
+
+
+@dataclass
 class ExecutionResponse:
     """
     DTO for execution API responses.
@@ -418,26 +438,46 @@ class CompletionResponse:
 @dataclass
 class ProtocolListResponse:
     """Response for listing protocols with pagination."""
-    protocols: List[ProtocolResponse]
-    total: int
+    items: List['ProtocolResponse']
+    total_count: int
     page: int
     page_size: int
-    has_more: bool
+    total_pages: int
+
+
+@dataclass
+class StepListResponse:
+    """Response for listing protocol steps with pagination."""
+    items: List['StepResponse']
+    total_count: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 @dataclass
 class ExecutionListResponse:
     """Response for listing executions with pagination."""
-    executions: List[ExecutionResponse]
-    total: int
+    items: List['ExecutionResponse']
+    total_count: int
     page: int
     page_size: int
-    has_more: bool
+    total_pages: int
+
+
+@dataclass
+class CompletionListResponse:
+    """Response for listing step completions with pagination."""
+    items: List['CompletionResponse']
+    total_count: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 @dataclass
 class ExecutionDetailResponse:
     """Detailed execution response with all steps and completions."""
-    execution: ExecutionResponse
-    steps: List[StepResponse]
-    completions: List[CompletionResponse]
+    execution: 'ExecutionResponse'
+    steps: List['StepResponse']
+    completions: List['CompletionResponse']

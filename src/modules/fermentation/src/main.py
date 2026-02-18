@@ -35,6 +35,12 @@ from shared.api.error_handlers import register_error_handlers
 from src.modules.fermentation.src.api.routers.fermentation_router import router as fermentation_router
 from src.modules.fermentation.src.api.routers.sample_router import router as sample_router, samples_router
 
+# Protocol routers (Phase 2)
+from src.modules.fermentation.src.api.routers.protocol_router import router as protocol_router
+from src.modules.fermentation.src.api.routers.protocol_step_router import router as protocol_step_router
+from src.modules.fermentation.src.api.routers.protocol_execution_router import router as protocol_execution_router
+from src.modules.fermentation.src.api.routers.step_completion_router import router as step_completion_router
+
 
 # Configure structured logging before app creation
 configure_logging(log_level="INFO")
@@ -77,6 +83,12 @@ def create_app() -> FastAPI:
     app.include_router(sample_router, tags=["samples"])
     app.include_router(samples_router, tags=["samples"])
     app.include_router(fermentation_router, tags=["fermentations"])
+    
+    # Protocol routers (Phase 2 API)
+    app.include_router(protocol_router, tags=["protocols"])
+    app.include_router(protocol_step_router, tags=["protocol-steps"])
+    app.include_router(protocol_execution_router, tags=["protocol-executions"])
+    app.include_router(step_completion_router, tags=["step-completions"])
     
     # Health check endpoint
     @app.get("/health", tags=["health"])
