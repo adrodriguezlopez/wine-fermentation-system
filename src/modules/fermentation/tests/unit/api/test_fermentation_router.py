@@ -54,6 +54,7 @@ from src.modules.fermentation.src.api.schemas.requests.fermentation_requests imp
 from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import FermentationResponse
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
 from src.modules.fermentation.src.service_component.errors import NotFoundError
+from src.shared.domain.errors import FermentationNotFound, InvalidFermentationState
 
 
 # ======================================================================================
@@ -158,7 +159,7 @@ async def test_create_fermentation_not_found_error(
     mock_user_context,
     mock_fermentation_service
 ):
-    """Should raise HTTPException 404 for invalid references."""
+    """Should raise FermentationNotFound (DomainError) for invalid references."""
     mock_fermentation_service.create_fermentation.side_effect = NotFoundError("Vessel not found")
     
     request = FermentationCreateRequest(
@@ -171,10 +172,8 @@ async def test_create_fermentation_not_found_error(
         start_date=date(2024, 3, 15)
     )
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await create_fermentation(request, mock_user_context, mock_fermentation_service)
-    
-    assert exc_info.value.status_code == 404
 
 
 # ======================================================================================
@@ -206,13 +205,11 @@ async def test_get_fermentation_not_found(
     mock_user_context,
     mock_fermentation_service
 ):
-    """Should raise HTTPException 404 when fermentation doesn't exist."""
+    """Should raise FermentationNotFound when fermentation doesn't exist."""
     mock_fermentation_service.get_fermentation.return_value = None
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await get_fermentation(999, mock_user_context, mock_fermentation_service)
-    
-    assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -223,10 +220,8 @@ async def test_get_fermentation_multi_tenant_security(
     """Should enforce multi-tenant isolation via winery_id filter."""
     mock_fermentation_service.get_fermentation.return_value = None
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await get_fermentation(1, mock_user_context, mock_fermentation_service)
-    
-    assert exc_info.value.status_code == 404
     # Verify winery_id was passed to service for filtering
     mock_fermentation_service.get_fermentation.assert_called_once_with(
         fermentation_id=1,
@@ -281,7 +276,7 @@ async def test_create_fermentation_with_blend_not_found_error(
     mock_fermentation_service,
     mock_unit_of_work
 ):
-    """Should raise HTTPException 404 for invalid harvest lot."""
+    """Should raise FermentationNotFound for invalid harvest lot."""
     mock_fermentation_service.create_fermentation_with_blend.side_effect = NotFoundError("Harvest lot not found")
     
     request = FermentationWithBlendCreateRequest(
@@ -297,15 +292,13 @@ async def test_create_fermentation_with_blend_not_found_error(
         ]
     )
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await create_fermentation_with_blend(
             request, 
             mock_user_context, 
             mock_fermentation_service,
             mock_unit_of_work
         )
-    
-    assert exc_info.value.status_code == 404
 
 
 # ======================================================================================
@@ -422,20 +415,18 @@ async def test_update_fermentation_not_found(
     mock_user_context,
     mock_fermentation_service
 ):
-    """Should raise HTTPException 404 when fermentation doesn't exist."""
+    """Should raise FermentationNotFound when fermentation doesn't exist."""
     mock_fermentation_service.update_fermentation.side_effect = NotFoundError("Fermentation not found")
     
     request = FermentationUpdateRequest(yeast_strain="EC-1118")
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await update_fermentation(
             fermentation_id=999,
             request=request,
             current_user=mock_user_context,
             fermentation_service=mock_fermentation_service
         )
-    
-    assert exc_info.value.status_code == 404
 
 
 # ======================================================================================
@@ -472,20 +463,18 @@ async def test_update_fermentation_status_not_found(
     mock_user_context,
     mock_fermentation_service
 ):
-    """Should raise HTTPException 404 when fermentation doesn't exist."""
+    """Should raise FermentationNotFound when fermentation doesn't exist."""
     mock_fermentation_service.update_status.side_effect = NotFoundError("Fermentation not found")
     
-    request = StatusUpdateRequest(status="COMPLETED")
+    request = StatusUpdateRequest(status=FermentationStatus.COMPLETED)
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await update_fermentation_status(
             fermentation_id=999,
             request=request,
             current_user=mock_user_context,
             fermentation_service=mock_fermentation_service
         )
-    
-    assert exc_info.value.status_code == 404
 
 
 # ======================================================================================
@@ -526,7 +515,7 @@ async def test_complete_fermentation_not_found(
     mock_user_context,
     mock_fermentation_service
 ):
-    """Should raise HTTPException 404 when fermentation doesn't exist."""
+    """Should raise FermentationNotFound when fermentation doesn't exist."""
     mock_fermentation_service.complete_fermentation.side_effect = NotFoundError("Fermentation not found")
     
     request = CompleteFermentationRequest(
@@ -534,15 +523,13 @@ async def test_complete_fermentation_not_found(
         final_mass_kg=950.0
     )
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await complete_fermentation(
             fermentation_id=999,
             request=request,
             current_user=mock_user_context,
             fermentation_service=mock_fermentation_service
         )
-    
-    assert exc_info.value.status_code == 404
 
 
 # ======================================================================================
@@ -577,18 +564,16 @@ async def test_delete_fermentation_not_found(
     mock_user_context,
     mock_fermentation_service
 ):
-    """Should raise HTTPException 404 when fermentation doesn't exist."""
+    """Should raise FermentationNotFound when fermentation doesn't exist."""
+    # The router raises NotFoundError when soft_delete returns False
     mock_fermentation_service.soft_delete.return_value = False
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await delete_fermentation(
             fermentation_id=999,
             current_user=mock_user_context,
             fermentation_service=mock_fermentation_service
         )
-    
-    assert exc_info.value.status_code == 404
-    assert "not found" in str(exc_info.value.detail).lower()
 
 
 # ======================================================================================
@@ -728,18 +713,16 @@ async def test_get_fermentation_timeline_not_found(
     mock_fermentation_service,
     mock_sample_service
 ):
-    """Should raise HTTPException 404 when fermentation doesn't exist."""
+    """Should raise FermentationNotFound when fermentation doesn't exist."""
     mock_fermentation_service.get_fermentation.return_value = None
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await get_fermentation_timeline(
             fermentation_id=999,
             current_user=mock_user_context,
             fermentation_service=mock_fermentation_service,
             sample_service=mock_sample_service
         )
-    
-    assert exc_info.value.status_code == 404
 
 
 # ======================================================================================
@@ -797,15 +780,13 @@ async def test_get_fermentation_statistics_not_found(
     mock_fermentation_service,
     mock_sample_service
 ):
-    """Should raise HTTPException 404 when fermentation doesn't exist."""
+    """Should raise FermentationNotFound when fermentation doesn't exist."""
     mock_fermentation_service.get_fermentation.return_value = None
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await get_fermentation_statistics(
             fermentation_id=999,
             current_user=mock_user_context,
             fermentation_service=mock_fermentation_service,
             sample_service=mock_sample_service
         )
-    
-    assert exc_info.value.status_code == 404

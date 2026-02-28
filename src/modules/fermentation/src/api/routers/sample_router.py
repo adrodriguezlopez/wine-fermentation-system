@@ -37,7 +37,7 @@ from src.modules.fermentation.src.service_component.errors import (
     ValidationError,
     NotFoundError
 )
-from shared.domain.errors import SampleNotFound
+from src.shared.domain.errors import SampleNotFound
 
 # Import dependencies
 from src.modules.fermentation.src.api.dependencies import get_sample_service

@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent.parent.
 from src.modules.fermentation.src.api.error_handlers import handle_service_errors, register_error_handlers
 
 # Domain errors (ADR-026)
-from shared.domain.errors import (
+from src.shared.domain.errors import (
     DomainError,
     FermentationNotFound,
     SampleNotFound,
@@ -87,62 +87,50 @@ async def test_handle_service_errors_reraises_http_exception():
 
 @pytest.mark.asyncio
 async def test_handle_service_errors_not_found_error():
-    """Should convert NotFoundError to 404 HTTPException."""
+    """Should re-raise FermentationNotFound (DomainError) for global handler."""
     
     @handle_service_errors
     async def not_found_func():
-        raise NotFoundError("Resource not found")
+        raise FermentationNotFound("Resource not found")
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationNotFound):
         await not_found_func()
-    
-    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-    assert exc_info.value.detail == "Resource not found"
 
 
 @pytest.mark.asyncio
 async def test_handle_service_errors_validation_error():
-    """Should convert ValidationError to 422 HTTPException."""
+    """Should re-raise InvalidFermentationState (DomainError) for global handler."""
     
     @handle_service_errors
     async def validation_error_func():
-        raise ValidationError("Invalid input")
+        raise InvalidFermentationState("Invalid input")
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(InvalidFermentationState):
         await validation_error_func()
-    
-    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert exc_info.value.detail == "Invalid input"
 
 
 @pytest.mark.asyncio
 async def test_handle_service_errors_duplicate_error():
-    """Should convert DuplicateError to 409 HTTPException."""
+    """Should re-raise FermentationAlreadyCompleted (DomainError) for global handler."""
     
     @handle_service_errors
     async def duplicate_error_func():
-        raise DuplicateError("Resource already exists")
+        raise FermentationAlreadyCompleted("Resource already exists")
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(FermentationAlreadyCompleted):
         await duplicate_error_func()
-    
-    assert exc_info.value.status_code == status.HTTP_409_CONFLICT
-    assert exc_info.value.detail == "Resource already exists"
 
 
 @pytest.mark.asyncio
 async def test_handle_service_errors_business_rule_violation():
-    """Should convert BusinessRuleViolation to 422 HTTPException."""
+    """Should re-raise InvalidFermentationState (DomainError) for global handler."""
     
     @handle_service_errors
     async def business_rule_func():
-        raise BusinessRuleViolation("Business rule failed")
+        raise InvalidFermentationState("Business rule failed")
     
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(InvalidFermentationState):
         await business_rule_func()
-    
-    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert exc_info.value.detail == "Business rule failed"
 
 
 @pytest.mark.asyncio

@@ -21,7 +21,7 @@ from functools import wraps
 from src.shared.wine_fermentator_logging import get_logger
 
 # ADR-026: Import shared domain errors (preferred over legacy errors)
-from shared.domain.errors import (
+from src.shared.domain.errors import (
     DomainError,
     FermentationError,
     FermentationNotFound,

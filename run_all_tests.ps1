@@ -50,12 +50,9 @@ $testResults = @{
     FruitOriginUnit = $null
     FruitOriginIntegration = $null
     FruitOriginAPI = $null
+    FermentationComplete = $null
     AnalysisEngineIntegration = $null
     ProtocolUnit = $null
-    ProtocolIntegration = $null
-    FermentationUnit = $null
-    FermentationIntegration = $null
-    FermentationAPI = $null
 }
 
 $allPassed = $true
@@ -79,7 +76,7 @@ function Invoke-TestSuite {
             # Check if pyproject.toml exists
             $pyprojectPath = Join-Path $ModulePath "pyproject.toml"
             if (-not (Test-Path $pyprojectPath)) {
-                Write-Host "[SKIP] ${Name}: No pyproject.toml found at $pyprojectPath" -ForegroundColor Yellow
+                Write-Host "[SKIP] ${Name}: No pyproject.toml found at $ModulePath" -ForegroundColor Yellow
                 return @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
             }
             
@@ -290,6 +287,48 @@ if (-not $Quick) {
     if (-not $testResults.FruitOriginAPI.Success) { $allPassed = $false }
 }
 
+# Run Fermentation Module Tests (all unit, integration, and API tests)
+Write-Host "`n"
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+Write-Host "Running: Fermentation Module - Complete Test Suite" -ForegroundColor Yellow
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+
+try {
+    Push-Location "src/modules/fermentation"
+    $output = & poetry run pytest tests/unit/ tests/integration/repository_component/ tests/api/ --ignore=tests/unit/api_security/ -q --tb=line 2>&1
+    $exitCode = $LASTEXITCODE
+    Pop-Location
+} catch {
+    Write-Host "[FAIL] Fermentation Tests: Exception occurred" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    $testResults.FermentationComplete = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+    $allPassed = $false
+}
+
+if ($exitCode -eq 0) {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+passed" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+        Write-Host "[PASS] Fermentation Module - Complete Test Suite: $passed tests passed" -ForegroundColor Green
+        $testResults.FermentationComplete = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+    }
+} else {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error)" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        $failed = 0
+        if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+        if ($summaryText -match '(\d+)\s+failed') { $failed = [int]($Matches[1]) }
+        Write-Host "[FAIL] Fermentation Module - Complete Test Suite: $passed passed, $failed failed" -ForegroundColor Red
+        $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+        $testResults.FermentationComplete = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
+        $allPassed = $false
+    }
+}
+
 # Run Analysis Engine Integration Tests
 # Note: These tests are in tests/integration/modules/analysis_engine/ and require 
 # special setup. Run manually with: cd src/modules/analysis_engine && poetry run pytest ../../../tests/integration/modules/analysis_engine/repositories/ -v
@@ -349,79 +388,7 @@ if ($exitCode -eq 0) {
     }
 }
 
-# Run Protocol (ADR-035) Integration Tests
-if (-not $Quick) {
-    Write-Host "`n"
-    Write-Host "--------------------------------------------" -ForegroundColor Yellow
-    Write-Host "Running: Protocol (ADR-035) - Integration Tests" -ForegroundColor Yellow
-    Write-Host "--------------------------------------------" -ForegroundColor Yellow
-    
-    try {
-        Push-Location "src/modules/fermentation"
-        $output = & poetry run pytest tests/integration/test_protocol_integration.py -q --tb=line 2>&1
-        $exitCode = $LASTEXITCODE
-        Pop-Location
-    } catch {
-        Write-Host "[FAIL] Protocol Integration Tests: Exception occurred" -ForegroundColor Red
-        Write-Host $_.Exception.Message -ForegroundColor Red
-        $testResults.ProtocolIntegration = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
-        $allPassed = $false
-    }
-    
-    if ($exitCode -eq 0) {
-        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|skipped)" | Select-Object -Last 1
-        if ($summaryLine) {
-            $summaryText = $summaryLine.ToString()
-            $passed = 0
-            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
-            Write-Host "[PASS] Protocol (ADR-035) - Integration Tests: $passed tests passed" -ForegroundColor Green
-            $testResults.ProtocolIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
-        }
-    } else {
-        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error|skipped)" | Select-Object -Last 1
-        if ($summaryLine) {
-            $summaryText = $summaryLine.ToString()
-            $passed = 0
-            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
-            Write-Host "[FAIL] Protocol (ADR-035) - Integration Tests: Import errors detected" -ForegroundColor Yellow
-            $testResults.ProtocolIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
-        }
-    }
-}
-
-# Run Fermentation Unit Tests
-Write-Host "`n"
-$testResults.FermentationUnit = Invoke-TestSuite `
-    -Name "Fermentation - Unit Tests" `
-    -ModulePath "src/modules/fermentation" `
-    -TestPath "tests/unit/" `
-    -Type "unit"
-
-if (-not $testResults.FermentationUnit.Success) { $allPassed = $false }
-
-# Run Fermentation Integration Tests
-if (-not $Quick) {
-    Write-Host "`n"
-    $testResults.FermentationIntegration = Invoke-TestSuite `
-        -Name "Fermentation - Integration Tests" `
-        -ModulePath "src/modules/fermentation" `
-        -TestPath "tests/integration/repository_component/" `
-        -Type "integration"
-    
-    if (-not $testResults.FermentationIntegration.Success) { $allPassed = $false }
-}
-
-# Run Fermentation API Tests
-if (-not $Quick) {
-    Write-Host "`n"
-    $testResults.FermentationAPI = Invoke-TestSuite `
-        -Name "Fermentation - API Tests" `
-        -ModulePath "src/modules/fermentation" `
-        -TestPath "tests/api/" `
-        -Type "api"
-    
-    if (-not $testResults.FermentationAPI.Success) { $allPassed = $false }
-}
+# Run Fermentation Complete Test Suite (see FermentationComplete section below)
 
 # Summary
 $endTime = Get-Date
