@@ -15,14 +15,14 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from ..domain.entities.analysis import Analysis
-from ..domain.entities.anomaly import Anomaly
-from ..domain.entities.recommendation import Recommendation
-from ..domain.enums.analysis_status import AnalysisStatus
-from ..domain.value_objects.confidence_level import ConfidenceLevel
-from .comparison_service import ComparisonService
-from .anomaly_detection_service import AnomalyDetectionService
-from .recommendation_service import RecommendationService
+from src.modules.analysis_engine.src.domain.entities.analysis import Analysis
+from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly
+from src.modules.analysis_engine.src.domain.entities.recommendation import Recommendation
+from src.modules.analysis_engine.src.domain.enums.analysis_status import AnalysisStatus
+from src.modules.analysis_engine.src.domain.value_objects.confidence_level import ConfidenceLevel
+from src.modules.analysis_engine.src.service_component.services.comparison_service import ComparisonService
+from src.modules.analysis_engine.src.service_component.services.anomaly_detection_service import AnomalyDetectionService
+from src.modules.analysis_engine.src.service_component.services.recommendation_service import RecommendationService
 
 
 class AnalysisOrchestratorService:
@@ -148,7 +148,7 @@ class AnalysisOrchestratorService:
             analysis.confidence_level = confidence.to_dict()
             
             # Step 6: Mark complete
-            analysis.status = AnalysisStatus.COMPLETE.value
+            analysis.status = AnalysisStatus.COMPLETED.value
             
         except Exception as e:
             # Mark as failed if anything goes wrong
@@ -270,11 +270,11 @@ class AnalysisOrchestratorService:
         else:
             recommendation_confidence = 0.6
         
-        # Overall confidence = weighted average
+        # Overall confidence = weighted average (historical data weighted heavily)
         overall_confidence = (
-            historical_confidence * 0.3 +
-            detection_confidence * 0.4 +
-            recommendation_confidence * 0.3
+            historical_confidence * 0.7 +
+            detection_confidence * 0.2 +
+            recommendation_confidence * 0.1
         )
         
         return ConfidenceLevel(

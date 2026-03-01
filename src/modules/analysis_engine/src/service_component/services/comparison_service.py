@@ -14,9 +14,9 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
-from src.shared.domain.errors import WineryAccessDenied
-from ..domain.entities.analysis import Analysis
-from ..domain.value_objects.comparison_result import ComparisonResult
+from src.shared.domain.errors import CrossWineryAccessDenied
+from src.modules.analysis_engine.src.domain.entities.analysis import Analysis
+from src.modules.analysis_engine.src.domain.value_objects.comparison_result import ComparisonResult
 
 
 class ComparisonService:

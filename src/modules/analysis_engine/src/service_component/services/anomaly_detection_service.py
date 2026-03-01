@@ -15,10 +15,10 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
-from ..domain.entities.anomaly import Anomaly
-from ..domain.enums.anomaly_type import AnomalyType
-from ..domain.enums.severity_level import SeverityLevel
-from ..domain.value_objects.deviation_score import DeviationScore
+from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly
+from src.modules.analysis_engine.src.domain.enums.anomaly_type import AnomalyType
+from src.modules.analysis_engine.src.domain.enums.severity_level import SeverityLevel
+from src.modules.analysis_engine.src.domain.value_objects.deviation_score import DeviationScore
 
 
 class AnomalyDetectionService:
@@ -424,12 +424,16 @@ class AnomalyDetectionService:
         """
         if not historical_avg_duration or historical_avg_duration <= 0:
             return None
-        
+
         tolerance = 1.5  # Approximation for 10-90 percentile
-        is_unusual = (
-            days_fermenting < historical_avg_duration - tolerance or
-            days_fermenting > historical_avg_duration + tolerance
+        too_long = days_fermenting > historical_avg_duration + tolerance
+        # Only flag "too short" when fermentation has lasted long enough to be considered
+        # potentially complete (at least 60% of the expected average duration)
+        too_short = (
+            days_fermenting >= historical_avg_duration * 0.6 and
+            days_fermenting < historical_avg_duration - tolerance
         )
+        is_unusual = too_long or too_short
         
         if not is_unusual:
             return None

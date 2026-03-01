@@ -51,6 +51,7 @@ $testResults = @{
     FruitOriginIntegration = $null
     FruitOriginAPI = $null
     FermentationComplete = $null
+    AnalysisEngineUnit = $null
     AnalysisEngineIntegration = $null
     ProtocolUnit = $null
 }
@@ -325,6 +326,52 @@ if ($exitCode -eq 0) {
         Write-Host "[FAIL] Fermentation Module - Complete Test Suite: $passed passed, $failed failed" -ForegroundColor Red
         $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
         $testResults.FermentationComplete = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
+        $allPassed = $false
+    }
+}
+
+# Run Analysis Engine Unit Tests
+Write-Host "`n"
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+Write-Host "Running: Analysis Engine - Unit Tests" -ForegroundColor Yellow
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+
+try {
+    Push-Location "src/modules/analysis_engine"
+    $output = & poetry run pytest "../../../tests/unit/modules/analysis_engine/" -q --tb=line 2>&1
+    $exitCode = $LASTEXITCODE
+    Pop-Location
+} catch {
+    Write-Host "[FAIL] Analysis Engine Unit Tests: Exception occurred" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    $testResults.AnalysisEngineUnit = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+    $allPassed = $false
+}
+
+if ($exitCode -eq 0) {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+passed" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+        Write-Host "[PASS] Analysis Engine - Unit Tests: $passed tests passed" -ForegroundColor Green
+        $testResults.AnalysisEngineUnit = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+    } else {
+        Write-Host "[WARN] Analysis Engine Unit Tests: Could not parse test count" -ForegroundColor Yellow
+        $testResults.AnalysisEngineUnit = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+        $allPassed = $false
+    }
+} else {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error)" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        $failed = 0
+        if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+        if ($summaryText -match '(\d+)\s+failed') { $failed = [int]($Matches[1]) }
+        Write-Host "[FAIL] Analysis Engine - Unit Tests: $passed passed, $failed failed" -ForegroundColor Red
+        $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+        $testResults.AnalysisEngineUnit = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
         $allPassed = $false
     }
 }

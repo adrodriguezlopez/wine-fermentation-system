@@ -6,11 +6,15 @@ from datetime import datetime, timezone
 from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
+# Add project root and src to path
+project_root = Path(__file__).parent.parent.parent.parent.parent.parent
+src_path = project_root / "src"
+for p in [str(project_root), str(src_path)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
-from modules.analysis_engine.src.service_component.services.comparison_service import ComparisonService
-from modules.analysis_engine.src.domain.value_objects.comparison_result import ComparisonResult
+from src.modules.analysis_engine.src.service_component.services.comparison_service import ComparisonService
+from src.modules.analysis_engine.src.domain.value_objects.comparison_result import ComparisonResult
 
 
 @pytest.fixture

@@ -5,14 +5,18 @@ from pathlib import Path
 from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
+# Add project root and src to path
+project_root = Path(__file__).parent.parent.parent.parent.parent.parent
+src_path = project_root / "src"
+for p in [str(project_root), str(src_path)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
-from modules.analysis_engine.src.service_component.services.recommendation_service import RecommendationService
-from modules.analysis_engine.src.domain.entities.anomaly import Anomaly
-from modules.analysis_engine.src.domain.enums.anomaly_type import AnomalyType
-from modules.analysis_engine.src.domain.enums.severity_level import SeverityLevel
-from modules.analysis_engine.src.domain.entities.recommendation import Recommendation
+from src.modules.analysis_engine.src.service_component.services.recommendation_service import RecommendationService
+from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly
+from src.modules.analysis_engine.src.domain.enums.anomaly_type import AnomalyType
+from src.modules.analysis_engine.src.domain.enums.severity_level import SeverityLevel
+from src.modules.analysis_engine.src.domain.entities.recommendation import Recommendation
 
 
 @pytest.fixture
@@ -27,7 +31,7 @@ class TestPriorityCalculation:
     def test_critical_anomaly_high_priority(self, recommendation_service: RecommendationService):
         """Critical anomalies should have high priority."""
         # Create mock anomaly and template
-        from modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate
+        from src.modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate
         
         anomaly = Anomaly(
             analysis_id=uuid4(),
@@ -51,7 +55,7 @@ class TestPriorityCalculation:
     
     def test_warning_anomaly_medium_priority(self, recommendation_service: RecommendationService):
         """Warning anomalies should have medium priority."""
-        from modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate
+        from src.modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate
         
         anomaly = Anomaly(
             analysis_id=uuid4(),
@@ -75,7 +79,7 @@ class TestPriorityCalculation:
     
     def test_info_anomaly_low_priority(self, recommendation_service: RecommendationService):
         """Info anomalies should have low priority."""
-        from modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate
+        from src.modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate
         
         anomaly = Anomaly(
             analysis_id=uuid4(),

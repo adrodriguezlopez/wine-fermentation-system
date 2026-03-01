@@ -6,13 +6,17 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
+# Add project root and src to path
+project_root = Path(__file__).parent.parent.parent.parent.parent.parent
+src_path = project_root / "src"
+for p in [str(project_root), str(src_path)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
-from modules.analysis_engine.src.service_component.services.anomaly_detection_service import AnomalyDetectionService
-from modules.analysis_engine.src.domain.entities.anomaly import Anomaly
-from modules.analysis_engine.src.domain.enums.anomaly_type import AnomalyType
-from modules.analysis_engine.src.domain.enums.severity_level import SeverityLevel
+from src.modules.analysis_engine.src.service_component.services.anomaly_detection_service import AnomalyDetectionService
+from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly
+from src.modules.analysis_engine.src.domain.enums.anomaly_type import AnomalyType
+from src.modules.analysis_engine.src.domain.enums.severity_level import SeverityLevel
 
 
 @pytest.fixture

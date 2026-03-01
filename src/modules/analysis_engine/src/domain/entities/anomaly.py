@@ -74,7 +74,58 @@ class Anomaly(Base):
         back_populates="anomaly",
         foreign_keys="Recommendation.anomaly_id"
     )
-    
+
+    def __init__(
+        self,
+        analysis_id=None,
+        anomaly_type=None,
+        severity=None,
+        sample_id=None,
+        deviation_score=None,
+        description=None,
+        **kwargs,
+    ):
+        """
+        Initialize Anomaly entity with Python-level defaults.
+
+        Accepts the six main fields as positional *or* keyword arguments for
+        compatibility with tests. SQLAlchemy ``default`` values for ``id`` and
+        ``detected_at`` are applied immediately so unit tests work without a DB.
+        """
+        from src.modules.analysis_engine.src.domain.value_objects.deviation_score import DeviationScore
+
+        # Merge positional args into kwargs
+        if analysis_id is not None:
+            kwargs["analysis_id"] = analysis_id
+        if anomaly_type is not None:
+            # Accept enum or string
+            kwargs["anomaly_type"] = anomaly_type.value if hasattr(anomaly_type, "value") else anomaly_type
+        if severity is not None:
+            kwargs["severity"] = severity.value if hasattr(severity, "value") else severity
+        if sample_id is not None:
+            kwargs["sample_id"] = sample_id
+        if description is not None:
+            kwargs["description"] = description
+
+        # Apply Python-level defaults
+        if "id" not in kwargs:
+            kwargs["id"] = uuid4()
+        if "detected_at" not in kwargs:
+            kwargs["detected_at"] = datetime.now(timezone.utc)
+        if "is_resolved" not in kwargs:
+            kwargs["is_resolved"] = False
+
+        # Serialize DeviationScore to dict for JSONB storage
+        ds = deviation_score if deviation_score is not None else kwargs.pop("deviation_score", None)
+        if isinstance(ds, DeviationScore):
+            kwargs["deviation_score"] = ds.to_dict()
+        elif ds is not None:
+            kwargs["deviation_score"] = ds
+        elif "deviation_score" not in kwargs:
+            kwargs["deviation_score"] = {}
+
+        super().__init__(**kwargs)
+
     def resolve(self) -> None:
         """
         Mark this anomaly as resolved.

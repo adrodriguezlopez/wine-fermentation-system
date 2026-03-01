@@ -12,11 +12,11 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from ..domain.entities.anomaly import Anomaly
-from ..domain.entities.recommendation import Recommendation
-from ..domain.entities.recommendation_template import RecommendationTemplate
-from ..domain.enums.anomaly_type import AnomalyType
-from ..domain.enums.recommendation_category import RecommendationCategory
+from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly
+from src.modules.analysis_engine.src.domain.entities.recommendation import Recommendation
+from src.modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate
+from src.modules.analysis_engine.src.domain.enums.anomaly_type import AnomalyType
+from src.modules.analysis_engine.src.domain.enums.recommendation_category import RecommendationCategory
 
 
 class RecommendationService:
