@@ -1,9 +1,10 @@
 # ADR-020: Analysis Engine Architecture & Anomaly Detection Algorithms
 
-**Status**: 🔄 In Progress  
+**Status**: ✅ Implemented  
 **Date**: January 16, 2026  
+**Implemented**: March 1, 2026  
 **Decision Makers**: Development Team + Domain Expert (Winemaker)  
-**Related ADRs**: ADR-034 (Historical Data Service), ADR-032 (Historical Data API), ADR-021 (Alerting - future)
+**Related ADRs**: ADR-034 (Historical Data Service), ADR-032 (Historical Data API), ADR-037 (Protocol Integration)
 
 ---
 

@@ -1,6 +1,6 @@
 # Analysis Engine ADRs - Implementation Roadmap
 
-**Status**: ✅ ADRs defined, 🟡 Service layer not yet implemented  
+**Status**: ✅ ADR-020 fully implemented | 🔄 ADR-037 in progress  
 **Related to**: Protocol Engine (ADR-035, ADR-036, ADR-037, ADR-038, ADR-039)
 
 ---
@@ -10,15 +10,17 @@
 ### **PRIMARY ADR**
 
 #### **ADR-020: Analysis Engine Architecture & Anomaly Detection Algorithms**
-**Status**: ✅ Approved, 🟡 Partially Implemented (domain layer only)  
+**Status**: ✅ Approved, ✅ **Fully Implemented** (March 1, 2026)  
 **File**: `.ai-context/adr/ADR-020-analysis-engine-architecture.md` (1046 lines)
 
 **What it defines**:
 - ✅ Domain entities (Analysis, Anomaly, Recommendation, RecommendationTemplate)
 - ✅ Value objects (ConfidenceLevel, ComparisonResult, DeviationScore)
-- ✅ Enums (AnomalyType, SeverityLevel, AnalysisStatus, RecommendationCategory)
-- ✅ Repository interfaces
-- ❌ **Service layer** (NOT YET IMPLEMENTED)
+- ✅ Enums (AnomalyType x8, SeverityLevel, AnalysisStatus, RecommendationCategory x11)
+- ✅ Repository interfaces + implementations
+- ✅ **Service layer** (4 services: Orchestrator, Comparison, AnomalyDetection, Recommendation)
+- ✅ **API layer** (analysis_router, recommendation_router, schemas, error_handlers, main.py port 8001)
+- ✅ **108 unit tests passing**
   
 **Key Concepts Defined**:
 
@@ -223,7 +225,7 @@ Based on ADR-020, the Analysis Service layer should have:
 
 ### **Nice to Have (Non-Blocking)**
 
-5. ⏳ **ADR-037** - Protocol-Analysis Integration (can add later)
+5. 🔄 **ADR-037** - Protocol-Analysis Integration (**In Progress** - started March 1, 2026)
 6. ⏳ **ADR-040** - Notifications (can add later)
 7. ⏳ **API Endpoints** (can add after service complete)
 
@@ -264,7 +266,7 @@ Week 2:
 
 ### **Phase 3: Integration (1 week - optional)**
 ```
-├─ Implement ADR-037 (Protocol-Analysis integration)
+├─ 🔄 ADR-037 (Protocol-Analysis integration) ← IN PROGRESS
 ├─ Add API endpoints
 └─ End-to-end testing
 ```
@@ -321,27 +323,26 @@ Week 2:
 - ✅ Multi-tenancy rules (ADR-025)
 - ✅ Detection thresholds validated by expert winemaker
 
-**You need to build**:
-- ❌ AnalysisOrchestratorService
-- ❌ ComparisonService
-- ❌ AnomalyDetectionService
-- ❌ RecommendationService
-- ❌ RuleConfigService
-- ❌ InMemoryCacheProvider
-- ❌ Unit tests (~200+ tests)
+**Fully implemented (2026-03-01)**:
+- ✅ Domain entities & repositories (ADR-020)
+- ✅ AnalysisOrchestratorService
+- ✅ ComparisonService
+- ✅ AnomalyDetectionService
+- ✅ RecommendationService
+- ✅ Historical data service (ADR-034)
+- ✅ Historical data API (ADR-032)
+- ✅ Multi-tenancy rules (ADR-025)
+- ✅ Unit tests (108 tests passing)
 
-**Estimated effort**: 2-3 weeks for full service layer + testing + API
+**In progress (Phase 4)**:
+- 🔄 Protocol-Analysis Integration (ADR-037) ← started March 1, 2026
 
-**Then after that** (optional Phase 3c):
-- Protocol-Analysis Integration (ADR-037)
+**Not yet started**:
 - Notification system (ADR-040)
 
 ---
 
 ## 🚀 Next Steps
 
-Ready to start building the Analysis Service?
-
-Key question: **Should we start with the AnalysisOrchestratorService and build top-down?** Or start with ComparisonService and build bottom-up?
-
-I recommend: **Top-down** (Orchestrator first) because it defines the workflow that everything else plugs into.
+ADR-037 implementation underway. Building `ProtocolAnalysisIntegrationService` with confidence boost formula:
+`adjusted_confidence = base_confidence × (0.5 + compliance_score / 100)`

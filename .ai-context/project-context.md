@@ -54,43 +54,58 @@
 **Details:** See [auth module-context.md](../src/shared/auth/.ai-context/module-context.md)
 
 ### Fermentation Management Module
-**Status:** ✅ COMPLETE (Repository + Service + API + Integration Tests) + **NEW: Protocol Engine (ADR-035)**  
-**Last Updated:** February 9, 2026  
-**Total Tests:** 29 Protocol tests PASSING (Phase 1 Complete)  
-  - Fermentation Engine: 316 tests passing
-  - **Protocol Engine (NEW)**: 29/29 PASSING ✅
-  - **Combined Fermentation Module**: 345+ tests passing
-**Details:** See [fermentation module-context.md](../src/modules/fermentation/.ai-context/module-context.md) and [protocol-module-context.md](../src/modules/fermentation/.ai-context/protocol-module-context.md)
+**Status:** ✅ COMPLETE (Repository + Service + API + Integration Tests) + **Protocol Engine (ADR-035/036/038) + Alert Service (ADR-040 partial)**  
+**Last Updated:** March 1, 2026  
+**Total Tests:** 677 passing  
+  - Fermentation Engine: 496 tests passing
+  - **Protocol Engine**: 181 tests passing (compliance, deviation, alerts, service)
+**Details:** See [fermentation module-context.md](../src/modules/fermentation/.ai-context/module-context.md)
 
 ### Fruit Origin Module  
-**Status:** ✅ COMPLETE (Repository + Service + API) - **Fixed with Protocol Updates**  
-**Last Updated:** February 9, 2026  
-**Total Tests:** 113 passing (was 107, fixed 6 with Protocol fixes)  
+**Status:** ✅ COMPLETE (Repository + Service + API)  
+**Last Updated:** March 1, 2026  
+**Total Tests:** 190 passing (113 unit + 43 integration + 34 API)  
 **Details:** See [fruit_origin module-context.md](../src/modules/fruit_origin/.ai-context/module-context.md)
 
 ### Winery Module
-**Status:** ✅ SERVICE LAYER COMPLETE (Repository + Service + Integration Tests) - **Fixed with Protocol Updates**  
-**Last Updated:** February 9, 2026  
-**Total Tests:** 44 passing (was 41, fixed 3 with Protocol fixes)  
+**Status:** ✅ COMPLETE (Repository + Service + API + Integration Tests)  
+**Last Updated:** March 1, 2026  
+**Total Tests:** 79 passing (44 unit + 35 integration)  
 **Details:** See [winery module-context.md](../src/modules/winery/.ai-context/module-context.md)
 
 ### Shared Testing Infrastructure
-**Status:** ✅ PRODUCTION READY (Full Integration Test Resolution)  
-**Last Updated:** February 9, 2026  
-**Total Tests:** 238 passing (Auth + Testing + Error Handling)  
+**Status:** ✅ PRODUCTION READY  
+**Last Updated:** March 1, 2026  
+**Total Tests:** 261 passing (Auth 186 + Testing 52 + Error Handling 23)  
 **Details:** See [testing module-context.md](../src/shared/testing/.ai-context/module-context.md)
 
-### Project Totals
-**Tests:** **903 passing** (100% pass rate - System Complete for ADR-035 Phase 1)
-  - Winery: 44 tests ✅
-  - Fruit Origin: 113 tests ✅
-  - Protocol (ADR-035): 29 tests ✅ (NEW)
-  - Fermentation: 480 tests ✅
-  - Shared: 238 tests ✅
-**ADR Status:** 16 implemented + ADR-035 Phase 1 Complete (ADR-002 through ADR-016, ADR-025 through ADR-028, excluding ADR-010, **+ ADR-035**)  
-**Details:** See [ADR-INDEX.md](./adr/ADR-INDEX.md) and [ADR-PENDING-GUIDE.md](./adr/ADR-PENDING-GUIDE.md)
+### Analysis Engine Module
+**Status:** ✅ COMPLETE (Domain + Repository + Services + API Layer)  
+**Last Updated:** March 1, 2026  
+**Total Tests:** 108 unit tests passing  
+  - Domain entities: 11 tests
+  - Services (4 services): 67 tests
+  - API layer: 30 tests
+**Details:** See [analysis_engine module-context.md](../src/modules/analysis_engine/.ai-context/module-context.md)
 
-**Next Phase:** Winery API Layer
+### Protocol Integration Module (ADR-037)
+**Status:** 🔄 IN PROGRESS - Implementation starting March 1, 2026  
+**Connects:** Analysis Engine ↔ Protocol Compliance Engine  
+**Details:** See [ADR-037](./adr/ADR-037-protocol-analysis-integration.md)
+
+### Project Totals
+**Tests:** **1,344 passing** (100% pass rate - March 1, 2026)
+  - Winery: 79 tests ✅
+  - Fruit Origin: 190 tests ✅
+  - Protocol (ADR-035/036/038/040): 181 tests ✅
+  - Fermentation Engine: 496 tests ✅
+  - Analysis Engine (ADR-020): 108 tests ✅ **NEW**
+  - Shared (Auth + Testing + Errors): 261 tests ✅
+  - Protocol Unit (ADR-035): 29 tests ✅
+**ADR Status:** 22 implemented + ADR-037 in progress + ADR-039/040 partial  
+**Details:** See [ADR-INDEX.md](./adr/ADR-INDEX.md)
+
+**Next Phase:** ADR-037 Protocol↔Analysis Integration
 
 ## How to restart work on this system
 Read the module-context.md for the specific module you need to work on:

@@ -23,6 +23,7 @@ from src.modules.analysis_engine.src.domain.value_objects.confidence_level impor
 from src.modules.analysis_engine.src.service_component.services.comparison_service import ComparisonService
 from src.modules.analysis_engine.src.service_component.services.anomaly_detection_service import AnomalyDetectionService
 from src.modules.analysis_engine.src.service_component.services.recommendation_service import RecommendationService
+from src.modules.analysis_engine.src.service_component.services.protocol_integration_service import ProtocolAnalysisIntegrationService
 
 
 class AnalysisOrchestratorService:
@@ -49,6 +50,7 @@ class AnalysisOrchestratorService:
         self.comparison = ComparisonService(session)
         self.anomaly_detection = AnomalyDetectionService(session)
         self.recommendation = RecommendationService(session)
+        self.protocol_integration = ProtocolAnalysisIntegrationService()
     
     async def execute_analysis(
         self,
@@ -61,6 +63,7 @@ class AnalysisOrchestratorService:
         starting_brix: Optional[float] = None,
         days_fermenting: float = 0.0,
         previous_densities: Optional[list] = None,
+        protocol_compliance_score: Optional[float] = None,
     ) -> Analysis:
         """
         Execute a complete fermentation analysis.
@@ -78,6 +81,9 @@ class AnalysisOrchestratorService:
             starting_brix: Starting brix (optional, for similarity)
             days_fermenting: Days since fermentation start
             previous_densities: List of (datetime, float) density readings
+            protocol_compliance_score: Protocol compliance % [0-100] from Protocol Engine.
+                If provided, confidence is boosted/penalised via ADR-037 formula.
+                If None (no protocol assigned), confidence is unchanged.
         
         Returns:
             Complete Analysis object with anomalies and recommendations
@@ -145,9 +151,30 @@ class AnalysisOrchestratorService:
                 anomaly_count=len(anomalies),
                 recommendation_count=len(recommendations),
             )
-            analysis.confidence_level = confidence.to_dict()
             
-            # Step 6: Mark complete
+            # Step 5b: Apply ADR-037 protocol compliance boost (if protocol is active)
+            boosted_overall = self.protocol_integration.apply_boost_to_overall_confidence(
+                confidence.overall_confidence, protocol_compliance_score
+            )
+            if boosted_overall != confidence.overall_confidence:
+                from dataclasses import replace as dataclass_replace
+                confidence = dataclass_replace(
+                    confidence, overall_confidence=round(boosted_overall, 2)
+                )
+            
+            analysis.confidence_level = confidence.to_dict()
+
+            # Step 6: Generate and persist protocol advisories (ADR-037 Flow 2)
+            if anomalies:
+                advisories = self.protocol_integration.generate_all_advisories(
+                    fermentation_id=fermentation_id,
+                    analysis_id=analysis.id,  # type: ignore
+                    anomalies=anomalies,
+                )
+                for advisory in advisories:
+                    self.session.add(advisory)
+
+            # Step 7: Mark complete
             analysis.status = AnalysisStatus.COMPLETED.value
             
         except Exception as e:

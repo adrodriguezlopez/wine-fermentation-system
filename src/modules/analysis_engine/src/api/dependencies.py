@@ -18,6 +18,9 @@ from src.modules.analysis_engine.src.service_component.services.analysis_orchest
 from src.modules.analysis_engine.src.repository_component.repositories.recommendation_repository import (
     RecommendationRepository,
 )
+from src.modules.analysis_engine.src.repository_component.repositories.protocol_advisory_repository import (
+    ProtocolAdvisoryRepository,
+)
 
 
 async def get_analysis_orchestrator(
@@ -56,3 +59,23 @@ async def get_recommendation_repository(
     from src.shared.infra.repository.fastapi_session_manager import FastAPISessionManager
     session_manager = FastAPISessionManager(session)
     return RecommendationRepository(session_manager)
+
+
+async def get_protocol_advisory_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)]
+) -> ProtocolAdvisoryRepository:
+    """
+    Dependency: Provide a ProtocolAdvisoryRepository connected to the current DB session.
+
+    Used by the advisory router to query and acknowledge protocol advisories
+    without running a full analysis.
+
+    Args:
+        session: AsyncSession injected by FastAPI from the request lifecycle
+
+    Returns:
+        ProtocolAdvisoryRepository instance
+    """
+    from src.shared.infra.repository.fastapi_session_manager import FastAPISessionManager
+    session_manager = FastAPISessionManager(session)
+    return ProtocolAdvisoryRepository(session_manager)

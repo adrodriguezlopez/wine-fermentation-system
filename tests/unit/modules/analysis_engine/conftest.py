@@ -20,6 +20,8 @@ for p in [str(src_path), str(project_root)]:
 # Pre-import ALL fermentation entities so SQLAlchemy mapper cascade can resolve
 # string references when the shared Base configures all mappers at once.
 try:
+    import src.shared.auth.domain.entities.user  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.samples.base_sample  # noqa: F401
     import src.modules.fermentation.src.domain.entities.fermentation_note  # noqa: F401
     import src.modules.fermentation.src.domain.entities.fermentation_lot_source  # noqa: F401
     import src.modules.fermentation.src.domain.entities.step_completion  # noqa: F401
@@ -27,6 +29,7 @@ try:
     import src.modules.fermentation.src.domain.entities.protocol_protocol  # noqa: F401
     import src.modules.fermentation.src.domain.entities.protocol_execution  # noqa: F401
     import src.modules.fermentation.src.domain.entities.fermentation  # noqa: F401
+    import src.modules.analysis_engine.src.domain.entities.protocol_advisory  # noqa: F401
 except Exception:
     pass
 

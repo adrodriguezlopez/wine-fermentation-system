@@ -6,7 +6,8 @@ Provides REST API for:
 - GET  /api/v1/analyses/{id}      - Retrieve analysis by ID
 - GET  /api/v1/analyses/fermentation/{id} - List analyses for fermentation
 - GET  /api/v1/recommendations/{id}       - Get recommendation by ID
-- PUT  /api/v1/recommendations/{id}/apply - Mark recommendation as applied
+- GET  /api/v1/fermentations/{id}/advisories       - List protocol advisories for a fermentation
+- POST /api/v1/advisories/{id}/acknowledge          - Acknowledge a protocol advisory
 
 Following ADR-006 API Layer Design and ADR-020 Analysis Engine Architecture.
 
@@ -34,6 +35,7 @@ from shared.api.error_handlers import register_error_handlers
 # Analysis Engine routers
 from src.modules.analysis_engine.src.api.routers.analysis_router import router as analysis_router
 from src.modules.analysis_engine.src.api.routers.recommendation_router import router as recommendation_router
+from src.modules.analysis_engine.src.api.routers.advisory_router import router as advisory_router
 
 
 configure_logging(log_level="INFO")
@@ -77,6 +79,7 @@ def create_app() -> FastAPI:
     # Register Analysis Engine routers
     app.include_router(analysis_router)
     app.include_router(recommendation_router)
+    app.include_router(advisory_router)
 
     @app.get("/health", tags=["health"])
     async def health_check():
