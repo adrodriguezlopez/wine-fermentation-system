@@ -18,6 +18,8 @@ from src.modules.fermentation.src.repository_component.fermentation_protocol_rep
 from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
 from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
 from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
+from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert
+from src.modules.fermentation.src.domain.repositories.protocol_alert_repository_interface import IProtocolAlertRepository
 
 
 # ============================================================================
@@ -95,12 +97,14 @@ class ProtocolAlertService:
         execution_repository: ProtocolExecutionRepository,
         step_repository: ProtocolStepRepository,
         compliance_service: ProtocolComplianceService,
+        alert_repository: Optional[IProtocolAlertRepository] = None,
     ):
         """Initialize service with repository and service dependencies."""
         self.protocol_repo = protocol_repository
         self.execution_repo = execution_repository
         self.step_repo = step_repository
         self.compliance_service = compliance_service
+        self.alert_repo = alert_repository
 
     async def send_overdue_alert(
         self,
@@ -166,6 +170,25 @@ class ProtocolAlertService:
                     dismissed_at=None,
                 )
                 alerts.append(alert)
+
+        # Persist all generated alerts if repository is wired
+        if alerts and self.alert_repo is not None:
+            orm_alerts = [
+                ProtocolAlert(
+                    execution_id=a.execution_id,
+                    protocol_id=a.protocol_id,
+                    winery_id=a.winery_id,
+                    step_id=a.step_id,
+                    step_name=a.step_name,
+                    alert_type=a.alert_type.value,
+                    severity=a.severity,
+                    status=a.status.value,
+                    message=a.message,
+                    created_at=a.created_at,
+                )
+                for a in alerts
+            ]
+            await self.alert_repo.create_many(orm_alerts)
 
         return alerts
 
@@ -240,6 +263,20 @@ class ProtocolAlertService:
                 sent_at=None,
                 dismissed_at=None,
             )
+            if self.alert_repo is not None:
+                orm_alert = ProtocolAlert(
+                    execution_id=alert.execution_id,
+                    protocol_id=alert.protocol_id,
+                    winery_id=alert.winery_id,
+                    step_id=alert.step_id,
+                    step_name=alert.step_name,
+                    alert_type=alert.alert_type.value,
+                    severity=alert.severity,
+                    status=alert.status.value,
+                    message=alert.message,
+                    created_at=alert.created_at,
+                )
+                await self.alert_repo.create(orm_alert)
             return alert
 
         return None
@@ -304,6 +341,24 @@ class ProtocolAlertService:
                 )
                 alerts.append(alert)
 
+        if alerts and self.alert_repo is not None:
+            orm_alerts = [
+                ProtocolAlert(
+                    execution_id=a.execution_id,
+                    protocol_id=a.protocol_id,
+                    winery_id=a.winery_id,
+                    step_id=a.step_id,
+                    step_name=a.step_name,
+                    alert_type=a.alert_type.value,
+                    severity=a.severity,
+                    status=a.status.value,
+                    message=a.message,
+                    created_at=a.created_at,
+                )
+                for a in alerts
+            ]
+            await self.alert_repo.create_many(orm_alerts)
+
         return alerts
 
     async def get_pending_alerts(
@@ -341,9 +396,32 @@ class ProtocolAlertService:
         # Default to PENDING if not specified
         status = status_filter or AlertStatus.PENDING
 
-        # In production, this would query an alert repository
-        # For now, return empty list as placeholder
-        # This would be: return await self.alert_repo.get_by_execution(execution_id, status, alert_type)
+        if self.alert_repo is not None:
+            orm_alerts = await self.alert_repo.get_by_execution(
+                execution_id=execution_id,
+                status=status.value,
+                alert_type=alert_type_filter.value if alert_type_filter else None,
+            )
+            return [
+                AlertDetail(
+                    alert_id=a.id,
+                    alert_type=AlertType(a.alert_type),
+                    execution_id=a.execution_id,
+                    protocol_id=a.protocol_id,
+                    winery_id=a.winery_id,
+                    step_id=a.step_id,
+                    step_name=a.step_name,
+                    message=a.message,
+                    severity=a.severity,
+                    status=AlertStatus(a.status),
+                    created_at=a.created_at,
+                    sent_at=a.sent_at,
+                    dismissed_at=a.dismissed_at,
+                )
+                for a in orm_alerts
+            ]
+
+        # No repo wired: return empty list (backward compatible)
         return []
 
     async def get_alert_summary(
@@ -442,20 +520,25 @@ class ProtocolAlertService:
                 f"Access denied: Execution {execution_id} belongs to winery {execution.winery_id}"
             )
 
-        # In production: would fetch alert from repository, update status, persist
-        # For now return mock response
+        if self.alert_repo is None:
+            raise ValueError("Alert repository not configured")
+
+        orm_alert = await self.alert_repo.acknowledge(alert_id)
+        if orm_alert is None:
+            raise ValueError(f"Alert {alert_id} not found")
+
         return AlertDetail(
-            alert_id=alert_id,
-            alert_type=AlertType.STEP_OVERDUE,
-            execution_id=execution_id,
-            protocol_id=execution.protocol_id,
-            winery_id=winery_id,
-            step_id=1,
-            step_name="Test Step",
-            message="Test alert",
-            severity="WARNING",
-            status=AlertStatus.ACKNOWLEDGED,
-            created_at=datetime.utcnow(),
-            sent_at=datetime.utcnow(),
-            dismissed_at=None,
+            alert_id=orm_alert.id,
+            alert_type=AlertType(orm_alert.alert_type),
+            execution_id=orm_alert.execution_id,
+            protocol_id=orm_alert.protocol_id,
+            winery_id=orm_alert.winery_id,
+            step_id=orm_alert.step_id,
+            step_name=orm_alert.step_name,
+            message=orm_alert.message,
+            severity=orm_alert.severity,
+            status=AlertStatus(orm_alert.status),
+            created_at=orm_alert.created_at,
+            sent_at=orm_alert.sent_at,
+            dismissed_at=orm_alert.dismissed_at,
         )

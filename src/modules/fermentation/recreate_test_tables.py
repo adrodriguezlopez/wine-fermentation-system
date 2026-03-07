@@ -34,6 +34,7 @@ from src.modules.fermentation.src.domain.entities.protocol_protocol import Ferme
 from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
 from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
 from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion
+from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert
 
 async def recreate_all_tables():
     engine = create_async_engine(

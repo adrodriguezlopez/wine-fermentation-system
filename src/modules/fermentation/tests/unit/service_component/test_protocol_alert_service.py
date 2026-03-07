@@ -70,12 +70,42 @@ def alert_service(
     mock_step_repo,
     mock_compliance_service,
 ) -> ProtocolAlertService:
-    """Create service with mock dependencies."""
+    """Create service with mock dependencies (includes a mock alert_repo)."""
+    from unittest.mock import AsyncMock as _AsyncMock
+    from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert
+    from src.modules.fermentation.src.domain.repositories.protocol_alert_repository_interface import (
+        IProtocolAlertRepository,
+    )
+
+    # Build a minimal acknowledged alert for the acknowledge_alert test
+    ack_alert = MagicMock(spec=ProtocolAlert)
+    ack_alert.id = 1
+    ack_alert.execution_id = 1
+    ack_alert.protocol_id = 1
+    ack_alert.winery_id = 1
+    ack_alert.step_id = None
+    ack_alert.step_name = None
+    ack_alert.alert_type = "STEP_OVERDUE"
+    ack_alert.severity = "WARNING"
+    ack_alert.status = "ACKNOWLEDGED"
+    ack_alert.message = "Step is overdue"
+    ack_alert.created_at = datetime.utcnow()
+    ack_alert.sent_at = None
+    ack_alert.dismissed_at = None
+    ack_alert.acknowledged_at = datetime.utcnow()
+
+    mock_alert_repo = MagicMock(spec=IProtocolAlertRepository)
+    mock_alert_repo.create = _AsyncMock()
+    mock_alert_repo.create_many = _AsyncMock(return_value=[])
+    mock_alert_repo.get_by_execution = _AsyncMock(return_value=[])
+    mock_alert_repo.acknowledge = _AsyncMock(return_value=ack_alert)
+
     return ProtocolAlertService(
         protocol_repository=mock_protocol_repo,
         execution_repository=mock_execution_repo,
         step_repository=mock_step_repo,
         compliance_service=mock_compliance_service,
+        alert_repository=mock_alert_repo,
     )
 
 

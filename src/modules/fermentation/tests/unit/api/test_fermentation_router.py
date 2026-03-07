@@ -205,11 +205,13 @@ async def test_get_fermentation_not_found(
     mock_user_context,
     mock_fermentation_service
 ):
-    """Should raise FermentationNotFound when fermentation doesn't exist."""
+    """Should raise HTTPException(404) when fermentation doesn't exist."""
     mock_fermentation_service.get_fermentation.return_value = None
     
-    with pytest.raises(FermentationNotFound):
+    with pytest.raises(HTTPException) as exc_info:
         await get_fermentation(999, mock_user_context, mock_fermentation_service)
+    assert exc_info.value.status_code == 404
+    assert "not found" in exc_info.value.detail.lower()
 
 
 @pytest.mark.asyncio
@@ -220,8 +222,9 @@ async def test_get_fermentation_multi_tenant_security(
     """Should enforce multi-tenant isolation via winery_id filter."""
     mock_fermentation_service.get_fermentation.return_value = None
     
-    with pytest.raises(FermentationNotFound):
+    with pytest.raises(HTTPException) as exc_info:
         await get_fermentation(1, mock_user_context, mock_fermentation_service)
+    assert exc_info.value.status_code == 404
     # Verify winery_id was passed to service for filtering
     mock_fermentation_service.get_fermentation.assert_called_once_with(
         fermentation_id=1,

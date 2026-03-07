@@ -11,6 +11,8 @@ from .protocol_responses import (
     ExecutionListResponse,
     CompletionResponse,
     CompletionListResponse,
+    AlertResponse,
+    AlertListResponse,
 )
 
 __all__ = [
@@ -23,4 +25,6 @@ __all__ = [
     "ExecutionListResponse",
     "CompletionResponse",
     "CompletionListResponse",
+    "AlertResponse",
+    "AlertListResponse",
 ]
