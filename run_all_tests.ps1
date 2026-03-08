@@ -296,7 +296,7 @@ Write-Host "--------------------------------------------" -ForegroundColor Yello
 
 try {
     Push-Location "src/modules/fermentation"
-    $output = & poetry run pytest tests/unit/ tests/integration/repository_component/ tests/api/ --ignore=tests/unit/api_security/ -q --tb=line 2>&1
+    $output = & poetry run pytest tests/unit/ tests/integration/repository_component/ tests/integration/test_etl_integration.py tests/integration/api_component/ tests/api/ --ignore=tests/unit/api_security/ -q --tb=line 2>&1
     $exitCode = $LASTEXITCODE
     Pop-Location
 } catch {
@@ -377,15 +377,61 @@ if ($exitCode -eq 0) {
 }
 
 # Run Analysis Engine Integration Tests
-# Note: These tests are in tests/integration/modules/analysis_engine/ and require 
-# special setup. Run manually with: cd src/modules/analysis_engine && poetry run pytest ../../../tests/integration/modules/analysis_engine/repositories/ -v
-# Skipping in this script due to path resolution issues across module boundaries
+# Requires PostgreSQL test DB at localhost:5433. Skips gracefully if not available.
 Write-Host "`n"
 Write-Host "--------------------------------------------" -ForegroundColor Yellow
-Write-Host "Running: Analysis Engine - Integration Tests (SKIPPED)" -ForegroundColor Yellow
+Write-Host "Running: Analysis Engine - Integration Tests" -ForegroundColor Yellow
 Write-Host "--------------------------------------------" -ForegroundColor Yellow
-Write-Host "[SKIP] Analysis Engine - Integration Tests: Requires manual execution from root" -ForegroundColor Yellow
-$testResults.AnalysisEngineIntegration = @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
+
+$dbAvailable = $false
+try {
+    $tcpClient = New-Object System.Net.Sockets.TcpClient
+    $connectTask = $tcpClient.ConnectAsync("localhost", 5433)
+    $dbAvailable = $connectTask.Wait(2000) -and $tcpClient.Connected
+    $tcpClient.Close()
+} catch {
+    $dbAvailable = $false
+}
+
+if (-not $dbAvailable) {
+    Write-Host "[SKIP] Analysis Engine - Integration Tests: PostgreSQL not available at localhost:5433" -ForegroundColor Yellow
+    $testResults.AnalysisEngineIntegration = @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
+} else {
+    try {
+        Push-Location "src/modules/analysis_engine"
+        $output = & poetry run pytest "../../../tests/integration/modules/analysis_engine/repositories/" -q --tb=line 2>&1
+        $exitCode = $LASTEXITCODE
+        Pop-Location
+    } catch {
+        Write-Host "[FAIL] Analysis Engine Integration Tests: Exception occurred" -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        $testResults.AnalysisEngineIntegration = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+        $allPassed = $false
+    }
+
+    if ($exitCode -eq 0) {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+passed" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            Write-Host "[PASS] Analysis Engine - Integration Tests: $passed tests passed" -ForegroundColor Green
+            $testResults.AnalysisEngineIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+        }
+    } else {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error)" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0; $failed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            if ($summaryText -match '(\d+)\s+failed') { $failed = [int]($Matches[1]) }
+            Write-Host "[FAIL] Analysis Engine - Integration Tests: $passed passed, $failed failed" -ForegroundColor Red
+            $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+            $testResults.AnalysisEngineIntegration = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
+            $allPassed = $false
+        }
+    }
+}
 
 # Run Protocol (ADR-035) Unit Tests (enums + repositories)
 Write-Host "`n"

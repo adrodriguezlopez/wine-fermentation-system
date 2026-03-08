@@ -5,6 +5,34 @@ Uses shared testing infrastructure from src/shared/testing/integration.
 Uses PostgreSQL test database (localhost:5433) to support JSONB columns.
 """
 
+import sys
+from pathlib import Path
+
+# Add project root and src/ to sys.path so 'src.*' imports resolve regardless
+# of which directory pytest is invoked from.
+# This file is at: tests/integration/modules/analysis_engine/conftest.py
+# → 4 parents up = project root
+_project_root = Path(__file__).parent.parent.parent.parent.parent
+for _p in [str(_project_root), str(_project_root / "src")]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+# Pre-import fermentation entities so SQLAlchemy mapper cascade resolves correctly
+# when the shared Base configures all mappers at once.
+try:
+    import src.shared.auth.domain.entities.user  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.fermentation  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.fermentation_note  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.fermentation_lot_source  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.samples.base_sample  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.protocol_protocol  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.protocol_step  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.protocol_execution  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.step_completion  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.protocol_alert  # noqa: F401
+except Exception:
+    pass  # Degrade gracefully if fermentation module is not available
+
 import pytest
 import pytest_asyncio
 from uuid import uuid4
