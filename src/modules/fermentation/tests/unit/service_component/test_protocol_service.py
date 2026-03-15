@@ -56,7 +56,11 @@ def mock_execution_repo() -> AsyncMock:
 @pytest.fixture
 def mock_step_repo() -> AsyncMock:
     """Mock step repository."""
-    return create_autospec(ProtocolStepRepository, instance=True)
+    mock = create_autospec(ProtocolStepRepository, instance=True)
+    mock.session = MagicMock()
+    mock.session.commit = AsyncMock()
+    mock.session.flush = AsyncMock()
+    return mock
 
 
 @pytest.fixture
@@ -653,3 +657,305 @@ class TestComplianceIntegration:
 
         assert result["compliance_score"] == 85.0
         assert "breakdown" in result
+
+# ============================================================================
+# ADR-039: Template Management Tests
+# ============================================================================
+
+
+def _make_step(step_id: int, order: int, protocol_id: int = 1) -> MagicMock:
+    """Helper: mock ProtocolStep."""
+    s = MagicMock(spec=ProtocolStep)
+    s.id = step_id
+    s.protocol_id = protocol_id
+    s.step_order = order
+    s.step_type = StepType.MONITORING
+    s.description = f"Step {order}"
+    s.expected_day = order
+    s.tolerance_hours = 12
+    s.duration_minutes = 30
+    s.is_critical = False
+    s.criticality_score = 1.0
+    s.can_repeat_daily = False
+    s.notes = None
+    s.depends_on_step_id = None
+    return s
+
+
+class TestCloneProtocol:
+    """Tests for ProtocolService.clone_protocol (ADR-039)."""
+
+    @pytest.mark.asyncio
+    @patch("src.modules.fermentation.src.service_component.services.protocol_service.ProtocolStep")
+    @patch("src.modules.fermentation.src.service_component.services.protocol_service.FermentationProtocol")
+    async def test_clone_creates_new_inactive_protocol(
+        self, MockProtocol, MockStep, protocol_service, mock_protocol_repo, mock_step_repo, sample_protocol
+    ):
+        """Cloned protocol should be inactive with new version."""
+        mock_cloned = MagicMock()
+        mock_cloned.is_active = False
+        mock_cloned.version = "2.0"
+        mock_cloned.varietal_code = "PN"
+        mock_cloned.id = 10
+        MockProtocol.return_value = mock_cloned
+        MockStep.return_value = MagicMock()
+
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+        mock_protocol_repo.get_by_winery_varietal_version = AsyncMock(return_value=None)
+        mock_protocol_repo.create = AsyncMock(side_effect=lambda p: p)
+        mock_protocol_repo.session.flush = AsyncMock()
+        mock_protocol_repo.session.commit = AsyncMock()
+
+        steps = [_make_step(1, 1), _make_step(2, 2)]
+        mock_step_repo.get_by_protocol = AsyncMock(return_value=steps)
+        mock_step_repo.create = AsyncMock(side_effect=lambda s: s)
+
+        result = await protocol_service.clone_protocol(
+            source_protocol_id=1,
+            winery_id=1,
+            new_version="2.0",
+        )
+
+        assert result.is_active is False
+        assert result.version == "2.0"
+        assert result.varietal_code == "PN"
+        mock_step_repo.create.assert_awaited()
+
+    @pytest.mark.asyncio
+    @patch("src.modules.fermentation.src.service_component.services.protocol_service.ProtocolStep")
+    @patch("src.modules.fermentation.src.service_component.services.protocol_service.FermentationProtocol")
+    async def test_clone_copies_all_steps(
+        self, MockProtocol, MockStep, protocol_service, mock_protocol_repo, mock_step_repo, sample_protocol
+    ):
+        """Clone should deep-copy every step from the source."""
+        MockProtocol.return_value = MagicMock(id=10)
+        MockStep.return_value = MagicMock()
+
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+        mock_protocol_repo.get_by_winery_varietal_version = AsyncMock(return_value=None)
+        mock_protocol_repo.create = AsyncMock(side_effect=lambda p: p)
+        mock_protocol_repo.session.flush = AsyncMock()
+        mock_protocol_repo.session.commit = AsyncMock()
+
+        steps = [_make_step(1, 1), _make_step(2, 2), _make_step(3, 3)]
+        mock_step_repo.get_by_protocol = AsyncMock(return_value=steps)
+        mock_step_repo.create = AsyncMock(side_effect=lambda s: s)
+
+        await protocol_service.clone_protocol(1, 1, "2.0")
+
+        assert mock_step_repo.create.await_count == 3
+
+    @pytest.mark.asyncio
+    @patch("src.modules.fermentation.src.service_component.services.protocol_service.ProtocolStep")
+    @patch("src.modules.fermentation.src.service_component.services.protocol_service.FermentationProtocol")
+    async def test_clone_uses_custom_name(
+        self, MockProtocol, MockStep, protocol_service, mock_protocol_repo, mock_step_repo, sample_protocol
+    ):
+        """Clone should use provided protocol name."""
+        mock_cloned = MagicMock()
+        mock_cloned.protocol_name = "Custom Name"
+        MockProtocol.return_value = mock_cloned
+
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+        mock_protocol_repo.get_by_winery_varietal_version = AsyncMock(return_value=None)
+        mock_protocol_repo.create = AsyncMock(side_effect=lambda p: p)
+        mock_protocol_repo.session.flush = AsyncMock()
+        mock_protocol_repo.session.commit = AsyncMock()
+        mock_step_repo.get_by_protocol = AsyncMock(return_value=[])
+
+        result = await protocol_service.clone_protocol(1, 1, "2.0", "Custom Name")
+
+        assert result.protocol_name == "Custom Name"
+
+    @pytest.mark.asyncio
+    async def test_clone_version_conflict_raises(
+        self, protocol_service, mock_protocol_repo, sample_protocol
+    ):
+        """Clone should raise if new_version already exists."""
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+        mock_protocol_repo.get_by_winery_varietal_version = AsyncMock(return_value=sample_protocol)
+
+        with pytest.raises(ValueError, match="already exists"):
+            await protocol_service.clone_protocol(1, 1, "1.0")
+
+    @pytest.mark.asyncio
+    async def test_clone_invalid_version_raises(
+        self, protocol_service, mock_protocol_repo, sample_protocol
+    ):
+        """Clone should raise on invalid version format."""
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+
+        with pytest.raises(ValueError, match="semantic format"):
+            await protocol_service.clone_protocol(1, 1, "v2")
+
+    @pytest.mark.asyncio
+    async def test_clone_access_denied_different_winery(
+        self, protocol_service, mock_protocol_repo, sample_protocol
+    ):
+        """Clone should raise if protocol belongs to different winery."""
+        sample_protocol.winery_id = 99
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+
+        with pytest.raises(ValueError, match="Access denied"):
+            await protocol_service.clone_protocol(1, winery_id=1, new_version="2.0")
+
+
+class TestAddCustomStep:
+    """Tests for ProtocolService.add_custom_step (ADR-039)."""
+
+    @pytest.mark.asyncio
+    @patch("src.modules.fermentation.src.service_component.services.protocol_service.ProtocolStep")
+    async def test_add_step_shifts_existing_steps(
+        self, MockStep, protocol_service, mock_protocol_repo, mock_step_repo, sample_protocol
+    ):
+        """Existing steps at or after insertion order should be shifted."""
+        MockStep.return_value = MagicMock()
+        sample_protocol.is_active = False
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+
+        existing = [_make_step(1, 1), _make_step(2, 2), _make_step(3, 3)]
+        mock_step_repo.get_by_protocol = AsyncMock(return_value=existing)
+        mock_step_repo.update = AsyncMock(side_effect=lambda s: s)
+        mock_step_repo.create = AsyncMock(side_effect=lambda s: s)
+        mock_step_repo.session = MagicMock()
+        mock_step_repo.session.commit = AsyncMock()
+
+        await protocol_service.add_custom_step(
+            protocol_id=1, winery_id=1, step_order=2,
+            step_type="MONITORING", description="New step",
+            expected_day=1, tolerance_hours=6, duration_minutes=20,
+            criticality_score=1.0,
+        )
+
+        # Steps at positions 2 and 3 should have been shifted to 3 and 4
+        assert mock_step_repo.update.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_add_step_to_active_protocol_raises(
+        self, protocol_service, mock_protocol_repo, sample_protocol
+    ):
+        """Cannot inject a step into an active protocol."""
+        sample_protocol.is_active = True
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+
+        with pytest.raises(ValueError, match="is active"):
+            await protocol_service.add_custom_step(
+                protocol_id=1, winery_id=1, step_order=1,
+                step_type="MONITORING", description="X",
+                expected_day=0, tolerance_hours=6, duration_minutes=10,
+                criticality_score=1.0,
+            )
+
+    @pytest.mark.asyncio
+    @patch("src.modules.fermentation.src.service_component.services.protocol_service.ProtocolStep")
+    async def test_add_step_returns_new_step(
+        self, MockStep, protocol_service, mock_protocol_repo, mock_step_repo, sample_protocol
+    ):
+        """add_custom_step should return the created step."""
+        mock_new_step = MagicMock()
+        mock_new_step.id = 99
+        MockStep.return_value = mock_new_step
+        sample_protocol.is_active = False
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+        mock_step_repo.get_by_protocol = AsyncMock(return_value=[])
+        mock_step_repo.create = AsyncMock(side_effect=lambda s: s)
+        mock_step_repo.session = MagicMock()
+        mock_step_repo.session.commit = AsyncMock()
+
+        result = await protocol_service.add_custom_step(
+            protocol_id=1, winery_id=1, step_order=1,
+            step_type="MONITORING", description="Custom",
+            expected_day=0, tolerance_hours=6, duration_minutes=10,
+            criticality_score=1.5,
+        )
+
+        assert result.id == 99
+
+
+class TestOverrideStep:
+    """Tests for ProtocolService.override_step (ADR-039)."""
+
+    @pytest.mark.asyncio
+    async def test_override_updates_allowed_fields(
+        self, protocol_service, mock_protocol_repo, mock_step_repo, sample_protocol
+    ):
+        """Override should apply changes to allowed fields."""
+        sample_protocol.is_active = False
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+
+        step = _make_step(5, 1, protocol_id=1)
+        mock_step_repo.get_by_id = AsyncMock(return_value=step)
+        mock_step_repo.update = AsyncMock(side_effect=lambda s: s)
+        mock_step_repo.session = MagicMock()
+        mock_step_repo.session.commit = AsyncMock()
+
+        result = await protocol_service.override_step(
+            protocol_id=1, step_id=5, winery_id=1,
+            tolerance_hours=6, description="Updated desc",
+        )
+
+        assert result.tolerance_hours == 6
+        assert result.description == "Updated desc"
+
+    @pytest.mark.asyncio
+    async def test_override_non_overridable_field_raises(
+        self, protocol_service, mock_protocol_repo, mock_step_repo, sample_protocol
+    ):
+        """Attempting to override step_order should raise ValueError."""
+        sample_protocol.is_active = False
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+
+        step = _make_step(5, 1, protocol_id=1)
+        mock_step_repo.get_by_id = AsyncMock(return_value=step)
+
+        with pytest.raises(ValueError, match="cannot be overridden"):
+            await protocol_service.override_step(
+                protocol_id=1, step_id=5, winery_id=1,
+                step_order=99,
+            )
+
+    @pytest.mark.asyncio
+    async def test_override_active_protocol_raises(
+        self, protocol_service, mock_protocol_repo, sample_protocol
+    ):
+        """Override on an active protocol should raise."""
+        sample_protocol.is_active = True
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+
+        with pytest.raises(ValueError, match="is active"):
+            await protocol_service.override_step(
+                protocol_id=1, step_id=5, winery_id=1,
+                tolerance_hours=6,
+            )
+
+    @pytest.mark.asyncio
+    async def test_override_step_not_found_raises(
+        self, protocol_service, mock_protocol_repo, mock_step_repo, sample_protocol
+    ):
+        """Override should raise if step does not exist."""
+        sample_protocol.is_active = False
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+        mock_step_repo.get_by_id = AsyncMock(return_value=None)
+
+        with pytest.raises(ValueError, match="not found"):
+            await protocol_service.override_step(
+                protocol_id=1, step_id=999, winery_id=1,
+                tolerance_hours=6,
+            )
+
+    @pytest.mark.asyncio
+    async def test_override_step_wrong_protocol_raises(
+        self, protocol_service, mock_protocol_repo, mock_step_repo, sample_protocol
+    ):
+        """Override should raise if step belongs to a different protocol."""
+        sample_protocol.is_active = False
+        mock_protocol_repo.get_by_id = AsyncMock(return_value=sample_protocol)
+
+        step = _make_step(5, 1, protocol_id=99)  # belongs to protocol 99, not 1
+        mock_step_repo.get_by_id = AsyncMock(return_value=step)
+
+        with pytest.raises(ValueError, match="does not belong"):
+            await protocol_service.override_step(
+                protocol_id=1, step_id=5, winery_id=1,
+                tolerance_hours=6,
+            )
