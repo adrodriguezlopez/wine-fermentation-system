@@ -53,6 +53,7 @@ $testResults = @{
     FermentationComplete = $null
     AnalysisEngineUnit = $null
     AnalysisEngineIntegration = $null
+    ProtocolMigrationIntegration = $null
     ProtocolUnit = $null
 }
 
@@ -428,6 +429,54 @@ if (-not $dbAvailable) {
             Write-Host "[FAIL] Analysis Engine - Integration Tests: $passed passed, $failed failed" -ForegroundColor Red
             $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
             $testResults.AnalysisEngineIntegration = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
+            $allPassed = $false
+        }
+    }
+}
+
+# Run Protocol Migration Integration Tests (migrations 001-003)
+# Requires PostgreSQL at localhost:5433 with alembic upgrade head applied.
+# Skips gracefully if DB is not available.
+Write-Host "`n"
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+Write-Host "Running: Protocol Migrations - Integration Tests (001-003)" -ForegroundColor Yellow
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+
+if (-not $dbAvailable) {
+    Write-Host "[SKIP] Protocol Migrations - Integration Tests: PostgreSQL not available at localhost:5433" -ForegroundColor Yellow
+    $testResults.ProtocolMigrationIntegration = @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
+} else {
+    try {
+        Push-Location "src/modules/fermentation"
+        $output = & poetry run pytest "../../../tests/integration/modules/protocol_migrations/" -q --tb=line 2>&1
+        $exitCode = $LASTEXITCODE
+        Pop-Location
+    } catch {
+        Write-Host "[FAIL] Protocol Migration Integration Tests: Exception occurred" -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        $testResults.ProtocolMigrationIntegration = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+        $allPassed = $false
+    }
+
+    if ($exitCode -eq 0) {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+passed" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            Write-Host "[PASS] Protocol Migrations - Integration Tests: $passed tests passed" -ForegroundColor Green
+            $testResults.ProtocolMigrationIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+        }
+    } else {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error)" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0; $failed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            if ($summaryText -match '(\d+)\s+failed') { $failed = [int]($Matches[1]) }
+            Write-Host "[FAIL] Protocol Migrations - Integration Tests: $passed passed, $failed failed" -ForegroundColor Red
+            $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+            $testResults.ProtocolMigrationIntegration = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
             $allPassed = $false
         }
     }

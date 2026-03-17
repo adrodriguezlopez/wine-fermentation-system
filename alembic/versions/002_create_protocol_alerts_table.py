@@ -78,10 +78,6 @@ def upgrade() -> None:
             name='fk_alerts_protocol',
         ),
         sa.ForeignKeyConstraint(
-            ['winery_id'], ['wineries.id'],
-            name='fk_alerts_winery',
-        ),
-        sa.ForeignKeyConstraint(
             ['step_id'], ['protocol_steps.id'],
             name='fk_alerts_step',
         ),
