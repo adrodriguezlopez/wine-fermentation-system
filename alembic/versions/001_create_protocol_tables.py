@@ -45,8 +45,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(['winery_id'], ['wineries.id'], name='fk_protocols_winery'),
-        sa.UniqueConstraint('winery_id', 'varietal_code', 'version', 
+        sa.UniqueConstraint('winery_id', 'varietal_code', 'version',
                           name='uq_protocol_winery_varietal_version'),
         sa.CheckConstraint('expected_duration_days > 0', name='ck_protocol_duration_positive'),
     )
@@ -105,11 +104,8 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.Column('completed_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(['fermentation_id'], ['fermentations.id'], 
-                              name='fk_executions_fermentation'),
-        sa.ForeignKeyConstraint(['protocol_id'], ['fermentation_protocols.id'], 
+        sa.ForeignKeyConstraint(['protocol_id'], ['fermentation_protocols.id'],
                               name='fk_executions_protocol'),
-        sa.ForeignKeyConstraint(['winery_id'], ['wineries.id'], name='fk_executions_winery'),
         sa.UniqueConstraint('fermentation_id', name='uq_execution_fermentation'),
         sa.CheckConstraint('compliance_score BETWEEN 0 AND 100', name='ck_execution_compliance_range'),
     )
@@ -141,7 +137,7 @@ def upgrade() -> None:
                               name='fk_completions_step'),
         sa.UniqueConstraint('execution_id', 'step_id', name='uq_completion_execution_step'),
         sa.CheckConstraint(
-            '(was_skipped = 1 AND skip_reason IS NOT NULL) OR was_skipped = 0',
+            '(was_skipped = true AND skip_reason IS NOT NULL) OR was_skipped = false',
             name='ck_completion_skip_reason_required'
         ),
     )

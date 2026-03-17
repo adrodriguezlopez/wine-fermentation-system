@@ -22,6 +22,7 @@ from src.shared.auth.infra.api.dependencies import require_winemaker
 from src.modules.fermentation.src.api.schemas.requests import (
     StepCreateRequest,
     StepUpdateRequest,
+    StepOverrideRequest,
 )
 
 # Response schemas (Pydantic - for serialization)
@@ -422,3 +423,178 @@ async def list_protocol_steps(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e)
         )
+
+
+# ---------------------------------------------------------------------------
+# ADR-039: Template Management endpoints
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/{protocol_id}/steps/custom",
+    response_model=StepResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Inject a custom step into an inactive protocol (ADR-039)",
+    description=(
+        "Inserts a new step at the specified position, shifting existing steps "
+        "to make room. The protocol must be inactive — clone it first if needed."
+    ),
+)
+async def add_custom_step(
+    protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
+    request: StepCreateRequest,
+    current_user: Annotated[UserContext, Depends(require_winemaker)],
+    step_repository: Annotated[IProtocolStepRepository, Depends(get_step_repository)],
+    protocol_repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+) -> StepResponse:
+    """
+    Inject a custom step into a protocol.
+
+    Raises:
+        HTTP 404: Protocol not found
+        HTTP 403: Protocol belongs to different winery
+        HTTP 409: Protocol is active (must clone first)
+        HTTP 422: Validation error
+    """
+    from src.modules.fermentation.src.service_component.services.protocol_service import ProtocolService
+    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
+    from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
+
+    session = step_repository.session
+    execution_repo = ProtocolExecutionRepository(session=session)
+    compliance_service = ProtocolComplianceService(
+        execution_repository=execution_repo,
+        step_repository=step_repository,
+        step_completion_repository=None,
+    )
+    service = ProtocolService(
+        protocol_repository=protocol_repository,
+        execution_repository=execution_repo,
+        step_repository=step_repository,
+        compliance_service=compliance_service,
+    )
+
+    try:
+        step = await service.add_custom_step(
+            protocol_id=protocol_id,
+            winery_id=current_user.winery_id,
+            step_order=request.step_order,
+            step_type=request.step_type,
+            description=request.description,
+            expected_day=request.expected_day,
+            tolerance_hours=request.tolerance_hours,
+            duration_minutes=request.duration_minutes,
+            criticality_score=request.criticality_score,
+            is_critical=getattr(request, 'is_critical', False),
+            can_repeat_daily=request.can_repeat_daily,
+            notes=request.notes,
+        )
+    except ValueError as e:
+        msg = str(e)
+        if "is active" in msg:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg)
+        if "not found" in msg or "Access denied" in msg:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+
+    return StepResponse(
+        id=step.id,
+        protocol_id=step.protocol_id,
+        step_order=step.step_order,
+        step_type=step.step_type,
+        description=step.description,
+        expected_day=step.expected_day,
+        tolerance_hours=step.tolerance_hours,
+        duration_minutes=step.duration_minutes,
+        criticality_score=step.criticality_score,
+        can_repeat_daily=step.can_repeat_daily,
+        depends_on_step_id=step.depends_on_step_id,
+        notes=step.notes,
+        created_at=step.created_at,
+        updated_at=step.created_at,  # freshly created
+    )
+
+
+@router.patch(
+    "/{protocol_id}/steps/{step_id}/override",
+    response_model=StepResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Override step parameters in an inactive protocol (ADR-039)",
+    description=(
+        "Modifies specific parameters of an existing step (e.g. change tolerance_hours "
+        "from 12 to 6). Only allowed on inactive protocols — clone first if needed."
+    ),
+)
+async def override_step(
+    protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
+    step_id: Annotated[int, Path(gt=0, description="Step ID")],
+    request: StepOverrideRequest,
+    current_user: Annotated[UserContext, Depends(require_winemaker)],
+    step_repository: Annotated[IProtocolStepRepository, Depends(get_step_repository)],
+    protocol_repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+) -> StepResponse:
+    """
+    Override parameters of an existing step.
+
+    Raises:
+        HTTP 404: Protocol or step not found
+        HTTP 403: Protocol belongs to different winery
+        HTTP 409: Protocol is active (must clone first)
+        HTTP 422: Non-overridable field or validation error
+    """
+    from src.modules.fermentation.src.service_component.services.protocol_service import ProtocolService
+    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
+    from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
+
+    session = step_repository.session
+    execution_repo = ProtocolExecutionRepository(session=session)
+    compliance_service = ProtocolComplianceService(
+        execution_repository=execution_repo,
+        step_repository=step_repository,
+        step_completion_repository=None,
+    )
+    service = ProtocolService(
+        protocol_repository=protocol_repository,
+        execution_repository=execution_repo,
+        step_repository=step_repository,
+        compliance_service=compliance_service,
+    )
+
+    # Only pass fields that were explicitly provided (exclude_unset)
+    changes = request.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No fields provided to override",
+        )
+
+    try:
+        step = await service.override_step(
+            protocol_id=protocol_id,
+            step_id=step_id,
+            winery_id=current_user.winery_id,
+            **changes,
+        )
+    except ValueError as e:
+        msg = str(e)
+        if "is active" in msg:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg)
+        if "not found" in msg or "Access denied" in msg or "does not belong" in msg:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+
+    return StepResponse(
+        id=step.id,
+        protocol_id=step.protocol_id,
+        step_order=step.step_order,
+        step_type=step.step_type,
+        description=step.description,
+        expected_day=step.expected_day,
+        tolerance_hours=step.tolerance_hours,
+        duration_minutes=step.duration_minutes,
+        criticality_score=step.criticality_score,
+        can_repeat_daily=step.can_repeat_daily,
+        depends_on_step_id=step.depends_on_step_id,
+        notes=step.notes,
+        created_at=step.created_at,
+        updated_at=step.created_at,
+    )

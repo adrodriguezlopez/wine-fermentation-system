@@ -59,8 +59,10 @@ class Recommendation(Base):
     # Recommendation details
     recommendation_text: Mapped[str] = mapped_column(String(1000), nullable=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False)
-    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     supporting_evidence_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    category: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    estimated_effectiveness: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     
     # Application tracking
     is_applied: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -76,14 +78,27 @@ class Recommendation(Base):
     template: Mapped["RecommendationTemplate"] = relationship("RecommendationTemplate")
     
     def __init__(self, **kwargs):
-        """Initialize with validation."""
+        """
+        Initialize Recommendation with Python-level defaults and validation.
+
+        SQLAlchemy column ``default`` values only fire on DB INSERT.  Setting
+        them here allows unit tests to work without a real database.
+        """
+        if "id" not in kwargs:
+            kwargs["id"] = uuid4()
+        if "is_applied" not in kwargs:
+            kwargs["is_applied"] = False
+        if "supporting_evidence_count" not in kwargs:
+            kwargs["supporting_evidence_count"] = 0
+
         super().__init__(**kwargs)
+
         # Validate after initialization
-        if hasattr(self, 'confidence') and not (0.0 <= self.confidence <= 1.0):
+        if hasattr(self, 'confidence') and self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
             raise ValueError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
-        if hasattr(self, 'priority') and self.priority < 1:
+        if hasattr(self, 'priority') and self.priority is not None and self.priority < 1:
             raise ValueError(f"Priority must be >= 1, got {self.priority}")
-        if hasattr(self, 'supporting_evidence_count') and self.supporting_evidence_count < 0:
+        if hasattr(self, 'supporting_evidence_count') and self.supporting_evidence_count is not None and self.supporting_evidence_count < 0:
             raise ValueError(f"Supporting evidence count cannot be negative")
     
     def apply(self) -> None:

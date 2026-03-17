@@ -76,7 +76,64 @@ class Analysis(Base):
         lazy="selectin",
         cascade="all, delete-orphan"
     )
-    
+
+    def __init__(
+        self,
+        fermentation_id=None,
+        winery_id=None,
+        comparison_result=None,
+        confidence_level=None,
+        **kwargs,
+    ):
+        """
+        Initialize Analysis entity with Python-level defaults.
+
+        Accepts the four main fields as positional *or* keyword arguments for
+        compatibility with tests that were written before this became an ORM model.
+        All remaining SQLAlchemy column kwargs are forwarded via ``**kwargs``.
+
+        SQLAlchemy column ``default`` values only fire on DB INSERT.  This
+        ``__init__`` sets them immediately so that unit tests (which never hit
+        a real database) work correctly.
+        """
+        from src.modules.analysis_engine.src.domain.value_objects.comparison_result import ComparisonResult
+        from src.modules.analysis_engine.src.domain.value_objects.confidence_level import ConfidenceLevel
+
+        # Merge positional args into kwargs
+        if fermentation_id is not None:
+            kwargs["fermentation_id"] = fermentation_id
+        if winery_id is not None:
+            kwargs["winery_id"] = winery_id
+
+        # Apply Python-level defaults before calling super().__init__
+        if "id" not in kwargs:
+            kwargs["id"] = uuid4()
+        if "status" not in kwargs:
+            kwargs["status"] = AnalysisStatus.PENDING.value
+        if "analyzed_at" not in kwargs:
+            kwargs["analyzed_at"] = datetime.now(timezone.utc)
+        if "historical_samples_count" not in kwargs:
+            kwargs["historical_samples_count"] = 0
+
+        # Serialize value objects to dicts for JSONB storage
+        cr = comparison_result if comparison_result is not None else kwargs.pop("comparison_result", None)
+        if isinstance(cr, ComparisonResult):
+            kwargs["comparison_result"] = cr.to_dict()
+        elif cr is not None:
+            kwargs["comparison_result"] = cr
+        elif "comparison_result" not in kwargs:
+            kwargs["comparison_result"] = {}
+
+        cl = confidence_level if confidence_level is not None else kwargs.pop("confidence_level", None)
+        if isinstance(cl, ConfidenceLevel):
+            kwargs["confidence_level"] = cl.to_dict()
+        elif cl is not None:
+            kwargs["confidence_level"] = cl
+        elif "confidence_level" not in kwargs:
+            kwargs["confidence_level"] = {}
+
+        super().__init__(**kwargs)
+
     def start(self) -> None:
         """
         Start the analysis process.
@@ -122,57 +179,57 @@ class Analysis(Base):
         """
         self.status = AnalysisStatus.FAILED.value
     
-    # Methods that depend on relationships (temporarily commented)
-    # def add_anomaly(self, anomaly: 'Anomaly') -> None:
-    #     """
-    #     Add an anomaly to this analysis.
-    #     
-    #     Args:
-    #         anomaly: The anomaly to add
-    #     
-    #     Raises:
-    #         ValueError: If anomaly's analysis_id doesn't match this analysis
-    #     """
-    #     if anomaly.analysis_id != self.id:
-    #         raise ValueError(
-    #             f"Anomaly does not belong to this analysis. "
-    #             f"Expected analysis_id={self.id}, got {anomaly.analysis_id}"
-    #         )
-    #     self.anomalies.append(anomaly)
-    
-    # def add_recommendation(self, recommendation: 'Recommendation') -> None:
-    #     """
-    #     Add a recommendation to this analysis.
-    #     
-    #     Args:
-    #         recommendation: The recommendation to add
-    #     
-    #     Raises:
-    #         ValueError: If recommendation's analysis_id doesn't match this analysis
-    #     """
-    #     if recommendation.analysis_id != self.id:
-    #         raise ValueError(
-    #             f"Recommendation does not belong to this analysis. "
-    #             f"Expected analysis_id={self.id}, got {recommendation.analysis_id}"
-    #         )
-    #     self.recommendations.append(recommendation)
-    
-    # @property
-    # def has_anomalies(self) -> bool:
-    #     """Check if analysis has detected any anomalies."""
-    #     return len(self.anomalies) > 0
-    
-    # @property
-    # def has_recommendations(self) -> bool:
-    #     """Check if analysis has generated any recommendations."""
-    #     return len(self.recommendations) > 0
-    
-    # @property
-    # def critical_anomalies_count(self) -> int:
-    #     """Count of critical severity anomalies."""
-    #     from ..enums.severity_level import SeverityLevel
-    #     return sum(1 for a in self.anomalies if a.severity == SeverityLevel.CRITICAL.value)
-    
+    # Methods that depend on relationships
+    def add_anomaly(self, anomaly: 'Anomaly') -> None:
+        """
+        Add an anomaly to this analysis.
+
+        Args:
+            anomaly: The anomaly to add
+
+        Raises:
+            ValueError: If anomaly's analysis_id doesn't match this analysis
+        """
+        if anomaly.analysis_id != self.id:
+            raise ValueError(
+                f"Anomaly does not belong to this analysis. "
+                f"Expected analysis_id={self.id}, got {anomaly.analysis_id}"
+            )
+        self.anomalies.append(anomaly)
+
+    def add_recommendation(self, recommendation: 'Recommendation') -> None:
+        """
+        Add a recommendation to this analysis.
+
+        Args:
+            recommendation: The recommendation to add
+
+        Raises:
+            ValueError: If recommendation's analysis_id doesn't match this analysis
+        """
+        if recommendation.analysis_id != self.id:
+            raise ValueError(
+                f"Recommendation does not belong to this analysis. "
+                f"Expected analysis_id={self.id}, got {recommendation.analysis_id}"
+            )
+        self.recommendations.append(recommendation)
+
+    @property
+    def has_anomalies(self) -> bool:
+        """Check if analysis has detected any anomalies."""
+        return len(self.anomalies) > 0
+
+    @property
+    def has_recommendations(self) -> bool:
+        """Check if analysis has generated any recommendations."""
+        return len(self.recommendations) > 0
+
+    @property
+    def critical_anomalies_count(self) -> int:
+        """Count of critical severity anomalies."""
+        from src.modules.analysis_engine.src.domain.enums.severity_level import SeverityLevel
+        return sum(1 for a in self.anomalies if a.severity == SeverityLevel.CRITICAL.value)
+
     @property
     def is_completed(self) -> bool:
         """Check if analysis is in a final state (COMPLETED or FAILED)."""

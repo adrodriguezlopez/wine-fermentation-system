@@ -246,11 +246,12 @@ async def get_fermentation(
     
     if fermentation is None:
         # Could be: not found OR belongs to different winery
-        # For simplicity, return 404 (don't reveal existence)
-        raise NotFoundError(
-            f"Fermentation with ID {fermentation_id} not found"
+        # Return 404 (don't reveal existence of resources in other wineries)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fermentation with ID {fermentation_id} not found",
         )
-    
+
     # ADR-025 LIGHT: Defense in depth - explicit validation
     # (Repository already filtered, but validate for security audit)
     if fermentation.winery_id != current_user.winery_id:

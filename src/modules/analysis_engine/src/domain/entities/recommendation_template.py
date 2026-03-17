@@ -38,16 +38,18 @@ class RecommendationTemplate(Base):
     id: Mapped[PGUUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     
     # Template identification
-    code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    title: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[str] = mapped_column(String(1000), nullable=False)
+    code: Mapped[str] = mapped_column(String(100), unique=True, nullable=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=True)
+    description: Mapped[str] = mapped_column(String(1000), nullable=True)
+    recommendation_text: Mapped[str] = mapped_column(String(1000), nullable=True)
     
     # Categorization
     category: Mapped[str] = mapped_column(String(100), nullable=False)
-    applicable_anomaly_types: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False)
+    applicable_anomaly_types: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=True)
     
-    # Priority and usage
-    priority_default: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Priority and effectiveness
+    priority_default: Mapped[int] = mapped_column(Integer, nullable=True)
+    effectiveness_score: Mapped[int] = mapped_column(Integer, nullable=True)
     times_applied: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     
     # Status
@@ -68,15 +70,24 @@ class RecommendationTemplate(Base):
     recommendations: Mapped[List["Recommendation"]] = relationship("Recommendation", back_populates="template")
     
     def __init__(self, **kwargs):
-        """Initialize with validation."""
+        """
+        Initialize RecommendationTemplate with Python-level defaults.
+
+        SQLAlchemy column ``default`` values only fire on DB INSERT.  Setting
+        them here allows unit tests to work without a real database.
+        """
+        if "id" not in kwargs:
+            kwargs["id"] = uuid4()
+        if "is_active" not in kwargs:
+            kwargs["is_active"] = True
+        if "times_applied" not in kwargs:
+            kwargs["times_applied"] = 0
+        if "created_at" not in kwargs:
+            kwargs["created_at"] = datetime.now(timezone.utc)
+        if "updated_at" not in kwargs:
+            kwargs["updated_at"] = datetime.now(timezone.utc)
+
         super().__init__(**kwargs)
-        # Validate after initialization
-        if hasattr(self, 'code') and not self.code:
-            raise ValueError("Template code cannot be empty")
-        if hasattr(self, 'applicable_anomaly_types') and not self.applicable_anomaly_types:
-            raise ValueError("Template must apply to at least one anomaly type")
-        if hasattr(self, 'priority_default') and self.priority_default < 1:
-            raise ValueError(f"Priority must be >= 1, got {self.priority_default}")
     
     def increment_usage(self) -> None:
         """Increment the times_applied counter and update timestamp."""

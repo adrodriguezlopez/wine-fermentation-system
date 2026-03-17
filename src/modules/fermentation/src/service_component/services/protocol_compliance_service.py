@@ -13,7 +13,7 @@ Provides deterministic, explainable compliance scoring based on:
 Performance Target: <100ms per calculation
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
@@ -545,10 +545,8 @@ class ProtocolComplianceService:
                 continue
 
             # Calculate expected completion date
-            expected_date = execution.start_date.replace(hour=0, minute=0, second=0)
-            expected_date = expected_date.replace(
-                day=expected_date.day + step.expected_day
-            )
+            expected_date = execution.start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            expected_date = expected_date + timedelta(days=step.expected_day)
 
             # Check if overdue
             if now > expected_date:

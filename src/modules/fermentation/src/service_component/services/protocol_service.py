@@ -632,6 +632,227 @@ class ProtocolService:
         return execution
 
     # ========================================================================
+    # ADR-039: Template Management
+    # ========================================================================
+
+    async def clone_protocol(
+        self,
+        source_protocol_id: int,
+        winery_id: int,
+        new_version: str,
+        new_protocol_name: Optional[str] = None,
+    ) -> FermentationProtocol:
+        """
+        Clone an existing protocol into a new version, copying all steps.
+
+        The cloned protocol starts inactive so the winemaker can modify it
+        before activating it. All steps are deep-copied with new IDs.
+
+        Args:
+            source_protocol_id: ID of the protocol to clone from
+            winery_id: Requesting winery (access control)
+            new_version: Version for the cloned protocol (e.g. "2.0")
+            new_protocol_name: Optional override for the name; defaults to
+                               "<original_name> v<new_version>"
+
+        Returns:
+            Newly created (inactive) FermentationProtocol with copied steps
+
+        Raises:
+            ValueError: Protocol not found, access denied, or version conflict
+        """
+        import re
+        if not re.match(r"^\d+\.\d+$", new_version):
+            raise ValueError("new_version must be semantic format (e.g. '2.0')")
+
+        source = await self.get_protocol(source_protocol_id, winery_id)
+
+        # Ensure the new version does not already exist
+        existing = await self.protocol_repo.get_by_winery_varietal_version(
+            winery_id, source.varietal_code, new_version
+        )
+        if existing:
+            raise ValueError(
+                f"Protocol {source.varietal_code} v{new_version} already exists "
+                f"for winery {winery_id}"
+            )
+
+        name = new_protocol_name or f"{source.protocol_name} v{new_version}"
+
+        cloned = FermentationProtocol(
+            winery_id=winery_id,
+            created_by_user_id=source.created_by_user_id,
+            varietal_code=source.varietal_code,
+            varietal_name=source.varietal_name,
+            color=source.color,
+            protocol_name=name,
+            version=new_version,
+            description=source.description,
+            expected_duration_days=source.expected_duration_days,
+            is_active=False,
+        )
+        await self.protocol_repo.create(cloned)
+        await self.protocol_repo.session.flush()
+
+        # Deep-copy all steps (preserve order; drop IDs and dependency links
+        # that reference old step IDs to avoid FK violations)
+        source_steps = await self.step_repo.get_by_protocol(source_protocol_id)
+        for s in sorted(source_steps, key=lambda x: x.step_order):
+            new_step = ProtocolStep(
+                protocol_id=cloned.id,
+                step_order=s.step_order,
+                step_type=s.step_type,
+                description=s.description,
+                expected_day=s.expected_day,
+                tolerance_hours=s.tolerance_hours,
+                duration_minutes=s.duration_minutes,
+                is_critical=s.is_critical,
+                criticality_score=s.criticality_score,
+                can_repeat_daily=s.can_repeat_daily,
+                notes=s.notes,
+                depends_on_step_id=None,  # Reset cross-step deps (old IDs invalid)
+            )
+            await self.step_repo.create(new_step)
+
+        await self.protocol_repo.session.commit()
+        return cloned
+
+    async def add_custom_step(
+        self,
+        protocol_id: int,
+        winery_id: int,
+        step_order: int,
+        step_type: str,
+        description: str,
+        expected_day: int,
+        tolerance_hours: int,
+        duration_minutes: int,
+        criticality_score: float,
+        is_critical: bool = False,
+        can_repeat_daily: bool = False,
+        notes: Optional[str] = None,
+    ) -> ProtocolStep:
+        """
+        Inject a custom step into an existing (inactive) protocol.
+
+        The step is inserted at *step_order*. All existing steps with
+        step_order >= the given value are shifted up by 1 to make room.
+
+        Args:
+            protocol_id: ID of the protocol to modify
+            winery_id: Requesting winery (access control)
+            step_order: Desired position for the new step (1-indexed)
+            step_type: Step category enum value
+            description: Specific step details
+            expected_day: Day when step occurs (0 = crush day)
+            tolerance_hours: Allowed time window ± hours
+            duration_minutes: Estimated duration
+            criticality_score: Importance 0-100
+            is_critical: Whether skipping this step is a critical deviation
+            can_repeat_daily: Whether step repeats each day
+            notes: Optional free-text notes
+
+        Returns:
+            Newly created ProtocolStep
+
+        Raises:
+            ValueError: Protocol not found, access denied, or protocol is active
+        """
+        protocol = await self.get_protocol(protocol_id, winery_id)
+
+        if protocol.is_active:
+            raise ValueError(
+                f"Cannot modify protocol {protocol_id}: it is active. "
+                "Clone it first to create an editable version."
+            )
+
+        # Shift existing steps to make room
+        existing_steps = await self.step_repo.get_by_protocol(protocol_id)
+        for s in existing_steps:
+            if s.step_order >= step_order:
+                s.step_order += 1
+                await self.step_repo.update(s)
+
+        new_step = ProtocolStep(
+            protocol_id=protocol_id,
+            step_order=step_order,
+            step_type=step_type,
+            description=description,
+            expected_day=expected_day,
+            tolerance_hours=tolerance_hours,
+            duration_minutes=duration_minutes,
+            is_critical=is_critical,
+            criticality_score=criticality_score,
+            can_repeat_daily=can_repeat_daily,
+            notes=notes,
+        )
+        await self.step_repo.create(new_step)
+        await self.step_repo.session.commit()
+        return new_step
+
+    async def override_step(
+        self,
+        protocol_id: int,
+        step_id: int,
+        winery_id: int,
+        **changes,
+    ) -> ProtocolStep:
+        """
+        Override parameters of an existing step in an inactive protocol.
+
+        Only the fields listed in *overridable_fields* can be changed.
+        The protocol must be inactive — clone it first if it is active.
+
+        Args:
+            protocol_id: ID of the owning protocol (for access control)
+            step_id: ID of the step to modify
+            winery_id: Requesting winery
+            **changes: Fields to update and their new values
+
+        Returns:
+            Updated ProtocolStep
+
+        Raises:
+            ValueError: Protocol/step not found, access denied, protocol active,
+                        or attempt to update a non-overridable field
+        """
+        overridable_fields = {
+            "description",
+            "expected_day",
+            "tolerance_hours",
+            "duration_minutes",
+            "is_critical",
+            "criticality_score",
+            "can_repeat_daily",
+            "notes",
+        }
+
+        protocol = await self.get_protocol(protocol_id, winery_id)
+
+        if protocol.is_active:
+            raise ValueError(
+                f"Cannot modify protocol {protocol_id}: it is active. "
+                "Clone it first to create an editable version."
+            )
+
+        step = await self.step_repo.get_by_id(step_id)
+        if step is None:
+            raise ValueError(f"Step {step_id} not found")
+        if step.protocol_id != protocol_id:
+            raise ValueError(
+                f"Step {step_id} does not belong to protocol {protocol_id}"
+            )
+
+        for field, value in changes.items():
+            if field not in overridable_fields:
+                raise ValueError(f"Field '{field}' cannot be overridden")
+            setattr(step, field, value)
+
+        await self.step_repo.update(step)
+        await self.step_repo.session.commit()
+        return step
+
+    # ========================================================================
     # Compliance Integration
     # ========================================================================
 

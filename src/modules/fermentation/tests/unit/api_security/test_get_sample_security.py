@@ -25,7 +25,7 @@ from fastapi import HTTPException
 from src.modules.fermentation.src.api.routers.sample_router import get_sample
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
 from src.shared.auth.domain.dtos import UserContext# ADR-026: Import domain errors
-from shared.domain.errors import SampleNotFound
+from src.shared.domain.errors import SampleNotFound
 
 # ==================================================================================
 # FIXTURES

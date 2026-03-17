@@ -130,3 +130,41 @@ class CompletionListResponse(BaseModel):
     page: int = Field(..., ge=1, description="Current page")
     page_size: int = Field(..., ge=1, description="Items per page")
     total_pages: int = Field(..., ge=0, description="Total pages")
+
+
+# ============================================================================
+# Alert Responses (ADR-040)
+# ============================================================================
+
+class AlertResponse(BaseModel):
+    """Response DTO for a ProtocolAlert (ADR-040)."""
+
+    id: int = Field(..., description="Alert ID")
+    execution_id: int = Field(..., description="Protocol execution ID")
+    protocol_id: int = Field(..., description="Protocol ID")
+    winery_id: int = Field(..., description="Winery ID")
+    step_id: Optional[int] = Field(None, description="Related step ID (null for execution-level alerts)")
+    step_name: Optional[str] = Field(None, description="Step description")
+    alert_type: str = Field(
+        ...,
+        description="STEP_OVERDUE | STEP_DUE_SOON | EXECUTION_NEARING_COMPLETION | EXECUTION_BEHIND_SCHEDULE | CRITICAL_DEVIATION"
+    )
+    severity: str = Field(..., description="INFO | WARNING | CRITICAL")
+    status: str = Field(..., description="PENDING | SENT | ACKNOWLEDGED | DISMISSED")
+    message: str = Field(..., description="Human-readable alert message")
+    created_at: datetime = Field(..., description="When the alert was created (UTC)")
+    sent_at: Optional[datetime] = Field(None, description="When the alert was delivered")
+    acknowledged_at: Optional[datetime] = Field(None, description="When acknowledged by winemaker")
+    dismissed_at: Optional[datetime] = Field(None, description="When dismissed by winemaker")
+
+    class Config:
+        from_attributes = True
+
+
+class AlertListResponse(BaseModel):
+    """Paginated list of protocol alerts with pending count."""
+
+    items: List[AlertResponse] = Field(..., description="Alert list")
+    total: int = Field(..., ge=0, description="Total alerts returned")
+    pending_count: int = Field(..., ge=0, description="Total PENDING alerts for this execution")
+

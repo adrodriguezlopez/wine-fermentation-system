@@ -12,6 +12,19 @@ from src.modules.analysis_engine.src.domain.value_objects.comparison_result impo
 from src.modules.analysis_engine.src.domain.value_objects.confidence_level import ConfidenceLevel
 
 
+def _make_comparison_result(**kwargs) -> ComparisonResult:
+    """Helper: create a ComparisonResult with sensible defaults."""
+    defaults = dict(
+        similar_fermentation_count=kwargs.pop("similar_fermentation_count", 20),
+        average_duration_days=kwargs.pop("average_duration_days", 14.0),
+        average_final_gravity=kwargs.pop("average_final_gravity", 0.995),
+        similar_fermentation_ids=kwargs.pop("similar_fermentation_ids", ["id1", "id2"]),
+        comparison_basis=kwargs.pop("comparison_basis", {"variety": "Malbec"}),
+    )
+    defaults.update(kwargs)
+    return ComparisonResult(**defaults)
+
+
 class TestAnalysisCreation:
     """Tests for Analysis entity creation and basic properties."""
     
@@ -19,14 +32,7 @@ class TestAnalysisCreation:
         """Should create Analysis entity with required fields."""
         fermentation_id = uuid4()
         winery_id = uuid4()
-        comparison_result = ComparisonResult(
-            historical_samples_count=20,
-            similarity_score=85.0,
-            statistical_metrics={"mean_duration": 12},
-            comparison_criteria={"varietal": "Malbec"},
-            patterns_used=[1, 2, 3],
-            compared_at=datetime.now(timezone.utc)
-        )
+        comparison_result = _make_comparison_result()
         confidence_level = ConfidenceLevel.from_comparison_result(
             historical_samples_count=20,
             similarity_score=85.0
@@ -43,8 +49,9 @@ class TestAnalysisCreation:
         assert analysis.fermentation_id == fermentation_id
         assert analysis.winery_id == winery_id
         assert analysis.status == AnalysisStatus.PENDING
-        assert analysis.comparison_result == comparison_result
-        assert analysis.confidence_level == confidence_level
+        # comparison_result and confidence_level are serialized to dicts for JSONB
+        assert isinstance(analysis.comparison_result, dict)
+        assert isinstance(analysis.confidence_level, dict)
         assert analysis.analyzed_at is not None
         assert len(analysis.anomalies) == 0
         assert len(analysis.recommendations) == 0
@@ -53,20 +60,14 @@ class TestAnalysisCreation:
         """Should generate unique UUID for each Analysis."""
         fermentation_id = uuid4()
         winery_id = uuid4()
-        comparison_result = ComparisonResult(
-            historical_samples_count=10,
-            similarity_score=75.0,
-            statistical_metrics={},
-            comparison_criteria={},
-            patterns_used=[],
-            compared_at=datetime.now(timezone.utc)
-        )
+        comparison_result = _make_comparison_result(similar_fermentation_count=10)
         confidence_level = ConfidenceLevel.from_comparison_result(10, 75.0)
         
         analysis1 = Analysis(fermentation_id, winery_id, comparison_result, confidence_level)
         analysis2 = Analysis(fermentation_id, winery_id, comparison_result, confidence_level)
         
         assert analysis1.id != analysis2.id
+
 
 
 class TestAnalysisStatusTransitions:
@@ -114,14 +115,7 @@ class TestAnalysisStatusTransitions:
     
     def _create_analysis(self) -> Analysis:
         """Helper to create a basic Analysis for testing."""
-        comparison_result = ComparisonResult(
-            historical_samples_count=15,
-            similarity_score=80.0,
-            statistical_metrics={},
-            comparison_criteria={},
-            patterns_used=[],
-            compared_at=datetime.now(timezone.utc)
-        )
+        comparison_result = _make_comparison_result(similar_fermentation_count=15)
         confidence_level = ConfidenceLevel.from_comparison_result(15, 80.0)
         return Analysis(
             fermentation_id=uuid4(),
@@ -209,14 +203,7 @@ class TestAnalysisAnomalyManagement:
     
     def _create_analysis(self) -> Analysis:
         """Helper to create a basic Analysis for testing."""
-        comparison_result = ComparisonResult(
-            historical_samples_count=15,
-            similarity_score=80.0,
-            statistical_metrics={},
-            comparison_criteria={},
-            patterns_used=[],
-            compared_at=datetime.now(timezone.utc)
-        )
+        comparison_result = _make_comparison_result(similar_fermentation_count=15)
         confidence_level = ConfidenceLevel.from_comparison_result(15, 80.0)
         return Analysis(
             fermentation_id=uuid4(),
@@ -271,14 +258,7 @@ class TestAnalysisRecommendationManagement:
     
     def _create_analysis(self) -> Analysis:
         """Helper to create a basic Analysis for testing."""
-        comparison_result = ComparisonResult(
-            historical_samples_count=15,
-            similarity_score=80.0,
-            statistical_metrics={},
-            comparison_criteria={},
-            patterns_used=[],
-            compared_at=datetime.now(timezone.utc)
-        )
+        comparison_result = _make_comparison_result(similar_fermentation_count=15)
         confidence_level = ConfidenceLevel.from_comparison_result(15, 80.0)
         return Analysis(
             fermentation_id=uuid4(),

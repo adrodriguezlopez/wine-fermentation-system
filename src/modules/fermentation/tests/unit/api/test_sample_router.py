@@ -37,6 +37,7 @@ from src.modules.fermentation.src.api.schemas.responses.sample_responses import 
 from src.modules.fermentation.src.domain.dtos import SampleCreate
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 from src.modules.fermentation.src.service_component.errors import ValidationError, NotFoundError
+from src.shared.domain.errors import FermentationNotFound, InvalidFermentationState
 
 
 # ======================================================================================
@@ -154,53 +155,43 @@ async def test_create_sample_converts_sample_type_to_enum(mock_user_context, moc
 
 @pytest.mark.asyncio
 async def test_create_sample_not_found_error(mock_user_context, mock_sample_service, sample_create_request):
-    """Test 404 when fermentation not found
-    
-    Note: We test for HTTPException (not NotFoundError) because the @handle_service_errors
-    decorator converts service-layer exceptions to HTTP responses. This tests the API contract
+    """Test FermentationNotFound when fermentation not found
+
+    Note: The @handle_service_errors decorator re-raises DomainError exceptions
+    (like FermentationNotFound) for the global error handler. This tests the API contract
     (what clients see), not internal implementation.
     """
     from src.modules.fermentation.src.api.routers.sample_router import create_sample
-    from fastapi import HTTPException
     
-    # Setup mock to raise NotFoundError (service layer exception)
+    # Setup mock to raise NotFoundError (service layer exception, which is aliased to FermentationNotFound)
     mock_sample_service.add_sample.side_effect = NotFoundError("Fermentation not found")
     
-    # Execute and verify HTTPException (API layer response)
-    with pytest.raises(HTTPException) as exc_info:
+    # Execute and verify FermentationNotFound is raised (DomainError)
+    with pytest.raises(FermentationNotFound):
         await create_sample(
             fermentation_id=9999,
             request=sample_create_request,
             current_user=mock_user_context,
             sample_service=mock_sample_service
         )
-    
-    # Verify correct HTTP status code (API contract)
-    assert exc_info.value.status_code == 404
-    assert "Fermentation not found" in str(exc_info.value.detail)
 
 
 @pytest.mark.asyncio
 async def test_create_sample_validation_error(mock_user_context, mock_sample_service, sample_create_request):
-    """Test 422 when sample data is invalid"""
+    """Test InvalidFermentationState when sample data is invalid"""
     from src.modules.fermentation.src.api.routers.sample_router import create_sample
-    from fastapi import HTTPException
     
-    # Setup mock to raise ValidationError
+    # Setup mock to raise ValidationError (aliased to InvalidFermentationState)
     mock_sample_service.add_sample.side_effect = ValidationError("Invalid sample value")
     
-    # Execute and verify HTTPException (error_handler converts ValidationError to HTTPException)
-    with pytest.raises(HTTPException) as exc_info:
+    # Execute and verify InvalidFermentationState is raised (DomainError)
+    with pytest.raises(InvalidFermentationState):
         await create_sample(
             fermentation_id=10,
             request=sample_create_request,
             current_user=mock_user_context,
             sample_service=mock_sample_service
         )
-    
-    # Verify it's a 422
-    assert exc_info.value.status_code == 422
-    assert "Invalid sample value" in str(exc_info.value.detail)
 
 
 # ======================================================================================
@@ -332,22 +323,17 @@ async def test_get_latest_sample_with_type_filter(mock_user_context, mock_sample
 
 @pytest.mark.asyncio
 async def test_get_latest_sample_invalid_type(mock_user_context, mock_sample_service):
-    """Test 422 when invalid sample type provided"""
+    """Test InvalidFermentationState when invalid sample type provided"""
     from src.modules.fermentation.src.api.routers.sample_router import get_latest_sample
-    from fastapi import HTTPException
     
-    # Execute with invalid type (error_handler catches ValidationError and converts to HTTPException)
-    with pytest.raises(HTTPException) as exc_info:
+    # Execute with invalid type (error_handler catches ValidationError and raises InvalidFermentationState)
+    with pytest.raises(InvalidFermentationState):
         await get_latest_sample(
             fermentation_id=10,
             sample_type="invalid_type",
             current_user=mock_user_context,
             sample_service=mock_sample_service
         )
-    
-    # Verify it's a 422
-    assert exc_info.value.status_code == 422
-    assert "Invalid sample type" in str(exc_info.value.detail)
 
 
 @pytest.mark.asyncio
@@ -670,24 +656,20 @@ async def test_delete_sample_success(mock_user_context, mock_sample_service):
 
 @pytest.mark.asyncio
 async def test_delete_sample_not_found(mock_user_context, mock_sample_service):
-    """Test 404 when sample to delete not found"""
+    """Test FermentationNotFound when sample to delete not found"""
     from src.modules.fermentation.src.api.routers.sample_router import delete_sample
-    from fastapi import HTTPException
     
-    # Setup mock to raise NotFoundError
+    # Setup mock to raise NotFoundError (aliased to FermentationNotFound)
     mock_sample_service.delete_sample.side_effect = NotFoundError("Sample not found")
     
-    # Execute and verify HTTPException
-    with pytest.raises(HTTPException) as exc_info:
+    # Execute and verify FermentationNotFound is raised
+    with pytest.raises(FermentationNotFound):
         await delete_sample(
             sample_id=9999,
             fermentation_id=10,
             current_user=mock_user_context,
             sample_service=mock_sample_service
         )
-    
-    # Verify 404
-    assert exc_info.value.status_code == 404
 
 
 # ======================================================================================

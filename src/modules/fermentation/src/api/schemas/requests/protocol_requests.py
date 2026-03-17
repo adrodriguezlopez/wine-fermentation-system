@@ -72,9 +72,45 @@ class ProtocolCreateRequest(BaseModel):
         return v
 
 
+class ProtocolCloneRequest(BaseModel):
+    """Request DTO for cloning a protocol into a new version (ADR-039)."""
+
+    new_version: str = Field(
+        ...,
+        description="Semantic version for the cloned protocol (e.g. '2.0')",
+    )
+    new_protocol_name: Optional[str] = Field(
+        None,
+        min_length=1,
+        max_length=255,
+        description="Override name; defaults to '<original> v<new_version>'",
+    )
+
+    @field_validator("new_version")
+    @classmethod
+    def validate_version(cls, v: str) -> str:
+        import re
+        if not re.match(r"^\d+\.\d+$", v):
+            raise ValueError("new_version must be semantic format (e.g. '2.0')")
+        return v
+
+
+class StepOverrideRequest(BaseModel):
+    """Request DTO for overriding step parameters in an inactive protocol (ADR-039)."""
+
+    description: Optional[str] = Field(None, min_length=1, max_length=500)
+    expected_day: Optional[int] = Field(None, ge=0)
+    tolerance_hours: Optional[int] = Field(None, ge=0)
+    duration_minutes: Optional[int] = Field(None, gt=0)
+    is_critical: Optional[bool] = None
+    criticality_score: Optional[float] = Field(None, ge=0, le=100)
+    can_repeat_daily: Optional[bool] = None
+    notes: Optional[str] = Field(None, max_length=500)
+
+
 class ProtocolUpdateRequest(BaseModel):
     """Request DTO for updating a protocol"""
-    
+
     protocol_name: Optional[str] = Field(
         None,
         min_length=1,

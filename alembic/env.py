@@ -12,6 +12,7 @@ from sqlalchemy import pool
 
 from alembic import context
 
+import os
 import sys
 from pathlib import Path
 
@@ -85,9 +86,14 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
+    # Prefer DATABASE_URL env var; strip async driver prefix for sync engine
+    env_url = os.environ.get("DATABASE_URL", "")
+    if env_url:
+        env_url = env_url.replace("postgresql+asyncpg://", "postgresql://")
     configuration["sqlalchemy.url"] = (
-        configuration.get("sqlalchemy.url") or
-        "postgresql://user:password@localhost/winery"
+        env_url
+        or configuration.get("sqlalchemy.url")
+        or "postgresql://postgres:postgres@localhost:5433/wine_fermentation"
     )
     
     connectable = engine_from_config(

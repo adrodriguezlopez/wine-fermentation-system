@@ -24,7 +24,7 @@ from src.modules.fermentation.src.domain.entities.fermentation import Fermentati
 from src.shared.auth.domain.dtos import UserContext
 # ADR-026: Import domain errors
 from src.modules.fermentation.src.service_component.errors import NotFoundError
-from shared.domain.errors import CrossWineryAccessDenied
+from src.shared.domain.errors import CrossWineryAccessDenied
 
 
 # ==================================================================================

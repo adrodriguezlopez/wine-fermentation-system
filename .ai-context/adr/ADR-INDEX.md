@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADRs) - Index
 
 **Wine Fermentation System**  
-**Last Update:** January 13, 2026
+**Last Update:** March 1, 2026
 
 ---
 
@@ -28,14 +28,14 @@
 | **[ADR-032](./ADR-032-historical-data-api-layer.md)** | Historical Data API Layer | ✅ Implemented | 2026-01-13 | High |
 | **[ADR-033](./ADR-033-code-coverage-improvement-strategy.md)** | Code Coverage Improvement Strategy | ✅ Implemented | 2026-01-15 | High |
 | **[ADR-034](./ADR-034-historical-data-service-refactoring.md)** | Historical Data Service Refactoring | ✅ Implemented | 2026-01-15 | Medium |
-| **[ADR-020](./ADR-020-analysis-engine-architecture.md)** | Analysis Engine Architecture | 🔄 In Progress | 2026-01-16 | Critical |
-| **[ADR-021](./ADR-021-protocol-compliance-engine.md)** | Fermentation Protocol Compliance Engine | 📋 Proposed | 2026-02-06 | High |
-| **[ADR-035](./ADR-035-protocol-data-model-schema.md)** | Protocol Data Model & Schema Design | ✅ Approved | 2026-02-09 | Critical |
-| **[ADR-036](./ADR-036-compliance-scoring-algorithm.md)** | Protocol Compliance Scoring Algorithm | ✅ Approved | 2026-02-09 | Critical |
-| **[ADR-037](./ADR-037-protocol-analysis-integration.md)** | Protocol-Analysis Engine Integration | ✅ Approved | 2026-02-09 | High |
-| **[ADR-038](./ADR-038-deviation-detection-strategy.md)** | Protocol Deviation Detection Strategy | ✅ Approved | 2026-02-09 | High |
-| **[ADR-039](./ADR-039-protocol-template-management.md)** | Protocol Template Management & Customization | ✅ Approved | 2026-02-09 | High |
-| **[ADR-040](./ADR-040-notifications-alerts.md)** | Protocol Notifications & Alerts Strategy | ✅ Approved | 2026-02-09 | Medium |
+| **[ADR-020](./ADR-020-analysis-engine-architecture.md)** | Analysis Engine Architecture | ✅ Implemented | 2026-03-01 | Critical |
+| **[ADR-021](./ADR-021-protocol-compliance-engine.md)** | Fermentation Protocol Compliance Engine | ✅ Implemented | 2026-02-13 | High |
+| **[ADR-035](./ADR-035-protocol-data-model-schema.md)** | Protocol Data Model & Schema Design | ✅ Implemented | 2026-02-09 | Critical |
+| **[ADR-036](./ADR-036-compliance-scoring-algorithm.md)** | Protocol Compliance Scoring Algorithm | ✅ Implemented | 2026-02-13 | Critical |
+| **[ADR-037](./ADR-037-protocol-analysis-integration.md)** | Protocol-Analysis Engine Integration | 🔄 In Progress | 2026-03-01 | High |
+| **[ADR-038](./ADR-038-deviation-detection-strategy.md)** | Protocol Deviation Detection Strategy | ✅ Implemented | 2026-02-13 | High |
+| **[ADR-039](./ADR-039-protocol-template-management.md)** | Protocol Template Management & Customization | 🟡 Partial | 2026-02-09 | High |
+| **[ADR-040](./ADR-040-notifications-alerts.md)** | Protocol Notifications & Alerts Strategy | 🟡 Partial | 2026-02-13 | Medium |
 
 ### ADR-033: Code Coverage Improvement Strategy
 **Decision:** Phased coverage improvement: API (85%), Repository (80%), Service (80%), ETL (80%)  
@@ -64,16 +64,16 @@
 
 ### ADR-020: Analysis Engine Architecture
 **Decision:** Intelligent anomaly detection and recommendation system for fermentations  
-**Status:** 🔄 In Progress (January 16, 2026) - Phase 1: Domain + Repository  
+**Status:** ✅ **Implemented** (March 1, 2026) - All phases complete  
 **Impact:** Core value add - transforms system from CRUD to intelligent decision support  
 **Key Points:**
-- Hybrid algorithm: YAML-driven rules + statistical analysis (Z-score/percentiles)
-- 8 anomaly types: stuck fermentation, temperature issues, volatile acidity, H₂S, etc.
-- Template-based recommendations with effectiveness tracking
-- Comparison priority: Varietal (P1) → fruit_origin (P2) → fermentation_type (P3)
-- Confidence levels (LOW/MEDIUM/HIGH/VERY_HIGH) always visible - transparency = reliability
-- Awaiting enologist validation for thresholds before Phase 2 (Service Layer)
-- Timeline: Phase 1 (3-4 days), Phase 2-5 pending expert input (9-10 days)
+- Domain: 4 entities, 3 value objects, 4 enums (AnomalyType x8, SeverityLevel, AnalysisStatus, RecommendationCategory x11)
+- Services: AnalysisOrchestratorService, ComparisonService, AnomalyDetectionService, RecommendationService
+- API Layer: 2 routers (analysis + recommendation), Pydantic v2 schemas, error handlers, FastAPI port 8001
+- 8 anomaly detection algorithms (validated by Susana Rodriguez Vasquez, 20-year enologist)
+- Confidence levels: weighted formula (historical 70% + detection 20% + recommendation 10%)
+- 108 unit tests passing (domain + service + API)
+- **Next**: ADR-037 Protocol↔Analysis integration
 
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |

@@ -22,6 +22,7 @@ from src.shared.auth.infra.api.dependencies import require_winemaker
 from src.modules.fermentation.src.api.schemas.requests import (
     ProtocolCreateRequest,
     ProtocolUpdateRequest,
+    ProtocolCloneRequest,
 )
 
 # Response schemas (Pydantic - for serialization)
@@ -520,3 +521,90 @@ async def activate_protocol(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to activate protocol: {str(e)}"
         )
+
+
+@router.post(
+    "/{protocol_id}/clone",
+    response_model=ProtocolResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Clone a protocol into a new version (ADR-039)",
+    description=(
+        "Creates a new inactive protocol version by deep-copying all steps from "
+        "an existing protocol. The clone starts inactive so the winemaker can "
+        "customise it before activating. Requires WINEMAKER or ADMIN role."
+    ),
+)
+async def clone_protocol(
+    protocol_id: Annotated[int, Path(gt=0, description="Source protocol ID")],
+    request: ProtocolCloneRequest,
+    current_user: Annotated[UserContext, Depends(require_winemaker)],
+    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+) -> ProtocolResponse:
+    """
+    Clone a protocol into a new version.
+
+    Args:
+        protocol_id: ID of the source protocol
+        request: Clone parameters (new_version, optional new_protocol_name)
+        current_user: Authenticated user context
+        repository: Protocol repository (injected)
+
+    Returns:
+        ProtocolResponse: The newly created (inactive) cloned protocol
+
+    Raises:
+        HTTP 404: Source protocol not found
+        HTTP 403: Protocol belongs to different winery
+        HTTP 409: new_version already exists for (winery, varietal)
+        HTTP 422: Invalid version format
+    """
+    from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
+    from src.modules.fermentation.src.service_component.services.protocol_service import ProtocolService
+    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
+    from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
+    from src.modules.fermentation.src.api.dependencies import get_db_session
+
+    session = repository.session
+    step_repo = ProtocolStepRepository(session=session)
+    execution_repo = ProtocolExecutionRepository(session=session)
+    compliance_service = ProtocolComplianceService(
+        execution_repository=execution_repo,
+        step_repository=step_repo,
+        step_completion_repository=None,  # not needed for clone
+    )
+    service = ProtocolService(
+        protocol_repository=repository,
+        execution_repository=execution_repo,
+        step_repository=step_repo,
+        compliance_service=compliance_service,
+    )
+
+    try:
+        cloned = await service.clone_protocol(
+            source_protocol_id=protocol_id,
+            winery_id=current_user.winery_id,
+            new_version=request.new_version,
+            new_protocol_name=request.new_protocol_name,
+        )
+    except ValueError as e:
+        msg = str(e)
+        if "already exists" in msg:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg)
+        if "not found" in msg or "Access denied" in msg:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+
+    return ProtocolResponse(
+        id=cloned.id,
+        winery_id=cloned.winery_id,
+        varietal_code=cloned.varietal_code,
+        varietal_name=cloned.varietal_name,
+        color=cloned.color,
+        version=cloned.version,
+        protocol_name=cloned.protocol_name,
+        is_active=cloned.is_active,
+        expected_duration_days=cloned.expected_duration_days,
+        description=cloned.description,
+        created_at=cloned.created_at,
+        updated_at=cloned.updated_at,
+    )

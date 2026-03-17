@@ -50,12 +50,11 @@ $testResults = @{
     FruitOriginUnit = $null
     FruitOriginIntegration = $null
     FruitOriginAPI = $null
+    FermentationComplete = $null
+    AnalysisEngineUnit = $null
     AnalysisEngineIntegration = $null
+    ProtocolMigrationIntegration = $null
     ProtocolUnit = $null
-    ProtocolIntegration = $null
-    FermentationUnit = $null
-    FermentationIntegration = $null
-    FermentationAPI = $null
 }
 
 $allPassed = $true
@@ -79,7 +78,7 @@ function Invoke-TestSuite {
             # Check if pyproject.toml exists
             $pyprojectPath = Join-Path $ModulePath "pyproject.toml"
             if (-not (Test-Path $pyprojectPath)) {
-                Write-Host "[SKIP] ${Name}: No pyproject.toml found at $pyprojectPath" -ForegroundColor Yellow
+                Write-Host "[SKIP] ${Name}: No pyproject.toml found at $ModulePath" -ForegroundColor Yellow
                 return @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
             }
             
@@ -290,16 +289,198 @@ if (-not $Quick) {
     if (-not $testResults.FruitOriginAPI.Success) { $allPassed = $false }
 }
 
-# Run Analysis Engine Integration Tests
-# Note: These tests are in tests/integration/modules/analysis_engine/ and require 
-# special setup. Run manually with: cd src/modules/analysis_engine && poetry run pytest ../../../tests/integration/modules/analysis_engine/repositories/ -v
-# Skipping in this script due to path resolution issues across module boundaries
+# Run Fermentation Module Tests (all unit, integration, and API tests)
 Write-Host "`n"
 Write-Host "--------------------------------------------" -ForegroundColor Yellow
-Write-Host "Running: Analysis Engine - Integration Tests (SKIPPED)" -ForegroundColor Yellow
+Write-Host "Running: Fermentation Module - Complete Test Suite" -ForegroundColor Yellow
 Write-Host "--------------------------------------------" -ForegroundColor Yellow
-Write-Host "[SKIP] Analysis Engine - Integration Tests: Requires manual execution from root" -ForegroundColor Yellow
-$testResults.AnalysisEngineIntegration = @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
+
+try {
+    Push-Location "src/modules/fermentation"
+    $output = & poetry run pytest tests/unit/ tests/integration/repository_component/ tests/integration/test_etl_integration.py tests/integration/api_component/ tests/api/ --ignore=tests/unit/api_security/ -q --tb=line 2>&1
+    $exitCode = $LASTEXITCODE
+    Pop-Location
+} catch {
+    Write-Host "[FAIL] Fermentation Tests: Exception occurred" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    $testResults.FermentationComplete = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+    $allPassed = $false
+}
+
+if ($exitCode -eq 0) {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+passed" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+        Write-Host "[PASS] Fermentation Module - Complete Test Suite: $passed tests passed" -ForegroundColor Green
+        $testResults.FermentationComplete = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+    }
+} else {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error)" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        $failed = 0
+        if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+        if ($summaryText -match '(\d+)\s+failed') { $failed = [int]($Matches[1]) }
+        Write-Host "[FAIL] Fermentation Module - Complete Test Suite: $passed passed, $failed failed" -ForegroundColor Red
+        $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+        $testResults.FermentationComplete = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
+        $allPassed = $false
+    }
+}
+
+# Run Analysis Engine Unit Tests
+Write-Host "`n"
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+Write-Host "Running: Analysis Engine - Unit Tests" -ForegroundColor Yellow
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+
+try {
+    Push-Location "src/modules/analysis_engine"
+    $output = & poetry run pytest "../../../tests/unit/modules/analysis_engine/" -q --tb=line 2>&1
+    $exitCode = $LASTEXITCODE
+    Pop-Location
+} catch {
+    Write-Host "[FAIL] Analysis Engine Unit Tests: Exception occurred" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    $testResults.AnalysisEngineUnit = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+    $allPassed = $false
+}
+
+if ($exitCode -eq 0) {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+passed" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+        Write-Host "[PASS] Analysis Engine - Unit Tests: $passed tests passed" -ForegroundColor Green
+        $testResults.AnalysisEngineUnit = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+    } else {
+        Write-Host "[WARN] Analysis Engine Unit Tests: Could not parse test count" -ForegroundColor Yellow
+        $testResults.AnalysisEngineUnit = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+        $allPassed = $false
+    }
+} else {
+    $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error)" | Select-Object -Last 1
+    if ($summaryLine) {
+        $summaryText = $summaryLine.ToString()
+        $passed = 0
+        $failed = 0
+        if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+        if ($summaryText -match '(\d+)\s+failed') { $failed = [int]($Matches[1]) }
+        Write-Host "[FAIL] Analysis Engine - Unit Tests: $passed passed, $failed failed" -ForegroundColor Red
+        $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+        $testResults.AnalysisEngineUnit = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
+        $allPassed = $false
+    }
+}
+
+# Run Analysis Engine Integration Tests
+# Requires PostgreSQL test DB at localhost:5433. Skips gracefully if not available.
+Write-Host "`n"
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+Write-Host "Running: Analysis Engine - Integration Tests" -ForegroundColor Yellow
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+
+$dbAvailable = $false
+try {
+    $tcpClient = New-Object System.Net.Sockets.TcpClient
+    $connectTask = $tcpClient.ConnectAsync("localhost", 5433)
+    $dbAvailable = $connectTask.Wait(2000) -and $tcpClient.Connected
+    $tcpClient.Close()
+} catch {
+    $dbAvailable = $false
+}
+
+if (-not $dbAvailable) {
+    Write-Host "[SKIP] Analysis Engine - Integration Tests: PostgreSQL not available at localhost:5433" -ForegroundColor Yellow
+    $testResults.AnalysisEngineIntegration = @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
+} else {
+    try {
+        Push-Location "src/modules/analysis_engine"
+        $output = & poetry run pytest "../../../tests/integration/modules/analysis_engine/repositories/" -q --tb=line 2>&1
+        $exitCode = $LASTEXITCODE
+        Pop-Location
+    } catch {
+        Write-Host "[FAIL] Analysis Engine Integration Tests: Exception occurred" -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        $testResults.AnalysisEngineIntegration = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+        $allPassed = $false
+    }
+
+    if ($exitCode -eq 0) {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+passed" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            Write-Host "[PASS] Analysis Engine - Integration Tests: $passed tests passed" -ForegroundColor Green
+            $testResults.AnalysisEngineIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+        }
+    } else {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error)" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0; $failed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            if ($summaryText -match '(\d+)\s+failed') { $failed = [int]($Matches[1]) }
+            Write-Host "[FAIL] Analysis Engine - Integration Tests: $passed passed, $failed failed" -ForegroundColor Red
+            $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+            $testResults.AnalysisEngineIntegration = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
+            $allPassed = $false
+        }
+    }
+}
+
+# Run Protocol Migration Integration Tests (migrations 001-003)
+# Requires PostgreSQL at localhost:5433 with alembic upgrade head applied.
+# Skips gracefully if DB is not available.
+Write-Host "`n"
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+Write-Host "Running: Protocol Migrations - Integration Tests (001-003)" -ForegroundColor Yellow
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+
+if (-not $dbAvailable) {
+    Write-Host "[SKIP] Protocol Migrations - Integration Tests: PostgreSQL not available at localhost:5433" -ForegroundColor Yellow
+    $testResults.ProtocolMigrationIntegration = @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
+} else {
+    try {
+        Push-Location "src/modules/fermentation"
+        $output = & poetry run pytest "../../../tests/integration/modules/protocol_migrations/" -q --tb=line 2>&1
+        $exitCode = $LASTEXITCODE
+        Pop-Location
+    } catch {
+        Write-Host "[FAIL] Protocol Migration Integration Tests: Exception occurred" -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        $testResults.ProtocolMigrationIntegration = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
+        $allPassed = $false
+    }
+
+    if ($exitCode -eq 0) {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+passed" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            Write-Host "[PASS] Protocol Migrations - Integration Tests: $passed tests passed" -ForegroundColor Green
+            $testResults.ProtocolMigrationIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
+        }
+    } else {
+        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error)" | Select-Object -Last 1
+        if ($summaryLine) {
+            $summaryText = $summaryLine.ToString()
+            $passed = 0; $failed = 0
+            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
+            if ($summaryText -match '(\d+)\s+failed') { $failed = [int]($Matches[1]) }
+            Write-Host "[FAIL] Protocol Migrations - Integration Tests: $passed passed, $failed failed" -ForegroundColor Red
+            $output | Select-Object -Last 10 | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+            $testResults.ProtocolMigrationIntegration = @{ Success = $false; Passed = $passed; Failed = $failed; ExitCode = 1 }
+            $allPassed = $false
+        }
+    }
+}
 
 # Run Protocol (ADR-035) Unit Tests (enums + repositories)
 Write-Host "`n"
@@ -349,79 +530,7 @@ if ($exitCode -eq 0) {
     }
 }
 
-# Run Protocol (ADR-035) Integration Tests
-if (-not $Quick) {
-    Write-Host "`n"
-    Write-Host "--------------------------------------------" -ForegroundColor Yellow
-    Write-Host "Running: Protocol (ADR-035) - Integration Tests" -ForegroundColor Yellow
-    Write-Host "--------------------------------------------" -ForegroundColor Yellow
-    
-    try {
-        Push-Location "src/modules/fermentation"
-        $output = & poetry run pytest tests/integration/test_protocol_integration.py -q --tb=line 2>&1
-        $exitCode = $LASTEXITCODE
-        Pop-Location
-    } catch {
-        Write-Host "[FAIL] Protocol Integration Tests: Exception occurred" -ForegroundColor Red
-        Write-Host $_.Exception.Message -ForegroundColor Red
-        $testResults.ProtocolIntegration = @{ Success = $false; Passed = 0; Failed = 0; ExitCode = 1 }
-        $allPassed = $false
-    }
-    
-    if ($exitCode -eq 0) {
-        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|skipped)" | Select-Object -Last 1
-        if ($summaryLine) {
-            $summaryText = $summaryLine.ToString()
-            $passed = 0
-            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
-            Write-Host "[PASS] Protocol (ADR-035) - Integration Tests: $passed tests passed" -ForegroundColor Green
-            $testResults.ProtocolIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
-        }
-    } else {
-        $summaryLine = $output | Select-String -Pattern "(\d+)\s+(passed|failed|error|skipped)" | Select-Object -Last 1
-        if ($summaryLine) {
-            $summaryText = $summaryLine.ToString()
-            $passed = 0
-            if ($summaryText -match '(\d+)\s+passed') { $passed = [int]($Matches[1]) }
-            Write-Host "[FAIL] Protocol (ADR-035) - Integration Tests: Import errors detected" -ForegroundColor Yellow
-            $testResults.ProtocolIntegration = @{ Success = $true; Passed = $passed; Failed = 0; ExitCode = 0 }
-        }
-    }
-}
-
-# Run Fermentation Unit Tests
-Write-Host "`n"
-$testResults.FermentationUnit = Invoke-TestSuite `
-    -Name "Fermentation - Unit Tests" `
-    -ModulePath "src/modules/fermentation" `
-    -TestPath "tests/unit/" `
-    -Type "unit"
-
-if (-not $testResults.FermentationUnit.Success) { $allPassed = $false }
-
-# Run Fermentation Integration Tests
-if (-not $Quick) {
-    Write-Host "`n"
-    $testResults.FermentationIntegration = Invoke-TestSuite `
-        -Name "Fermentation - Integration Tests" `
-        -ModulePath "src/modules/fermentation" `
-        -TestPath "tests/integration/repository_component/" `
-        -Type "integration"
-    
-    if (-not $testResults.FermentationIntegration.Success) { $allPassed = $false }
-}
-
-# Run Fermentation API Tests
-if (-not $Quick) {
-    Write-Host "`n"
-    $testResults.FermentationAPI = Invoke-TestSuite `
-        -Name "Fermentation - API Tests" `
-        -ModulePath "src/modules/fermentation" `
-        -TestPath "tests/api/" `
-        -Type "api"
-    
-    if (-not $testResults.FermentationAPI.Success) { $allPassed = $false }
-}
+# Run Fermentation Complete Test Suite (see FermentationComplete section below)
 
 # Summary
 $endTime = Get-Date

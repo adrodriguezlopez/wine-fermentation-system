@@ -1,10 +1,11 @@
 # ADR-037: Protocol-Analysis Engine Integration
 
-**Status**: ✅ Approved for Implementation  
+**Status**: 🔄 In Progress  
 **Date**: February 9, 2026  
+**Implementation Started**: March 1, 2026  
 **Decision Makers**: Development Team  
 **Related ADRs**: ADR-021 (Protocol Engine), ADR-020 (Analysis Engine), ADR-036 (Compliance Scoring)  
-**Timeline Context**: Phase 3 integration (Week 6-7)
+**Timeline Context**: Phase 4 integration (active)
 
 ---
 
