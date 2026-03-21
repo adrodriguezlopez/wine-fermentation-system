@@ -19,10 +19,38 @@ from pathlib import Path
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Import metadata from shared base entity
-# Note: For Protocol module, tables are created via recreate_test_tables.py
-# using entity definitions and Base.metadata.create_all() - not via Alembic migrations
-from src.shared.infra.orm.base_entity import Base
+# Import Base and ALL entity classes so that Base.metadata contains
+# the complete schema — required for autogenerate to produce accurate diffs.
+from src.shared.infra.orm.base_entity import Base  # noqa: F401 (registers mapper)
+
+# Multi-tenancy root
+from src.modules.winery.src.domain.entities.winery import Winery  # noqa: F401
+from src.shared.auth.domain.entities.user import User  # noqa: F401
+
+# Fruit origin / traceability
+from src.modules.fruit_origin.src.domain.entities.vineyard import Vineyard  # noqa: F401
+from src.modules.fruit_origin.src.domain.entities.vineyard_block import VineyardBlock  # noqa: F401
+from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot  # noqa: F401
+
+# Fermentation core
+from src.modules.fermentation.src.domain.entities.fermentation import Fermentation  # noqa: F401
+from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote  # noqa: F401
+from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource  # noqa: F401
+from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample  # noqa: F401
+
+# Fermentation protocol (ADR-035)
+from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol  # noqa: F401
+from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep  # noqa: F401
+from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution  # noqa: F401
+from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion  # noqa: F401
+from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert  # noqa: F401
+
+# Analysis engine
+from src.modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate  # noqa: F401
+from src.modules.analysis_engine.src.domain.entities.analysis import Analysis  # noqa: F401
+from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly  # noqa: F401
+from src.modules.analysis_engine.src.domain.entities.recommendation import Recommendation  # noqa: F401
+from src.modules.analysis_engine.src.domain.entities.protocol_advisory import ProtocolAdvisory  # noqa: F401
 
 target_metadata = Base.metadata
 
