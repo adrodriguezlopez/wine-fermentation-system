@@ -45,6 +45,14 @@ class ProtocolExecutionStatus(str, Enum):
     ABANDONED = "ABANDONED"
 
 
+class ProtocolState(str, Enum):
+    """Lifecycle state for a FermentationProtocol (ADR-039)."""
+
+    DRAFT = "DRAFT"             # Being authored — not yet approved for use
+    FINAL = "FINAL"             # Approved and ready for use (or already in use)
+    DEPRECATED = "DEPRECATED"   # Retired — no new executions allowed
+
+
 class SkipReason(str, Enum):
     """Reasons why a protocol step was skipped"""
     

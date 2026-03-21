@@ -55,6 +55,11 @@ class ProtocolResponse(BaseModel):
     is_active: bool = Field(..., description="Active status")
     expected_duration_days: int = Field(..., description="Expected duration")
     description: Optional[str] = Field(None, description="Protocol description")
+    # ADR-039: template management fields (None for old records not yet migrated)
+    is_template: Optional[bool] = Field(None, description="True = master template, False = fermentation instance")
+    state: Optional[str] = Field(None, description="Lifecycle state: DRAFT | FINAL | DEPRECATED")
+    template_id: Optional[int] = Field(None, description="Parent template ID (set on instances)")
+    approved_by_user_id: Optional[int] = Field(None, description="User who approved DRAFT → FINAL")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
     

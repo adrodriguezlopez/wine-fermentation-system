@@ -14,8 +14,13 @@ Docker:
     docker-compose up fermentation
 """
 
+import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+
+from src.modules.fermentation.src.service_component.services.alert_scheduler_service import AlertSchedulerService
 
 # ADR-027: Structured Logging Middleware
 from src.shared.wine_fermentator_logging import configure_logging, get_logger
@@ -48,6 +53,30 @@ configure_logging(log_level="INFO")
 logger = get_logger(__name__)
 
 
+def _get_db_url() -> str:
+    """Return the async DB URL for the scheduler (same source as DatabaseConfig)."""
+    url = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5433/wine_fermentation")
+    # Normalise to asyncpg scheme
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://") and "+asyncpg" not in url:
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Start background scheduler on startup; stop it on shutdown."""
+    scheduler = AlertSchedulerService(
+        database_url=_get_db_url(),
+        interval_minutes=int(os.getenv("ALERT_SCHEDULER_INTERVAL_MINUTES", "30")),
+    )
+    scheduler.start()
+    logger.info("alert_scheduler_wired")
+    yield
+    scheduler.stop()
+
+
 def create_app() -> FastAPI:
     """
     Create and configure FastAPI application
@@ -57,6 +86,7 @@ def create_app() -> FastAPI:
     """
     app = FastAPI(
         title="Wine Fermentation API",
+        lifespan=_lifespan,
         description="API for managing wine fermentations and samples",
         version="1.0.0",
         docs_url="/docs",

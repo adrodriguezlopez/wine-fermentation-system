@@ -77,3 +77,21 @@ class IFermentationProtocolRepository(ABC):
             Tuple of (protocols list, total count)
         """
         pass
+    @abstractmethod
+    async def list_templates_paginated(
+        self, winery_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[FermentationProtocol], int]:
+        """
+        Get master-template protocols (is_template=True) for a winery with pagination.
+
+        Returns:
+            Tuple of (templates list, total count)
+        """
+        pass
+
+    @abstractmethod
+    async def deactivate_by_winery_varietal(
+        self, winery_id: int, varietal_code: str
+    ) -> None:
+        """Deactivate all protocols for a (winery, varietal) combination."""
+        pass

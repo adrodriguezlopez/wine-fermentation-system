@@ -6,7 +6,7 @@ Uses SQLAlchemy async session for database operations.
 """
 
 from typing import List, Optional, Tuple
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol
@@ -240,3 +240,57 @@ class FermentationProtocolRepository(IFermentationProtocolRepository):
         protocols = result.scalars().all()
         
         return protocols, total_count
+    async def list_templates_paginated(
+        self, winery_id: int, page: int = 1, page_size: int = 20
+    ) -> Tuple[List[FermentationProtocol], int]:
+        """
+        Get master-template protocols (is_template=True) for a winery with pagination.
+
+        Args:
+            winery_id: Winery ID
+            page: Page number (1-indexed)
+            page_size: Number of results per page
+
+        Returns:
+            Tuple of (templates list, total count)
+        """
+        base_filter = (
+            (FermentationProtocol.winery_id == winery_id)
+            & (FermentationProtocol.is_template.is_(True))
+        )
+
+        count_stmt = select(func.count(FermentationProtocol.id)).where(base_filter)
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalars().first() or 0
+
+        offset = (page - 1) * page_size
+        stmt = (
+            select(FermentationProtocol)
+            .where(base_filter)
+            .order_by(FermentationProtocol.varietal_name, FermentationProtocol.version.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all(), total_count
+
+    async def deactivate_by_winery_varietal(
+        self, winery_id: int, varietal_code: str
+    ) -> None:
+        """
+        Deactivate all protocol versions for a (winery, varietal) combination.
+
+        Args:
+            winery_id: Winery ID
+            varietal_code: Varietal code (e.g. "PN")
+        """
+        stmt = (
+            update(FermentationProtocol)
+            .where(
+                (FermentationProtocol.winery_id == winery_id)
+                & (FermentationProtocol.varietal_code == varietal_code)
+            )
+            .values(is_active=False)
+        )
+        await self.session.execute(stmt)
+        await self.session.flush()
