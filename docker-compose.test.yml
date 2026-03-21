@@ -1,0 +1,23 @@
+# =============================================================================
+# TEST override — isolated DB, no hot-reload, no port exposure outside CI
+# =============================================================================
+# Usage (via deploy.ps1):
+#   .\deploy.ps1 -Env test
+# Or manually:
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up
+# =============================================================================
+version: '3.8'
+
+services:
+
+  db:
+    ports:
+      - "${POSTGRES_HOST_PORT:-5434}:5432"
+
+  fermentation:
+    ports:
+      - "${FERMENTATION_HOST_PORT:-8100}:8000"
+
+  winery:
+    ports:
+      - "${WINERY_HOST_PORT:-8101}:8001"

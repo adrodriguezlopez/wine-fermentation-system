@@ -1,0 +1,23 @@
+# =============================================================================
+# STAGING override — no source mounts, no debug, exposed on standard ports
+# =============================================================================
+# Usage (via deploy.ps1):
+#   .\deploy.ps1 -Env staging
+# Or manually:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml --env-file .env.staging up -d
+# =============================================================================
+version: '3.8'
+
+services:
+
+  db:
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+
+  fermentation:
+    ports:
+      - "${FERMENTATION_HOST_PORT:-8000}:8000"
+
+  winery:
+    ports:
+      - "${WINERY_HOST_PORT:-8001}:8001"

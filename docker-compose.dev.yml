@@ -1,0 +1,36 @@
+# =============================================================================
+# DEV override — hot-reload, exposed ports, source mounts
+# =============================================================================
+# Usage (via deploy.ps1):
+#   .\deploy.ps1 -Env dev
+# Or manually:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.dev up
+# =============================================================================
+version: '3.8'
+
+services:
+
+  db:
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+
+  fermentation:
+    ports:
+      - "${FERMENTATION_HOST_PORT:-8000}:8000"
+    # Hot-reload: mount source so code changes are picked up instantly
+    volumes:
+      - ./src:/app/src
+      - ./src/shared:/app/src/shared
+    command: >
+      uvicorn src.modules.fermentation.src.main:app
+      --host 0.0.0.0 --port 8000 --reload
+
+  winery:
+    ports:
+      - "${WINERY_HOST_PORT:-8001}:8001"
+    volumes:
+      - ./src:/app/src
+      - ./src/shared:/app/src/shared
+    command: >
+      uvicorn src.modules.winery.src.main:app
+      --host 0.0.0.0 --port 8001 --reload

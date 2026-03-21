@@ -1,0 +1,27 @@
+# =============================================================================
+# PROD override — no ports exposed to host (use a reverse proxy/load balancer
+# to terminate TLS and forward to internal container addresses)
+# =============================================================================
+# Usage (via deploy.ps1):
+#   .\deploy.ps1 -Env prod
+# Or manually:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+# =============================================================================
+version: '3.8'
+
+services:
+
+  # Database is NOT exposed to the host in production.
+  # Connect via internal Docker network only.
+  db:
+    restart: always
+
+  fermentation:
+    restart: always
+    # No host port — reached via reverse proxy on the internal network
+    # ports: []  ← intentionally omitted
+
+  winery:
+    restart: always
+    # No host port — reached via reverse proxy on the internal network
+    # ports: []  ← intentionally omitted
