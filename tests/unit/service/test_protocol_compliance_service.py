@@ -309,10 +309,11 @@ async def test_one_step_one_day_late_25_percent_penalty(
     # Total possible: 150 + 150 + 150 + 50 + 50 + 100 = 650
     # Completion score: (612.5 / 650) * 100 = 94.23%
     # Timing score: 5 on-time / 6 total = 83.33%
-    # Final: (94.23 * 0.7) + (83.33 * 0.3) = 66 + 25 = 91%
+    # Base: (94.23 * 0.7) + (83.33 * 0.3) = 65.96 + 25.00 = 90.96
+    # All critical steps complete: +5 bonus → 95.96
     assert result.weighted_completion == pytest.approx(94.23, abs=0.01)
     assert result.timing_score == pytest.approx(83.33, abs=0.01)
-    assert result.compliance_score < 95
+    assert result.compliance_score == pytest.approx(95.96, abs=0.01)
 
 
 # ============================================================================
@@ -642,7 +643,7 @@ async def test_get_execution_status_includes_progress_and_compliance(
     completions = [
         MagicMock(step_id=1, was_skipped=False),
         MagicMock(step_id=2, was_skipped=False),
-        MagicMock(step_id=3, was_skipped=True),
+        MagicMock(step_id=3, was_skipped=True, skip_reason="WINEMAKER_DECISION"),
     ]
 
     compliance_service.completion_repo.get_by_execution = AsyncMock(

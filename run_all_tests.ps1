@@ -42,11 +42,14 @@ Write-Host ""
 
 $testResults = @{
     SharedTestingUnit = $null
+    SharedTestingUnitBuilders = $null
+    SharedInfraUnit = $null
     SharedErrorHandlingUnit = $null
     SharedAuthUnit = $null
     SharedAuthIntegration = $null
     WineryUnit = $null
     WineryIntegration = $null
+    WineryAPI = $null
     FruitOriginUnit = $null
     FruitOriginIntegration = $null
     FruitOriginAPI = $null
@@ -55,6 +58,8 @@ $testResults = @{
     AnalysisEngineIntegration = $null
     ProtocolMigrationIntegration = $null
     ProtocolUnit = $null
+    ProtocolComplianceUnit = $null
+    SeedScripts = $null
 }
 
 $allPassed = $true
@@ -199,6 +204,27 @@ $testResults.SharedTestingUnit = Invoke-TestSuite `
 
 if (-not $testResults.SharedTestingUnit.Success) { $allPassed = $false }
 
+# Run Shared Testing Unit Builder Tests (entity_factory, query_result_builder, etc.)
+# These test the testing infrastructure builders under testing/unit/tests/.
+Write-Host "`n"
+$testResults.SharedTestingUnitBuilders = Invoke-TestSuite `
+    -Name "Shared Testing - Unit Builder Tests" `
+    -ModulePath "src/shared" `
+    -TestPath "testing/unit/tests/" `
+    -Type "unit"
+
+if (-not $testResults.SharedTestingUnitBuilders.Success) { $allPassed = $false }
+
+# Run Shared Infra Unit Tests (database session, base repository, transaction scope)
+Write-Host "`n"
+$testResults.SharedInfraUnit = Invoke-TestSuite `
+    -Name "Shared Infra - Unit Tests" `
+    -ModulePath "src/shared" `
+    -TestPath "infra/test/" `
+    -Type "unit"
+
+if (-not $testResults.SharedInfraUnit.Success) { $allPassed = $false }
+
 # Run Shared Error Handling Unit Tests (ADR-026)
 Write-Host "`n"
 $testResults.SharedErrorHandlingUnit = Invoke-TestSuite `
@@ -253,6 +279,18 @@ if (-not $Quick) {
         -Type "integration"
     
     if (-not $testResults.WineryIntegration.Success) { $allPassed = $false }
+}
+
+# Run Winery API Tests (TestClient with in-memory SQLite)
+if (-not $Quick) {
+    Write-Host "`n"
+    $testResults.WineryAPI = Invoke-TestSuite `
+        -Name "Winery - API Tests" `
+        -ModulePath "src/modules/winery" `
+        -TestPath "tests/api/" `
+        -Type "api"
+    
+    if (-not $testResults.WineryAPI.Success) { $allPassed = $false }
 }
 
 # Run Fruit Origin Unit Tests
@@ -531,6 +569,34 @@ if ($exitCode -eq 0) {
 }
 
 # Run Fermentation Complete Test Suite (see FermentationComplete section below)
+
+# Run Protocol Compliance Unit Tests (ADR-036 scoring algorithm)
+# Located at tests/unit/service/ - uses fermentation module's poetry env
+Write-Host "`n"
+$testResults.ProtocolComplianceUnit = Invoke-TestSuite `
+    -Name "Protocol Compliance (ADR-036) - Unit Tests" `
+    -ModulePath "src/modules/fermentation" `
+    -TestPath "../../../tests/unit/service/" `
+    -Type "unit"
+
+if (-not $testResults.ProtocolComplianceUnit.Success) { $allPassed = $false }
+
+# Run Seed Script Tests (ADR-018 data bootstrap scripts)
+# Located at tests/scripts/ - uses fermentation module's poetry env
+Write-Host "`n"
+$testResults.SeedScripts = Invoke-TestSuite `
+    -Name "Seed Scripts (ADR-018) - Unit Tests" `
+    -ModulePath "src/modules/fermentation" `
+    -TestPath "../../../tests/scripts/" `
+    -Type "unit"
+
+if (-not $testResults.SeedScripts.Success) { $allPassed = $false }
+
+# NOTE: The following test files are intentionally excluded from this runner:
+#   - src/modules/fermentation/tests/unit/api_security/ : require special JWT/auth env setup
+#   - src/modules/fermentation/tests/service_component/interfaces/ : placeholder (empty) files
+#   - src/modules/fermentation/tests/integration/test_etl_load_testing.py : slow load tests
+#   - src/modules/fermentation/tests/integration/test_etl_performance_benchmarks.py : perf benchmarks
 
 # Summary
 $endTime = Get-Date
