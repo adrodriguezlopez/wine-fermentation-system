@@ -44,6 +44,7 @@ from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolS
 from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution  # noqa: F401
 from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion  # noqa: F401
 from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert  # noqa: F401
+from src.modules.fermentation.src.domain.entities.winemaker_action import WinemakerAction  # noqa: F401
 
 # Analysis engine
 from src.modules.analysis_engine.src.domain.entities.recommendation_template import RecommendationTemplate  # noqa: F401
