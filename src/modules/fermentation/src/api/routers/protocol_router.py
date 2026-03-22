@@ -23,6 +23,7 @@ from src.modules.fermentation.src.api.schemas.requests import (
     ProtocolCreateRequest,
     ProtocolUpdateRequest,
     ProtocolCloneRequest,
+    ProtocolInstantiateRequest,
 )
 
 # Response schemas (Pydantic - for serialization)
@@ -605,6 +606,186 @@ async def clone_protocol(
         is_active=cloned.is_active,
         expected_duration_days=cloned.expected_duration_days,
         description=cloned.description,
+        is_template=getattr(cloned, "is_template", None),
+        state=getattr(cloned, "state", None),
+        template_id=getattr(cloned, "template_id", None),
+        approved_by_user_id=getattr(cloned, "approved_by_user_id", None),
         created_at=cloned.created_at,
         updated_at=cloned.updated_at,
     )
+
+
+# ---------------------------------------------------------------------------
+# ADR-039: Template Lifecycle Endpoints
+# ---------------------------------------------------------------------------
+
+def _build_service(repository: "IFermentationProtocolRepository") -> "ProtocolService":
+    """Inline factory — builds ProtocolService from an existing repository instance."""
+    from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
+    from src.modules.fermentation.src.service_component.services.protocol_service import ProtocolService
+    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
+    from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
+
+    session = repository.session
+    step_repo = ProtocolStepRepository(session=session)
+    execution_repo = ProtocolExecutionRepository(session=session)
+    compliance_service = ProtocolComplianceService(
+        execution_repository=execution_repo,
+        step_repository=step_repo,
+        step_completion_repository=None,
+    )
+    return ProtocolService(
+        protocol_repository=repository,
+        execution_repository=execution_repo,
+        step_repository=step_repo,
+        compliance_service=compliance_service,
+    )
+
+
+def _to_response(p: "FermentationProtocol") -> ProtocolResponse:
+    """Convert a FermentationProtocol entity to ProtocolResponse."""
+    from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol as _FP  # noqa: F401
+    return ProtocolResponse(
+        id=p.id,
+        winery_id=p.winery_id,
+        varietal_code=p.varietal_code,
+        varietal_name=p.varietal_name,
+        color=p.color,
+        version=p.version,
+        protocol_name=p.protocol_name,
+        is_active=p.is_active,
+        expected_duration_days=p.expected_duration_days,
+        description=p.description,
+        is_template=getattr(p, "is_template", None),
+        state=getattr(p, "state", None),
+        template_id=getattr(p, "template_id", None),
+        approved_by_user_id=getattr(p, "approved_by_user_id", None),
+        created_at=p.created_at,
+        updated_at=p.updated_at,
+    )
+
+
+@router.get(
+    "/templates",
+    response_model=ProtocolListResponse,
+    summary="List master protocol templates (ADR-039)",
+    description=(
+        "Returns all protocols where is_template=True for the caller's winery. "
+        "Use this to discover available templates before instantiating one for a "
+        "specific fermentation batch."
+    ),
+)
+async def list_templates(
+    page: Annotated[int, Query(ge=1, description="Page number (1-indexed)")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
+    current_user: Annotated[UserContext, Depends(require_winemaker)] = None,
+    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)] = None,
+) -> ProtocolListResponse:
+    """List master-template protocols for the caller's winery."""
+    service = _build_service(repository)
+    templates, total_count = await service.list_templates(
+        winery_id=current_user.winery_id,
+        page=page,
+        page_size=page_size,
+    )
+    return ProtocolListResponse(
+        items=[_to_response(t) for t in templates],
+        total_count=total_count,
+        page=page,
+        page_size=page_size,
+        total_pages=(total_count + page_size - 1) // page_size,
+    )
+
+
+@router.post(
+    "/{protocol_id}/approve",
+    response_model=ProtocolResponse,
+    summary="Approve a DRAFT template → FINAL (ADR-039)",
+    description=(
+        "Transitions a DRAFT master-template to FINAL state so it can be used "
+        "to create per-fermentation instances. Requires WINEMAKER or ADMIN role."
+    ),
+)
+async def approve_template(
+    protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
+    current_user: Annotated[UserContext, Depends(require_winemaker)],
+    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+) -> ProtocolResponse:
+    """Approve a DRAFT template → FINAL."""
+    service = _build_service(repository)
+    try:
+        protocol = await service.approve_template(
+            protocol_id=protocol_id,
+            winery_id=current_user.winery_id,
+            approver_user_id=current_user.user_id,
+        )
+    except ValueError as e:
+        msg = str(e)
+        if "not found" in msg or "Access denied" in msg:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+    return _to_response(protocol)
+
+
+@router.post(
+    "/{protocol_id}/deprecate",
+    response_model=ProtocolResponse,
+    summary="Deprecate a FINAL template → DEPRECATED (ADR-039)",
+    description=(
+        "Transitions a FINAL master-template to DEPRECATED state. "
+        "The template becomes inactive and no new instances can be created from it. "
+        "Existing instances and executions are not affected."
+    ),
+)
+async def deprecate_template(
+    protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
+    current_user: Annotated[UserContext, Depends(require_winemaker)],
+    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+) -> ProtocolResponse:
+    """Deprecate a FINAL template."""
+    service = _build_service(repository)
+    try:
+        protocol = await service.deprecate_template(
+            protocol_id=protocol_id,
+            winery_id=current_user.winery_id,
+        )
+    except ValueError as e:
+        msg = str(e)
+        if "not found" in msg or "Access denied" in msg:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+    return _to_response(protocol)
+
+
+@router.post(
+    "/{protocol_id}/instantiate",
+    response_model=ProtocolResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a per-fermentation instance from a FINAL template (ADR-039)",
+    description=(
+        "Deep-copies a FINAL master template into a per-fermentation protocol instance "
+        "(is_template=False). The instance can be customised with step overrides before "
+        "the fermentation starts. Requires WINEMAKER or ADMIN role."
+    ),
+)
+async def instantiate_template(
+    protocol_id: Annotated[int, Path(gt=0, description="Source template protocol ID")],
+    request: ProtocolInstantiateRequest,
+    current_user: Annotated[UserContext, Depends(require_winemaker)],
+    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+) -> ProtocolResponse:
+    """Instantiate a FINAL template into a fermentation-specific instance."""
+    service = _build_service(repository)
+    try:
+        instance = await service.instantiate_from_template(
+            template_id=protocol_id,
+            winery_id=current_user.winery_id,
+            fermentation_batch_name=request.fermentation_batch_name,
+            created_by_user_id=current_user.user_id,
+        )
+    except ValueError as e:
+        msg = str(e)
+        if "not found" in msg or "Access denied" in msg:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+    return _to_response(instance)

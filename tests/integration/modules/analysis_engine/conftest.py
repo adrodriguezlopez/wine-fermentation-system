@@ -20,16 +20,23 @@ for _p in [str(_project_root), str(_project_root / "src")]:
 # Pre-import fermentation entities so SQLAlchemy mapper cascade resolves correctly
 # when the shared Base configures all mappers at once.
 try:
+    # Foundation tables first (others FK into these)
+    import src.modules.winery.src.domain.entities.winery  # noqa: F401  # wineries — referenced by users, fermentations, harvest_lots, winemaker_actions
+    import src.modules.fruit_origin.src.domain.entities.vineyard  # noqa: F401  # vineyards → wineries
+    import src.modules.fruit_origin.src.domain.entities.vineyard_block  # noqa: F401  # vineyard_blocks → vineyards
+    import src.modules.fruit_origin.src.domain.entities.harvest_lot  # noqa: F401  # harvest_lots → vineyard_blocks, wineries
+    # Auth / fermentation entities
     import src.shared.auth.domain.entities.user  # noqa: F401
     import src.modules.fermentation.src.domain.entities.fermentation  # noqa: F401
     import src.modules.fermentation.src.domain.entities.fermentation_note  # noqa: F401
-    import src.modules.fermentation.src.domain.entities.fermentation_lot_source  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.fermentation_lot_source  # noqa: F401  # → harvest_lots
     import src.modules.fermentation.src.domain.entities.samples.base_sample  # noqa: F401
     import src.modules.fermentation.src.domain.entities.protocol_protocol  # noqa: F401
     import src.modules.fermentation.src.domain.entities.protocol_step  # noqa: F401
     import src.modules.fermentation.src.domain.entities.protocol_execution  # noqa: F401
     import src.modules.fermentation.src.domain.entities.step_completion  # noqa: F401
     import src.modules.fermentation.src.domain.entities.protocol_alert  # noqa: F401
+    import src.modules.fermentation.src.domain.entities.winemaker_action  # noqa: F401  # ADR-041: → wineries, fermentations, protocol_*
 except Exception:
     pass  # Degrade gracefully if fermentation module is not available
 

@@ -96,6 +96,7 @@ async def trigger_analysis(
         starting_brix=request.starting_brix,
         days_fermenting=request.days_fermenting,
         previous_densities=previous_densities,
+        protocol_compliance_score=request.protocol_compliance_score,  # ADR-037 boost
     )
 
     return AnalysisResponse.from_orm_entity(analysis)

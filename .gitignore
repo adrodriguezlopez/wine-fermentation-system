@@ -49,6 +49,17 @@ poetry.lock
 .env.local
 .env.development.local
 
+# =============================================================================
+# Environment files — secret values must NEVER be committed
+# =============================================================================
+# Ignore all .env.* files except the committed template
+.env.dev
+.env.test
+.env.staging
+.env.prod
+# Keep the template tracked
+!.env.example
+
 # Implementation plans (temporary documentation)
 IMPLEMENTATION_PLAN_*.md
 

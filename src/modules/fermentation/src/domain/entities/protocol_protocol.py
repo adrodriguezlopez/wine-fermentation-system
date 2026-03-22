@@ -11,6 +11,7 @@ from sqlalchemy import String, Integer, Boolean, Text, DateTime, ForeignKey, Uni
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.shared.infra.orm.base_entity import BaseEntity
+from src.modules.fermentation.src.domain.enums.step_type import ProtocolState
 
 if TYPE_CHECKING:
     from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
@@ -54,6 +55,19 @@ class FermentationProtocol(BaseEntity):
     
     # Lifecycle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)  # Currently in use?
+
+    # ADR-039: Template management lifecycle
+    is_template: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # DRAFT = being authored, FINAL = approved for use, DEPRECATED = retired
+    state: Mapped[str] = mapped_column(String(20), default=ProtocolState.FINAL, nullable=False)
+    # For instances (is_template=False): ID of the master template this was copied from
+    template_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("fermentation_protocols.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # User who approved DRAFT → FINAL transition
+    approved_by_user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     
     # Audit trail
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

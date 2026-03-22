@@ -1,30 +1,99 @@
+# =============================================================================
+# Base docker-compose — shared structure for ALL environments.
+# Never used directly. Always combined with an override:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Environment variables are loaded from the .env.<env> file by deploy.ps1.
+# =============================================================================
 version: '3.8'
 
 services:
-  fermentation:
-    build: 
-      context: ./src/modules/fermentation
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/wine_fermentation
-      - JWT_SECRET=your-secret-key-here
-    depends_on:
-      - db
-    volumes:
-      - ./src/modules/fermentation/src:/app/src
-    
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL database
+  # ---------------------------------------------------------------------------
   db:
-    image: postgres:14
-    ports:
-      - "5433:5432"  # Use port 5433 on host to avoid conflicts
+    image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=wine_fermentation
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Alembic migration runner — runs once then exits
+  # ---------------------------------------------------------------------------
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Fermentation service (port 8000 internally)
+  # ---------------------------------------------------------------------------
+  fermentation:
+    build:
+      context: ./src/modules/fermentation
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_ASYNC_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      LOG_LEVEL: ${LOG_LEVEL}
+      ALERT_SCHEDULER_INTERVAL_MINUTES: ${ALERT_SCHEDULER_INTERVAL_MINUTES}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Winery service (port 8001 internally)
+  # ---------------------------------------------------------------------------
+  winery:
+    build:
+      context: ./src/modules/winery
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_ASYNC_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      LOG_LEVEL: ${LOG_LEVEL}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

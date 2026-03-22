@@ -32,10 +32,11 @@
 | **[ADR-021](./ADR-021-protocol-compliance-engine.md)** | Fermentation Protocol Compliance Engine | ✅ Implemented | 2026-02-13 | High |
 | **[ADR-035](./ADR-035-protocol-data-model-schema.md)** | Protocol Data Model & Schema Design | ✅ Implemented | 2026-02-09 | Critical |
 | **[ADR-036](./ADR-036-compliance-scoring-algorithm.md)** | Protocol Compliance Scoring Algorithm | ✅ Implemented | 2026-02-13 | Critical |
-| **[ADR-037](./ADR-037-protocol-analysis-integration.md)** | Protocol-Analysis Engine Integration | 🔄 In Progress | 2026-03-01 | High |
+| **[ADR-037](./ADR-037-protocol-analysis-integration.md)** | Protocol-Analysis Engine Integration | ✅ Implemented | 2026-03-01 | High |
 | **[ADR-038](./ADR-038-deviation-detection-strategy.md)** | Protocol Deviation Detection Strategy | ✅ Implemented | 2026-02-13 | High |
-| **[ADR-039](./ADR-039-protocol-template-management.md)** | Protocol Template Management & Customization | 🟡 Partial | 2026-02-09 | High |
-| **[ADR-040](./ADR-040-notifications-alerts.md)** | Protocol Notifications & Alerts Strategy | 🟡 Partial | 2026-02-13 | Medium |
+| **[ADR-039](./ADR-039-protocol-template-management.md)** | Protocol Template Management & Customization | ✅ Implemented | 2026-02-09 | High |
+| **[ADR-040](./ADR-040-notifications-alerts.md)** | Protocol Notifications & Alerts Strategy | ✅ Implemented | 2026-02-13 | Medium |
+| **[ADR-041](./ADR-041-action-tracking-module.md)** | Action Tracking Module Architecture | ✅ Accepted | 2026-03-21 | High |
 
 ### ADR-033: Code Coverage Improvement Strategy
 **Decision:** Phased coverage improvement: API (85%), Repository (80%), Service (80%), ETL (80%)  

@@ -14,6 +14,10 @@ from .protocol_responses import (
     AlertResponse,
     AlertListResponse,
 )
+from ..action_schemas import (
+    ActionResponse,
+    ActionListResponse,
+)
 
 __all__ = [
     "FermentationResponse",
@@ -27,4 +31,6 @@ __all__ = [
     "CompletionListResponse",
     "AlertResponse",
     "AlertListResponse",
+    "ActionResponse",
+    "ActionListResponse",
 ]

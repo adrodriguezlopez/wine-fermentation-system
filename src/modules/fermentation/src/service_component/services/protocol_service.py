@@ -928,3 +928,199 @@ class ProtocolService:
         status = await self.compliance_service.get_execution_status(execution_id)
 
         return status
+
+    # ========================================================================
+    # ADR-039: Template Lifecycle Management
+    # ========================================================================
+
+    async def list_templates(
+        self,
+        winery_id: int,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> Tuple[List[FermentationProtocol], int]:
+        """
+        List master-template protocols (is_template=True) for a winery.
+
+        Args:
+            winery_id: Owning winery
+            page: Page number (1-indexed)
+            page_size: Items per page
+
+        Returns:
+            Tuple of (templates list, total count)
+        """
+        return await self.protocol_repo.list_templates_paginated(
+            winery_id=winery_id, page=page, page_size=page_size
+        )
+
+    async def approve_template(
+        self,
+        protocol_id: int,
+        winery_id: int,
+        approver_user_id: int,
+    ) -> FermentationProtocol:
+        """
+        Transition a DRAFT template to FINAL (approved for use).
+
+        Args:
+            protocol_id: Template to approve
+            winery_id: Owning winery (access control)
+            approver_user_id: ID of the admin/winemaker approving
+
+        Returns:
+            Updated FermentationProtocol in FINAL state
+
+        Raises:
+            ValueError: If protocol not found, not a template, or not in DRAFT state
+        """
+        from src.modules.fermentation.src.domain.enums.step_type import ProtocolState
+
+        protocol = await self.get_protocol(protocol_id, winery_id)
+
+        if not protocol.is_template:
+            raise ValueError(
+                f"Protocol {protocol_id} is a fermentation instance, not a template"
+            )
+        if protocol.state != ProtocolState.DRAFT:
+            raise ValueError(
+                f"Only DRAFT templates can be approved. "
+                f"Current state: {protocol.state}"
+            )
+
+        protocol.state = ProtocolState.FINAL
+        protocol.approved_by_user_id = approver_user_id
+        protocol.updated_at = datetime.utcnow()
+
+        await self.protocol_repo.update(protocol)
+        await self.protocol_repo.session.commit()
+        return protocol
+
+    async def deprecate_template(
+        self,
+        protocol_id: int,
+        winery_id: int,
+    ) -> FermentationProtocol:
+        """
+        Transition a FINAL template to DEPRECATED (retired, no new instances).
+
+        A deprecated template becomes inactive as well so it no longer appears
+        in normal protocol lists.
+
+        Args:
+            protocol_id: Template to deprecate
+            winery_id: Owning winery (access control)
+
+        Returns:
+            Updated FermentationProtocol in DEPRECATED state
+
+        Raises:
+            ValueError: If protocol not found, not a template, or not in FINAL state
+        """
+        from src.modules.fermentation.src.domain.enums.step_type import ProtocolState
+
+        protocol = await self.get_protocol(protocol_id, winery_id)
+
+        if not protocol.is_template:
+            raise ValueError(
+                f"Protocol {protocol_id} is a fermentation instance, not a template"
+            )
+        if protocol.state != ProtocolState.FINAL:
+            raise ValueError(
+                f"Only FINAL templates can be deprecated. "
+                f"Current state: {protocol.state}"
+            )
+
+        protocol.state = ProtocolState.DEPRECATED
+        protocol.is_active = False
+        protocol.updated_at = datetime.utcnow()
+
+        await self.protocol_repo.update(protocol)
+        await self.protocol_repo.session.commit()
+        return protocol
+
+    async def instantiate_from_template(
+        self,
+        template_id: int,
+        winery_id: int,
+        fermentation_batch_name: str,
+        created_by_user_id: int,
+    ) -> FermentationProtocol:
+        """
+        Create a per-fermentation protocol instance from a FINAL master template.
+
+        The instance is a deep copy of the template with:
+        - is_template = False
+        - state = FINAL (ready to use immediately)
+        - template_id pointing back to the master
+        - A name scoped to the fermentation batch
+
+        Args:
+            template_id: ID of the FINAL master template to copy
+            winery_id: Owning winery (access control)
+            fermentation_batch_name: Name of the fermentation batch (used in instance name)
+            created_by_user_id: User creating the instance
+
+        Returns:
+            Newly created FermentationProtocol instance
+
+        Raises:
+            ValueError: If template not found, not in FINAL state, or not a template
+        """
+        from src.modules.fermentation.src.domain.enums.step_type import ProtocolState
+
+        template = await self.get_protocol(template_id, winery_id)
+
+        if not template.is_template:
+            raise ValueError(
+                f"Protocol {template_id} is already a fermentation instance"
+            )
+        if template.state != ProtocolState.FINAL:
+            raise ValueError(
+                f"Only FINAL templates can be instantiated. "
+                f"Current state: {template.state}"
+            )
+
+        instance_name = (
+            f"{template.varietal_name} v{template.version} — {fermentation_batch_name}"
+        )
+
+        instance = FermentationProtocol(
+            winery_id=winery_id,
+            created_by_user_id=created_by_user_id,
+            varietal_code=template.varietal_code,
+            varietal_name=template.varietal_name,
+            color=template.color,
+            protocol_name=instance_name,
+            version=template.version,
+            description=template.description,
+            expected_duration_days=template.expected_duration_days,
+            is_active=True,
+            is_template=False,
+            state=ProtocolState.FINAL,
+            template_id=template.id,
+        )
+        await self.protocol_repo.create(instance)
+        await self.protocol_repo.session.flush()
+
+        # Deep-copy all steps (reset dependency IDs to avoid FK violations)
+        source_steps = await self.step_repo.get_by_protocol(template_id)
+        for s in sorted(source_steps, key=lambda x: x.step_order):
+            new_step = ProtocolStep(
+                protocol_id=instance.id,
+                step_order=s.step_order,
+                step_type=s.step_type,
+                description=s.description,
+                expected_day=s.expected_day,
+                tolerance_hours=s.tolerance_hours,
+                duration_minutes=s.duration_minutes,
+                is_critical=s.is_critical,
+                criticality_score=s.criticality_score,
+                can_repeat_daily=s.can_repeat_daily,
+                notes=s.notes,
+                depends_on_step_id=None,
+            )
+            await self.step_repo.create(new_step)
+
+        await self.protocol_repo.session.commit()
+        return instance

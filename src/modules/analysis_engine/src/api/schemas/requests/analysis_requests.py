@@ -67,6 +67,16 @@ class AnalysisCreateRequest(BaseModel):
         None,
         description="Historical density readings for trend analysis (chronological order)"
     )
+    protocol_compliance_score: Optional[float] = Field(
+        None,
+        description=(
+            "Protocol compliance score [0-100] from the Protocol Engine (ADR-037). "
+            "When provided, adjusts analysis confidence via the compliance multiplier. "
+            "If omitted, confidence is not adjusted."
+        ),
+        ge=0.0,
+        le=100.0,
+    )
 
     @field_validator("variety")
     @classmethod

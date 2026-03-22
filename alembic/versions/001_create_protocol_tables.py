@@ -21,7 +21,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "001_create_protocol_tables"
-down_revision: Union[str, None] = None
+down_revision: Union[str, None] = "000_baseline_schema"
 branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
 

@@ -95,6 +95,23 @@ class ProtocolCloneRequest(BaseModel):
         return v
 
 
+class ProtocolInstantiateRequest(BaseModel):
+    """
+    Request DTO for creating a per-fermentation instance from a FINAL master template (ADR-039).
+
+    The instance is a deep copy of the template with is_template=False so it
+    can be customised (step overrides) before the fermentation starts.
+    """
+
+    fermentation_batch_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=200,
+        description="Fermentation batch name used to distinguish the instance "
+                    "(e.g. 'PN-2026-Batch-01')",
+    )
+
+
 class StepOverrideRequest(BaseModel):
     """Request DTO for overriding step parameters in an inactive protocol (ADR-039)."""
 
