@@ -47,6 +47,7 @@ from src.modules.fermentation.src.api.routers.protocol_execution_router import r
 from src.modules.fermentation.src.api.routers.step_completion_router import router as step_completion_router
 from src.modules.fermentation.src.api.routers.alert_router import router as alert_router
 from src.modules.fermentation.src.api.routers.action_router import router as action_router
+from src.modules.fermentation.src.api_component.historical.routers.historical_router import router as historical_router
 
 
 # Configure structured logging before app creation
@@ -102,10 +103,12 @@ def create_app() -> FastAPI:
     # ADR-026: Register global error handlers for RFC 7807 format
     register_error_handlers(app)
     
-    # CORS middleware (configure for production)
+    # CORS middleware — origins controlled by ALLOWED_ORIGINS env var
+    # dev/test: default "*"; staging/prod: set to comma-separated list in .env
+    _allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # TODO: Configure allowed origins in production
+        allow_origins=_allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -123,6 +126,7 @@ def create_app() -> FastAPI:
     app.include_router(step_completion_router, tags=["step-completions"])
     app.include_router(alert_router, tags=["protocol-alerts"])
     app.include_router(action_router, tags=["winemaker-actions"])
+    app.include_router(historical_router)  # ADR-032: /api/v1/fermentation/historical
     
     # Health check endpoint
     @app.get("/health", tags=["health"])

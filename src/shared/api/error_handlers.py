@@ -5,13 +5,23 @@ Implements ADR-026: Error Handling & Exception Hierarchy Strategy.
 Provides RFC 7807 Problem Details format with ADR-027 structured logging.
 """
 
+import os
 from typing import Any, Dict
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from domain.errors import DomainError
-from wine_fermentator_logging import get_logger
+# Dual-path imports: handle both 'running from project root' and 'running from
+# src/shared/ poetry env' contexts (same pattern as fruit_origin/errors.py).
+try:
+    from domain.errors import DomainError
+except ModuleNotFoundError:
+    from src.shared.domain.errors import DomainError  # type: ignore[no-redef]
+
+try:
+    from wine_fermentator_logging import get_logger
+except ModuleNotFoundError:
+    from src.shared.wine_fermentator_logging import get_logger  # type: ignore[no-redef]
 
 logger = get_logger(__name__)
 

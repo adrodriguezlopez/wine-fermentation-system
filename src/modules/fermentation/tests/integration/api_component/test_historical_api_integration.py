@@ -51,7 +51,7 @@ class TestListHistoricalFermentations:
         await db_session.flush()
         
         # List historical fermentations
-        response = await test_client.get("/api/fermentation/historical")
+        response = await test_client.get("/api/v1/fermentation/historical")
         
         assert response.status_code == 200
         data = response.json()
@@ -64,7 +64,7 @@ class TestListHistoricalFermentations:
         self, test_client, historical_fermentation, other_winery_fermentation
     ):
         """Only fermentations from user's winery are returned."""
-        response = await test_client.get("/api/fermentation/historical")
+        response = await test_client.get("/api/v1/fermentation/historical")
         
         assert response.status_code == 200
         data = response.json()
@@ -83,7 +83,7 @@ class TestListHistoricalFermentations:
         """Date range filters work correctly."""
         # Filter: Sept 2-4 (should match fermentations 1, 2, 3 - indices 1, 2, 3)
         response = await test_client.get(
-            "/api/fermentation/historical",
+            "/api/v1/fermentation/historical",
             params={
                 "start_date_from": "2023-09-02",
                 "start_date_to": "2023-09-04"
@@ -105,7 +105,7 @@ class TestListHistoricalFermentations:
         """Status filter works correctly."""
         # Filter by COMPLETED (4 out of 5)
         response = await test_client.get(
-            "/api/fermentation/historical",
+            "/api/v1/fermentation/historical",
             params={"status": "COMPLETED"}
         )
         
@@ -123,7 +123,7 @@ class TestListHistoricalFermentations:
         """Pagination parameters limit and offset work correctly."""
         # Get first 2 items
         response1 = await test_client.get(
-            "/api/fermentation/historical",
+            "/api/v1/fermentation/historical",
             params={"limit": 2, "offset": 0}
         )
         
@@ -135,7 +135,7 @@ class TestListHistoricalFermentations:
         
         # Get next 2 items
         response2 = await test_client.get(
-            "/api/fermentation/historical",
+            "/api/v1/fermentation/historical",
             params={"limit": 2, "offset": 2}
         )
         
@@ -161,7 +161,7 @@ class TestGetHistoricalFermentationById:
     ):
         """Successfully retrieves fermentation by ID."""
         response = await test_client.get(
-            f"/api/fermentation/historical/{historical_fermentation.id}"
+            f"/api/v1/fermentation/historical/{historical_fermentation.id}"
         )
         
         assert response.status_code == 200
@@ -173,7 +173,7 @@ class TestGetHistoricalFermentationById:
     
     async def test_get_by_id_returns_404_when_not_found(self, test_client):
         """Returns 404 for non-existent fermentation."""
-        response = await test_client.get("/api/fermentation/historical/99999")
+        response = await test_client.get("/api/v1/fermentation/historical/99999")
         
         assert response.status_code == 404
         assert "not found" in response.json()["detail"].lower()
@@ -183,7 +183,7 @@ class TestGetHistoricalFermentationById:
     ):
         """Returns 404 when accessing fermentation from different winery."""
         response = await test_client.get(
-            f"/api/fermentation/historical/{other_winery_fermentation.id}"
+            f"/api/v1/fermentation/historical/{other_winery_fermentation.id}"
         )
         
         assert response.status_code == 404
@@ -214,7 +214,7 @@ class TestGetFermentationSamples:
         
         # Get samples
         response = await test_client.get(
-            f"/api/fermentation/historical/{historical_fermentation.id}/samples"
+            f"/api/v1/fermentation/historical/{historical_fermentation.id}/samples"
         )
         
         assert response.status_code == 200
@@ -231,7 +231,7 @@ class TestGetFermentationSamples:
     ):
         """Returns 404 when fermentation doesn't exist."""
         response = await test_client.get(
-            "/api/fermentation/historical/99999/samples"
+            "/api/v1/fermentation/historical/99999/samples"
         )
         
         assert response.status_code == 404
@@ -292,7 +292,7 @@ class TestExtractPatterns:
         
         # Extract patterns
         response = await test_client.get(
-            "/api/fermentation/historical/patterns/extract"
+            "/api/v1/fermentation/historical/patterns/extract"
         )
         
         assert response.status_code == 200
@@ -313,7 +313,7 @@ class TestExtractPatterns:
         """Date range filter limits aggregation."""
         # Filter to first 3 fermentations (Sept 1-3)
         response = await test_client.get(
-            "/api/fermentation/historical/patterns/extract",
+            "/api/v1/fermentation/historical/patterns/extract",
             params={
                 "start_date": "2023-09-01",
                 "end_date": "2023-09-03"
@@ -335,7 +335,7 @@ class TestDashboardStatistics:
     ):
         """Returns dashboard statistics from real data."""
         response = await test_client.get(
-            "/api/fermentation/historical/statistics/dashboard"
+            "/api/v1/fermentation/historical/statistics/dashboard"
         )
         
         assert response.status_code == 200

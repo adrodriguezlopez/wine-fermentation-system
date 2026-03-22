@@ -140,7 +140,7 @@ class TestListHistoricalFermentations:
         
         # Act
         response = client.get(
-            "/api/fermentation/historical",
+            "/api/v1/fermentation/historical",
             params={
                 "start_date_from": "2024-01-01",
                 "start_date_to": "2024-12-31",
@@ -178,7 +178,7 @@ class TestListHistoricalFermentations:
         mock_fermentation_service.get_fermentations_by_winery.return_value = [mock_fermentation]
         
         # Act
-        response = client.get("/api/fermentation/historical")
+        response = client.get("/api/v1/fermentation/historical")
         
         # Assert
         assert response.status_code == 200
@@ -197,7 +197,7 @@ class TestListHistoricalFermentations:
         mock_fermentation_service.get_fermentations_by_winery.side_effect = Exception("Database error")
         
         # Act
-        response = client.get("/api/fermentation/historical")
+        response = client.get("/api/v1/fermentation/historical")
         
         # Assert
         assert response.status_code == 500
@@ -216,7 +216,7 @@ class TestGetHistoricalFermentation:
         mock_fermentation_service.get_fermentation.return_value = mock_fermentation
         
         # Act
-        response = client.get("/api/fermentation/historical/1")
+        response = client.get("/api/v1/fermentation/historical/1")
         
         # Assert
         assert response.status_code == 200
@@ -238,7 +238,7 @@ class TestGetHistoricalFermentation:
         mock_fermentation_service.get_fermentation.return_value = None
         
         # Act
-        response = client.get("/api/fermentation/historical/999")
+        response = client.get("/api/v1/fermentation/historical/999")
         
         # Assert
         assert response.status_code == 404
@@ -251,7 +251,7 @@ class TestGetHistoricalFermentation:
         mock_fermentation_service.get_fermentation.side_effect = Exception("Database error")
         
         # Act
-        response = client.get("/api/fermentation/historical/1")
+        response = client.get("/api/v1/fermentation/historical/1")
         
         # Assert
         assert response.status_code == 500
@@ -271,7 +271,7 @@ class TestGetFermentationSamples:
         mock_sample_service.get_samples_by_fermentation.return_value = [mock_sample]
         
         # Act
-        response = client.get("/api/fermentation/historical/1/samples")
+        response = client.get("/api/v1/fermentation/historical/1/samples")
         
         # Assert
         assert response.status_code == 200
@@ -299,7 +299,7 @@ class TestGetFermentationSamples:
         mock_fermentation_service.get_fermentation.return_value = None
         
         # Act
-        response = client.get("/api/fermentation/historical/999/samples")
+        response = client.get("/api/v1/fermentation/historical/999/samples")
         
         # Assert
         assert response.status_code == 404
@@ -311,7 +311,7 @@ class TestGetFermentationSamples:
         mock_fermentation_service.get_fermentation.side_effect = Exception("Database error")
         
         # Act
-        response = client.get("/api/fermentation/historical/1/samples")
+        response = client.get("/api/v1/fermentation/historical/1/samples")
         
         # Assert
         assert response.status_code == 500
@@ -341,7 +341,7 @@ class TestExtractPatterns:
         
         # Act
         response = client.get(
-            "/api/fermentation/historical/patterns/extract",
+            "/api/v1/fermentation/historical/patterns/extract",
             params={
                 "fruit_origin_id": 5,
                 "start_date": "2024-01-01",
@@ -384,7 +384,7 @@ class TestExtractPatterns:
         mock_pattern_service.extract_patterns.return_value = patterns_dict
         
         # Act
-        response = client.get("/api/fermentation/historical/patterns/extract")
+        response = client.get("/api/v1/fermentation/historical/patterns/extract")
         
         # Assert
         assert response.status_code == 200
@@ -404,7 +404,7 @@ class TestExtractPatterns:
         mock_pattern_service.extract_patterns.side_effect = Exception("Database error")
         
         # Act
-        response = client.get("/api/fermentation/historical/patterns/extract")
+        response = client.get("/api/v1/fermentation/historical/patterns/extract")
         
         # Assert
         assert response.status_code == 500
@@ -433,7 +433,7 @@ class TestGetDashboardStatistics:
         mock_pattern_service.extract_patterns.return_value = patterns_dict
         
         # Act
-        response = client.get("/api/fermentation/historical/statistics/dashboard")
+        response = client.get("/api/v1/fermentation/historical/statistics/dashboard")
         
         # Assert
         assert response.status_code == 200
@@ -454,7 +454,7 @@ class TestGetDashboardStatistics:
         mock_pattern_service.extract_patterns.side_effect = Exception("Database error")
         
         # Act
-        response = client.get("/api/fermentation/historical/statistics/dashboard")
+        response = client.get("/api/v1/fermentation/historical/statistics/dashboard")
         
         # Assert
         assert response.status_code == 500
@@ -469,7 +469,7 @@ class TestTriggerImport:
     async def test_trigger_import_returns_job_id(self, client):
         """Test triggering import returns job ID (placeholder)."""
         # Act
-        response = client.post("/api/fermentation/historical/import")
+        response = client.post("/api/v1/fermentation/historical/import")
         
         # Assert
         assert response.status_code == 202  # Accepted
@@ -489,7 +489,7 @@ class TestGetImportJobStatus:
     async def test_get_job_status_returns_404_placeholder(self, client):
         """Test getting job status returns 404 (placeholder)."""
         # Act
-        response = client.get("/api/fermentation/historical/import/1")
+        response = client.get("/api/v1/fermentation/historical/import/1")
         
         # Assert
         assert response.status_code == 404
@@ -505,7 +505,7 @@ class TestListImportJobs:
     async def test_list_jobs_returns_empty_list_placeholder(self, client):
         """Test listing jobs returns empty list (placeholder)."""
         # Act
-        response = client.get("/api/fermentation/historical/import")
+        response = client.get("/api/v1/fermentation/historical/import")
         
         # Assert
         assert response.status_code == 200
@@ -518,7 +518,7 @@ class TestListImportJobs:
         """Test listing jobs accepts pagination parameters."""
         # Act
         response = client.get(
-            "/api/fermentation/historical/import",
+            "/api/v1/fermentation/historical/import",
             params={"limit": 20, "offset": 10}
         )
         

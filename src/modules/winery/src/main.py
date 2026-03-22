@@ -14,6 +14,8 @@ Docker:
     docker-compose up winery
 """
 
+import os
+
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -63,10 +65,11 @@ def create_app() -> FastAPI:
     # ADR-026: Register global error handlers for RFC 7807 format
     register_error_handlers(app)
     
-    # CORS middleware (configure for production)
+    # CORS — origins controlled by ALLOWED_ORIGINS env var
+    _allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # TODO: Configure allowed origins in production
+        allow_origins=_allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

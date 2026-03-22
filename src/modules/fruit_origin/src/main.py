@@ -1,18 +1,19 @@
 """
-Analysis Engine FastAPI Application Entry Point.
+FastAPI Application Entry Point - Fruit Origin Module
 
-Provides REST API for:
-- POST /api/v1/analyses           - Trigger fermentation analysis
-- GET  /api/v1/analyses/{id}      - Retrieve analysis by ID
-- GET  /api/v1/analyses/fermentation/{id} - List analyses for fermentation
-- GET  /api/v1/recommendations/{id}       - Get recommendation by ID
-- GET  /api/v1/fermentations/{id}/advisories       - List protocol advisories for a fermentation
-- POST /api/v1/advisories/{id}/acknowledge          - Acknowledge a protocol advisory
+Provides REST API for managing vineyards, vineyard blocks, and harvest lots.
 
-Following ADR-006 API Layer Design and ADR-020 Analysis Engine Architecture.
+Endpoints:
+    GET/POST /api/v1/vineyards               - Vineyard management
+    GET/POST /api/v1/harvest-lots            - Harvest lot management
+
+Following ADR-006 API Layer Design.
 
 Run with:
-    uvicorn src.modules.analysis_engine.src.main:app --reload --port 8001
+    uvicorn src.modules.fruit_origin.src.main:app --reload --port 8002
+
+Docker:
+    docker-compose up fruit_origin
 """
 
 import os
@@ -20,53 +21,51 @@ import os
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
-# ADR-027: Structured Logging
+# ADR-027: Structured Logging Middleware
 from src.shared.wine_fermentator_logging import configure_logging, get_logger
 from src.shared.wine_fermentator_logging.middleware import (
     LoggingMiddleware,
     UserContextMiddleware,
 )
 
-# Auth
+# Auth dependencies
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.infra.api.dependencies import get_current_user
 
-# ADR-026: Global domain error handlers
-from shared.api.error_handlers import register_error_handlers
+# ADR-026: Domain error handlers (fruit_origin-specific)
+from src.modules.fruit_origin.src.api_component.error_handlers import register_error_handlers
 
-# Analysis Engine routers
-from src.modules.analysis_engine.src.api.routers.analysis_router import router as analysis_router
-from src.modules.analysis_engine.src.api.routers.recommendation_router import router as recommendation_router
-from src.modules.analysis_engine.src.api.routers.advisory_router import router as advisory_router
+# Fruit Origin routers
+from src.modules.fruit_origin.src.api_component.routers.vineyard_router import router as vineyard_router
+from src.modules.fruit_origin.src.api_component.routers.harvest_lot_router import router as harvest_lot_router
 
 
+# Configure structured logging before app creation
 configure_logging(log_level="INFO")
 logger = get_logger(__name__)
 
 
 def create_app() -> FastAPI:
     """
-    Create and configure the Analysis Engine FastAPI application.
+    Create and configure FastAPI application for Fruit Origin module.
 
     Returns:
         Configured FastAPI instance with middleware and routers.
     """
     app = FastAPI(
-        title="Wine Analysis Engine API",
-        description=(
-            "REST API for fermentation anomaly detection and recommendation generation. "
-            "Part of the Wine Fermentation System."
-        ),
+        title="Fruit Origin API",
+        description="API for managing vineyards, vineyard blocks, and harvest lots",
         version="1.0.0",
         docs_url="/docs",
         redoc_url="/redoc",
     )
 
     # ADR-027: Structured logging middleware
+    # Order matters: LoggingMiddleware outermost to capture all requests
     app.add_middleware(LoggingMiddleware)
     app.add_middleware(UserContextMiddleware)
 
-    # ADR-026: Global RFC 7807 error handlers for DomainError subclasses
+    # ADR-026: Register domain error handlers (RFC 7807 format)
     register_error_handlers(app)
 
     # CORS — origins controlled by ALLOWED_ORIGINS env var
@@ -79,46 +78,49 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Register Analysis Engine routers
-    app.include_router(analysis_router)
-    app.include_router(recommendation_router)
-    app.include_router(advisory_router)
+    # Fruit Origin routers
+    app.include_router(vineyard_router)       # /api/v1/vineyards
+    app.include_router(harvest_lot_router)    # /api/v1/harvest-lots
 
+    # Health check
     @app.get("/health", tags=["health"])
     async def health_check():
         """Health check endpoint for monitoring."""
         logger.debug("health_check_called")
         return {
             "status": "healthy",
-            "service": "analysis-engine",
+            "service": "fruit_origin",
             "version": "1.0.0",
         }
 
+    # Auth info endpoint
     @app.get("/me", tags=["auth"])
     async def get_current_user_info(user: UserContext = Depends(get_current_user)):
-        """Return authenticated user information."""
+        """Get current authenticated user information."""
         logger.info("get_user_info", user_id=user.user_id, winery_id=user.winery_id)
         return {
             "user_id": user.user_id,
             "winery_id": user.winery_id,
             "email": user.email,
-            "role": user.role.value,
+            "role": user.role,
         }
 
-    logger.info("application_started", title=app.title, version=app.version)
+    logger.info("fruit_origin_app_created", version="1.0.0")
     return app
 
 
+# Create app instance
 app = create_app()
 
 
 if __name__ == "__main__":
     import uvicorn
 
+    logger.info("starting_fruit_origin_server", port=8002)
     uvicorn.run(
-        "src.modules.analysis_engine.src.main:app",
+        "src.modules.fruit_origin.src.main:app",
         host="0.0.0.0",
-        port=8001,
+        port=8002,
         reload=True,
         log_level="info",
     )
