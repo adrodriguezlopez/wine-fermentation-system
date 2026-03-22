@@ -25,3 +25,13 @@ services:
     restart: always
     # No host port — reached via reverse proxy on the internal network
     # ports: []  ← intentionally omitted
+
+  fruit_origin:
+    restart: always
+    # No host port — reached via reverse proxy on the internal network
+    # ports: []  ← intentionally omitted
+
+  analysis_engine:
+    restart: always
+    # No host port — reached via reverse proxy on the internal network
+    # ports: []  ← intentionally omitted

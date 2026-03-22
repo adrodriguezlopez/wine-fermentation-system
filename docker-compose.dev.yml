@@ -34,3 +34,23 @@ services:
     command: >
       uvicorn src.modules.winery.src.main:app
       --host 0.0.0.0 --port 8001 --reload
+
+  fruit_origin:
+    ports:
+      - "${FRUIT_ORIGIN_HOST_PORT:-8002}:8002"
+    volumes:
+      - ./src:/app/src
+      - ./src/shared:/app/src/shared
+    command: >
+      uvicorn src.modules.fruit_origin.src.main:app
+      --host 0.0.0.0 --port 8002 --reload
+
+  analysis_engine:
+    ports:
+      - "${ANALYSIS_ENGINE_HOST_PORT:-8003}:8003"
+    volumes:
+      - ./src:/app/src
+      - ./src/shared:/app/src/shared
+    command: >
+      uvicorn src.modules.analysis_engine.src.main:app
+      --host 0.0.0.0 --port 8003 --reload
