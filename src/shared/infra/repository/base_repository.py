@@ -12,20 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.shared.infra.interfaces.session_manager import ISessionManager
 
-# Import error mapping from fermentation module
-# This will be available when BaseRepository is used in domain repositories
-try:
-    from src.modules.fermentation.src.repository_component.errors import (
-        map_database_error,
-        RepositoryError
-    )
-except ImportError:
-    # Fallback for testing/development
-    def map_database_error(error: Exception) -> Exception:
-        return error
-
-    class RepositoryError(Exception):
-        pass
+# Canonical error types — defined once in this package, re-exported by all modules
+from src.shared.infra.repository.errors import map_database_error, RepositoryError
 
 
 T = TypeVar('T')

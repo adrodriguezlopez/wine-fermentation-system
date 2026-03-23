@@ -32,7 +32,7 @@ from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.infra.api.dependencies import get_current_user
 
 # ADR-026: Global domain error handlers
-from shared.api.error_handlers import register_error_handlers
+from src.shared.api.error_handlers import register_error_handlers
 
 # Analysis Engine routers
 from src.modules.analysis_engine.src.api.routers.analysis_router import router as analysis_router

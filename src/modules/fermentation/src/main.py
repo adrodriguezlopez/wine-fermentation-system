@@ -34,7 +34,7 @@ from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.infra.api.dependencies import get_current_user, require_winemaker
 
 # ADR-026: Domain error handlers
-from shared.api.error_handlers import register_error_handlers
+from src.shared.api.error_handlers import register_error_handlers
 
 # Fermentation routers
 from src.modules.fermentation.src.api.routers.fermentation_router import router as fermentation_router

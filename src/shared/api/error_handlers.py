@@ -11,17 +11,8 @@ from typing import Any, Dict
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-# Dual-path imports: handle both 'running from project root' and 'running from
-# src/shared/ poetry env' contexts (same pattern as fruit_origin/errors.py).
-try:
-    from domain.errors import DomainError
-except ModuleNotFoundError:
-    from src.shared.domain.errors import DomainError  # type: ignore[no-redef]
-
-try:
-    from wine_fermentator_logging import get_logger
-except ModuleNotFoundError:
-    from src.shared.wine_fermentator_logging import get_logger  # type: ignore[no-redef]
+from domain.errors import DomainError
+from wine_fermentator_logging import get_logger
 
 logger = get_logger(__name__)
 

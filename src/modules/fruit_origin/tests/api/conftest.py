@@ -39,6 +39,9 @@ from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
 from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
+# BaseSample must be imported explicitly so SQLAlchemy can resolve the
+# Fermentation.samples relationship string reference during mapper configuration.
+from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
 
 
 # =============================================================================

@@ -31,7 +31,7 @@ from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.infra.api.dependencies import get_current_user, require_admin
 
 # ADR-026: Domain error handlers
-from shared.api.error_handlers import register_error_handlers
+from src.shared.api.error_handlers import register_error_handlers
 
 # Winery router
 from src.modules.winery.src.api_component.routers.winery_router import router as winery_router

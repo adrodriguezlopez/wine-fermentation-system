@@ -11,6 +11,7 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry install --no-root --no-interaction
 
 COPY src/ ./src/
+ENV PYTHONPATH=/app
 
 RUN useradd -m appuser
 USER appuser
