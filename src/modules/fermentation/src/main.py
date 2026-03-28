@@ -47,7 +47,7 @@ from src.modules.fermentation.src.api.routers.protocol_execution_router import r
 from src.modules.fermentation.src.api.routers.step_completion_router import router as step_completion_router
 from src.modules.fermentation.src.api.routers.alert_router import router as alert_router
 from src.modules.fermentation.src.api.routers.action_router import router as action_router
-from src.modules.fermentation.src.api_component.historical.routers.historical_router import router as historical_router
+from src.modules.fermentation.src.api.routers.historical_router import router as historical_router
 
 
 # Configure structured logging before app creation

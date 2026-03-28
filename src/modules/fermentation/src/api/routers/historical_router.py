@@ -15,11 +15,11 @@ from src.shared.wine_fermentator_logging import get_logger
 from src.modules.fermentation.src.service_component.interfaces.fermentation_service_interface import IFermentationService
 from src.modules.fermentation.src.service_component.interfaces.pattern_analysis_service_interface import IPatternAnalysisService
 from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
-from src.modules.fermentation.src.api_component.historical.schemas.requests.historical_requests import (
+from src.modules.fermentation.src.api.schemas.requests.historical_requests import (
     HistoricalFermentationQueryRequest,
     PatternExtractionRequest
 )
-from src.modules.fermentation.src.api_component.historical.schemas.responses.historical_responses import (
+from src.modules.fermentation.src.api.schemas.responses.historical_responses import (
     HistoricalFermentationResponse,
     PaginatedHistoricalFermentationsResponse,
     HistoricalSampleResponse,

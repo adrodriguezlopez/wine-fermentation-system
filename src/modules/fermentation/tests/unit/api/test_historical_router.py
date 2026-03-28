@@ -13,7 +13,7 @@ from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from src.modules.fermentation.src.api_component.historical.routers.historical_router import (
+from src.modules.fermentation.src.api.routers.historical_router import (
     router,
     get_winery_id
 )
