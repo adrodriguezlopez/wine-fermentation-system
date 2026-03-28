@@ -40,6 +40,7 @@ from src.modules.fruit_origin.src.api_component.routers.vineyard_router import r
 from src.modules.fruit_origin.src.api_component.routers.harvest_lot_router import router as harvest_lot_router
 
 from src.shared.auth.infra.api.auth_router import router as auth_router
+from src.shared.api.constants import API_V1_PREFIX
 from src.shared.infra.database.fastapi_session import initialize_database
 
 
@@ -88,11 +89,11 @@ def create_app() -> FastAPI:
     )
 
     # Auth endpoints (shared across all modules)
-    app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(auth_router, prefix=API_V1_PREFIX)
 
     # Fruit Origin routers — API version prefix centralised here
-    app.include_router(vineyard_router, prefix="/api/v1")       # /api/v1/vineyards
-    app.include_router(harvest_lot_router, prefix="/api/v1")    # /api/v1/harvest-lots
+    app.include_router(vineyard_router, prefix=API_V1_PREFIX)       # /api/v1/vineyards
+    app.include_router(harvest_lot_router, prefix=API_V1_PREFIX)    # /api/v1/harvest-lots
 
     # Health check
     @app.get("/health", tags=["health"])

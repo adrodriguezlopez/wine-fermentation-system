@@ -40,6 +40,7 @@ from src.modules.analysis_engine.src.api.routers.recommendation_router import ro
 from src.modules.analysis_engine.src.api.routers.advisory_router import router as advisory_router
 
 from src.shared.auth.infra.api.auth_router import router as auth_router
+from src.shared.api.constants import API_V1_PREFIX
 from src.shared.infra.database.fastapi_session import initialize_database
 
 
@@ -90,12 +91,12 @@ def create_app() -> FastAPI:
     )
 
     # Auth endpoints (shared across all modules)
-    app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(auth_router, prefix=API_V1_PREFIX)
 
     # Register Analysis Engine routers
-    app.include_router(analysis_router)
-    app.include_router(recommendation_router)
-    app.include_router(advisory_router)
+    app.include_router(analysis_router, prefix=API_V1_PREFIX)
+    app.include_router(recommendation_router, prefix=API_V1_PREFIX)
+    app.include_router(advisory_router, prefix=API_V1_PREFIX)
 
     @app.get("/health", tags=["health"])
     async def health_check():

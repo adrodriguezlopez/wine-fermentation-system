@@ -37,6 +37,7 @@ from src.shared.api.error_handlers import register_error_handlers
 from src.modules.winery.src.api_component.routers.winery_router import router as winery_router
 
 from src.shared.auth.infra.api.auth_router import router as auth_router
+from src.shared.api.constants import API_V1_PREFIX
 from src.shared.infra.database.fastapi_session import initialize_database
 
 
@@ -85,10 +86,10 @@ def create_app() -> FastAPI:
     )
     
     # Auth endpoints (shared across all modules)
-    app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(auth_router, prefix=API_V1_PREFIX)
 
     # Include winery router (admin namespace)
-    app.include_router(winery_router, prefix="/api/v1", tags=["wineries"])
+    app.include_router(winery_router, prefix=API_V1_PREFIX, tags=["wineries"])
     
     # Health check endpoint
     @app.get("/health", tags=["health"])

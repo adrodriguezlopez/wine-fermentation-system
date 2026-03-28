@@ -23,6 +23,7 @@ from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.domain.enums.user_role import UserRole
 from src.shared.infra.orm.base_entity import Base
 from src.shared.infra.database.fastapi_session import get_db_session as real_get_db_session
+from src.shared.api.constants import API_V1_PREFIX
 
 # Import all entities to register them in Base.metadata
 from src.shared.auth.domain.entities.user import User
@@ -145,7 +146,7 @@ def create_winery_test_app(user_override: UserContext = None, db_override: Async
     from src.modules.winery.src.api_component.routers.winery_router import router as winery_router
     
     app = FastAPI(title="Winery API - Test")
-    app.include_router(winery_router, prefix="/api/v1")
+    app.include_router(winery_router, prefix=API_V1_PREFIX)
     
     # Override auth if provided
     if user_override:

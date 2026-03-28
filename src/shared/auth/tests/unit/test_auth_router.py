@@ -27,6 +27,7 @@ from src.shared.auth.domain.errors import (
 from src.shared.auth.infra.api.auth_router import router
 from src.shared.auth.infra.api.dependencies import get_auth_service, get_current_user
 from src.shared.api.error_handlers import register_error_handlers
+from src.shared.api.constants import API_V1_PREFIX
 
 
 # ---------------------------------------------------------------------------
@@ -69,7 +70,7 @@ def _app_with_mock(mock_service, user_context: UserContext = None) -> FastAPI:
     """Create a minimal FastAPI test app with overridden auth dependencies."""
     app = FastAPI()
     register_error_handlers(app)
-    app.include_router(router, prefix="/api/v1")
+    app.include_router(router, prefix=API_V1_PREFIX)
     app.dependency_overrides[get_auth_service] = lambda: mock_service
     if user_context is not None:
         app.dependency_overrides[get_current_user] = lambda: user_context
@@ -263,7 +264,7 @@ class TestGetMeEndpoint:
         # Don't override get_current_user — let bearer_scheme reject the request
         app = FastAPI()
         register_error_handlers(app)
-        app.include_router(router, prefix="/api/v1")
+        app.include_router(router, prefix=API_V1_PREFIX)
         app.dependency_overrides[get_auth_service] = lambda: mock
         client = TestClient(app, raise_server_exceptions=False)
 

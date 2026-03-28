@@ -30,7 +30,7 @@ from src.modules.analysis_engine.src.repository_component.repositories.recommend
 )
 
 router = APIRouter(
-    prefix="/api/v1/recommendations",
+    prefix="/recommendations",
     tags=["recommendations"],
 )
 

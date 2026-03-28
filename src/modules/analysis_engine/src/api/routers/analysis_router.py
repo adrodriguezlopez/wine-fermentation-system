@@ -34,7 +34,7 @@ from src.modules.analysis_engine.src.service_component.services.analysis_orchest
 )
 
 router = APIRouter(
-    prefix="/api/v1/analyses",
+    prefix="/analyses",
     tags=["analyses"],
 )
 

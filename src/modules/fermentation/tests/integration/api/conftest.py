@@ -34,13 +34,14 @@ from src.modules.fermentation.src.repository_component.repositories.fermentation
 from src.modules.fermentation.src.repository_component.repositories.sample_repository import SampleRepository
 from src.shared.infra.repository.fastapi_session_manager import FastAPISessionManager
 from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
+from src.shared.api.constants import API_V1_PREFIX
 
 
 @pytest.fixture
 def app():
     """Create FastAPI app with historical router."""
     app = FastAPI()
-    app.include_router(router, prefix="/api/v1")
+    app.include_router(router, prefix=API_V1_PREFIX)
     return app
 
 

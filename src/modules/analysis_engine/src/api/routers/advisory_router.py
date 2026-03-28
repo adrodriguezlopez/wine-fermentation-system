@@ -37,7 +37,7 @@ router = APIRouter(tags=["protocol-advisories"])
 
 
 @router.get(
-    "/api/v1/fermentations/{fermentation_id}/advisories",
+    "/fermentations/{fermentation_id}/advisories",
     response_model=ProtocolAdvisoryListResponse,
     status_code=status.HTTP_200_OK,
     summary="List protocol advisories for a fermentation",
@@ -93,7 +93,7 @@ async def list_advisories(
 
 
 @router.post(
-    "/api/v1/advisories/{advisory_id}/acknowledge",
+    "/advisories/{advisory_id}/acknowledge",
     response_model=ProtocolAdvisoryResponse,
     status_code=status.HTTP_200_OK,
     summary="Acknowledge a protocol advisory",

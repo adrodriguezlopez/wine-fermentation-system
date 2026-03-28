@@ -50,6 +50,7 @@ from src.modules.fermentation.src.api.routers.action_router import router as act
 from src.modules.fermentation.src.api.routers.historical_router import router as historical_router
 
 from src.shared.auth.infra.api.auth_router import router as auth_router
+from src.shared.api.constants import API_V1_PREFIX
 from src.shared.infra.database.fastapi_session import initialize_database, close_database
 
 
@@ -126,22 +127,22 @@ def create_app() -> FastAPI:
     )
     
     # Auth endpoints (shared across all modules)
-    app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(auth_router, prefix=API_V1_PREFIX)
 
     # Include routers (sample router first for route specificity)
     # API version prefix centralised here — routers define only resource paths
-    app.include_router(sample_router, prefix="/api/v1", tags=["samples"])
-    app.include_router(samples_router, prefix="/api/v1", tags=["samples"])
-    app.include_router(fermentation_router, prefix="/api/v1", tags=["fermentations"])
+    app.include_router(sample_router, prefix=API_V1_PREFIX, tags=["samples"])
+    app.include_router(samples_router, prefix=API_V1_PREFIX, tags=["samples"])
+    app.include_router(fermentation_router, prefix=API_V1_PREFIX, tags=["fermentations"])
     
     # Protocol routers (Phase 2 API)
-    app.include_router(protocol_router, prefix="/api/v1", tags=["protocols"])
-    app.include_router(protocol_step_router, prefix="/api/v1", tags=["protocol-steps"])
-    app.include_router(protocol_execution_router, prefix="/api/v1", tags=["protocol-executions"])
-    app.include_router(step_completion_router, prefix="/api/v1", tags=["step-completions"])
-    app.include_router(alert_router, prefix="/api/v1", tags=["protocol-alerts"])
-    app.include_router(action_router, prefix="/api/v1", tags=["winemaker-actions"])
-    app.include_router(historical_router, prefix="/api/v1")  # ADR-032: /api/v1/fermentation/historical
+    app.include_router(protocol_router, prefix=API_V1_PREFIX, tags=["protocols"])
+    app.include_router(protocol_step_router, prefix=API_V1_PREFIX, tags=["protocol-steps"])
+    app.include_router(protocol_execution_router, prefix=API_V1_PREFIX, tags=["protocol-executions"])
+    app.include_router(step_completion_router, prefix=API_V1_PREFIX, tags=["step-completions"])
+    app.include_router(alert_router, prefix=API_V1_PREFIX, tags=["protocol-alerts"])
+    app.include_router(action_router, prefix=API_V1_PREFIX, tags=["winemaker-actions"])
+    app.include_router(historical_router, prefix=API_V1_PREFIX)  # ADR-032: /api/v1/fermentation/historical
     
     # Health check endpoint
     @app.get("/health", tags=["health"])

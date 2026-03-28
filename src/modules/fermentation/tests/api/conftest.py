@@ -28,6 +28,7 @@ from sqlalchemy import text
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.domain.enums.user_role import UserRole
+from src.shared.api.constants import API_V1_PREFIX
 from src.shared.infra.orm.base_entity import Base
 from src.shared.infra.database.fastapi_session import initialize_database, get_db_session
 from src.shared.infra.database.config import DatabaseConfig
@@ -209,9 +210,9 @@ def create_test_app(user_override: UserContext = None, db_override: AsyncSession
     
     # Include routers (sample router first for route specificity)
     # Version prefix mirrors production main.py
-    app.include_router(sample_router, prefix="/api/v1")
-    app.include_router(samples_router, prefix="/api/v1")  # New: non-nested sample endpoints
-    app.include_router(fermentation_router, prefix="/api/v1")
+    app.include_router(sample_router, prefix=API_V1_PREFIX)
+    app.include_router(samples_router, prefix=API_V1_PREFIX)  # New: non-nested sample endpoints
+    app.include_router(fermentation_router, prefix=API_V1_PREFIX)
     
     # Register error handlers for domain exceptions
     register_error_handlers(app)

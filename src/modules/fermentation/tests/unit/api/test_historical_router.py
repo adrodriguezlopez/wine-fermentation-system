@@ -28,6 +28,7 @@ from src.modules.fermentation.src.service_component.interfaces.sample_service_in
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
 from src.modules.fermentation.src.service_component.errors import NotFoundError
+from src.shared.api.constants import API_V1_PREFIX
 
 
 # Test Fixtures
@@ -36,7 +37,7 @@ from src.modules.fermentation.src.service_component.errors import NotFoundError
 def app():
     """Create FastAPI app with router."""
     app = FastAPI()
-    app.include_router(router, prefix="/api/v1")
+    app.include_router(router, prefix=API_V1_PREFIX)
     return app
 
 

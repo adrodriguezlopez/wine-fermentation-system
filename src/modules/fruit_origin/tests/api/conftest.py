@@ -25,6 +25,7 @@ from src.shared.auth.domain.enums.user_role import UserRole
 from src.shared.auth.infra.api.dependencies import get_current_user
 from src.shared.infra.database.fastapi_session import get_db_session, initialize_database
 from src.shared.infra.orm.base_entity import Base
+from src.shared.api.constants import API_V1_PREFIX
 from src.modules.fruit_origin.src.api_component.routers.vineyard_router import router as vineyard_router
 from src.modules.fruit_origin.src.api_component.routers.harvest_lot_router import router as harvest_lot_router
 from src.modules.fruit_origin.src.api_component.error_handlers import register_error_handlers
@@ -138,8 +139,8 @@ def create_fruit_origin_test_app(
     app = FastAPI(title="Fruit Origin API - Test")
     
     # Include routers — version prefix mirrors production main.py
-    app.include_router(vineyard_router, prefix="/api/v1")
-    app.include_router(harvest_lot_router, prefix="/api/v1")
+    app.include_router(vineyard_router, prefix=API_V1_PREFIX)
+    app.include_router(harvest_lot_router, prefix=API_V1_PREFIX)
     
     # Register error handlers
     register_error_handlers(app)
