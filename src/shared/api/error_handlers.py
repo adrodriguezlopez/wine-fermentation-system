@@ -11,8 +11,8 @@ from typing import Any, Dict
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from domain.errors import DomainError
-from wine_fermentator_logging import get_logger
+from src.shared.domain.errors import DomainError
+from src.shared.wine_fermentator_logging import get_logger
 
 logger = get_logger(__name__)
 

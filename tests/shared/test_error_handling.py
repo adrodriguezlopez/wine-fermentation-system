@@ -9,12 +9,7 @@ import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 
-# Import from shared package (since tests are outside src/)
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src" / "shared"))
-
-from domain.errors import (
+from src.shared.domain.errors import (
     DomainError,
     FermentationError,
     FermentationNotFound,
@@ -41,7 +36,7 @@ from domain.errors import (
     InvalidToken,
     CrossWineryAccessDenied,
 )
-from api.error_handlers import register_error_handlers
+from src.shared.api.error_handlers import register_error_handlers
 
 
 # ============================================
