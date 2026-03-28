@@ -49,6 +49,8 @@ from src.modules.fermentation.src.api.routers.alert_router import router as aler
 from src.modules.fermentation.src.api.routers.action_router import router as action_router
 from src.modules.fermentation.src.api.routers.historical_router import router as historical_router
 
+from src.shared.infra.database.fastapi_session import initialize_database, close_database
+
 
 # Configure structured logging before app creation
 configure_logging(log_level="INFO")
@@ -68,7 +70,9 @@ def _get_db_url() -> str:
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    """Start background scheduler on startup; stop it on shutdown."""
+    """Initialise DB and background scheduler on startup; clean up on shutdown."""
+    initialize_database()
+    logger.info("database_initialised")
     scheduler = AlertSchedulerService(
         database_url=_get_db_url(),
         interval_minutes=int(os.getenv("ALERT_SCHEDULER_INTERVAL_MINUTES", "30")),
@@ -77,6 +81,7 @@ async def _lifespan(app: FastAPI):
     logger.info("alert_scheduler_wired")
     yield
     scheduler.stop()
+    await close_database()
 
 
 def create_app() -> FastAPI:

@@ -39,6 +39,8 @@ from src.modules.fruit_origin.src.api_component.error_handlers import register_e
 from src.modules.fruit_origin.src.api_component.routers.vineyard_router import router as vineyard_router
 from src.modules.fruit_origin.src.api_component.routers.harvest_lot_router import router as harvest_lot_router
 
+from src.shared.infra.database.fastapi_session import initialize_database
+
 
 # Configure structured logging before app creation
 configure_logging(log_level="INFO")
@@ -52,6 +54,7 @@ def create_app() -> FastAPI:
     Returns:
         Configured FastAPI instance with middleware and routers.
     """
+    initialize_database()
     app = FastAPI(
         title="Fruit Origin API",
         description="API for managing vineyards, vineyard blocks, and harvest lots",

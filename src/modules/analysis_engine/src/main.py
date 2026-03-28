@@ -39,6 +39,8 @@ from src.modules.analysis_engine.src.api.routers.analysis_router import router a
 from src.modules.analysis_engine.src.api.routers.recommendation_router import router as recommendation_router
 from src.modules.analysis_engine.src.api.routers.advisory_router import router as advisory_router
 
+from src.shared.infra.database.fastapi_session import initialize_database
+
 
 configure_logging(log_level="INFO")
 logger = get_logger(__name__)
@@ -51,6 +53,7 @@ def create_app() -> FastAPI:
     Returns:
         Configured FastAPI instance with middleware and routers.
     """
+    initialize_database()
     app = FastAPI(
         title="Wine Analysis Engine API",
         description=(
