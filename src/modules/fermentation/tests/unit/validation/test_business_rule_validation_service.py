@@ -6,7 +6,7 @@ from unittest.mock import Mock, AsyncMock
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 from service_component.services.business_rule_validation_service import BusinessRuleValidationService
-from domain.enums.sample_type import SampleType
+from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 
 @pytest.fixture
 def mock_sample_repository():

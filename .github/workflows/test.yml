@@ -82,9 +82,31 @@ jobs:
           pytest "$test_file" -v --tb=short || exit 1
         done
 
+  lint-imports:
+    name: Import Lint Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Check for short (non-absolute) imports
+      run: |
+        echo "Checking for short package imports that should use absolute paths..."
+        if grep -rn --include="*.py" -E "^from (shared|domain|wine_fermentator_logging|api)\\."
+            src/ tests/; then
+          echo ""
+          echo "ERROR: Short imports found. Replace with absolute paths:"
+          echo "  from shared.*          -> from src.shared.*"
+          echo "  from domain.*          -> from src.modules.<module>.src.domain.*"
+          echo "  from wine_fermentator_logging  -> from src.shared.wine_fermentator_logging"
+          echo "  from api.*             -> from src.<module>.api.*"
+          exit 1
+        fi
+        echo "Import lint check passed."
+
   test-summary:
     name: Test Summary
-    needs: [test-fruit-origin, test-fermentation]
+    needs: [test-fruit-origin, test-fermentation, lint-imports]
     runs-on: ubuntu-latest
     if: always()
     

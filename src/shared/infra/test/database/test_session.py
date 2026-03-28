@@ -17,8 +17,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent))
 
-from shared.infra.database import DatabaseConfig, DatabaseSession
-from shared.infra.interfaces import IDatabaseConfig
+from src.shared.infra.database import DatabaseConfig, DatabaseSession
+from src.shared.infra.interfaces import IDatabaseConfig
 
 
 class TestDatabaseSessionCreation:
@@ -83,7 +83,7 @@ class TestAsyncSessionManagement:
         mock_session_factory = Mock()
         mock_session_factory.return_value = mock_session_instance
         
-        with patch('shared.infra.database.session.async_sessionmaker', return_value=mock_session_factory):
+        with patch('src.shared.infra.database.session.async_sessionmaker', return_value=mock_session_factory):
             db_session = DatabaseSession(mock_config)
             
             # Test that async context manager works (not checking exact instance)
@@ -103,7 +103,7 @@ class TestAsyncSessionManagement:
         mock_session_factory = Mock()
         mock_session_factory.return_value = mock_session_instance
         
-        with patch('shared.infra.database.session.async_sessionmaker', return_value=mock_session_factory):
+        with patch('src.shared.infra.database.session.async_sessionmaker', return_value=mock_session_factory):
             db_session = DatabaseSession(mock_config)
             
             async with db_session.get_session() as session:
@@ -139,7 +139,7 @@ class TestDatabaseSessionErrorHandling:
         mock_config.async_engine = mock_engine
         
         # Mock the sessionmaker to raise an exception when called
-        with patch('shared.infra.database.session.async_sessionmaker') as mock_sessionmaker:
+        with patch('src.shared.infra.database.session.async_sessionmaker') as mock_sessionmaker:
             mock_sessionmaker.side_effect = Exception("Database connection failed")
             
             # Exception should be raised during DatabaseSession creation, not during get_session()
@@ -176,7 +176,7 @@ class TestDatabaseSessionIntegration:
         db_session = DatabaseSession(mock_config)
         
         # Verify sessionmaker was configured with correct parameters
-        with patch('shared.infra.database.session.async_sessionmaker') as mock_sessionmaker:
+        with patch('src.shared.infra.database.session.async_sessionmaker') as mock_sessionmaker:
             db_session = DatabaseSession(mock_config)
             
             # Verify sessionmaker was called with engine and async=True

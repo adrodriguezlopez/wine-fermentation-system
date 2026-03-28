@@ -16,8 +16,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent))
 
-from shared.infra.interfaces import IDatabaseConfig, ISessionManager
-from shared.infra.database import DatabaseConfig, DatabaseSession
+from src.shared.infra.interfaces import IDatabaseConfig, ISessionManager
+from src.shared.infra.database import DatabaseConfig, DatabaseSession
 
 
 class TestDatabaseConfigInterface:
@@ -26,7 +26,7 @@ class TestDatabaseConfigInterface:
     def test_database_config_implements_interface(self):
         """Test that DatabaseConfig properly implements IDatabaseConfig protocol."""
         # Arrange
-        with patch('shared.infra.database.config.create_async_engine') as mock_create_engine:
+        with patch('src.shared.infra.database.config.create_async_engine') as mock_create_engine:
             mock_engine = Mock(spec=AsyncEngine)
             mock_create_engine.return_value = mock_engine
             
@@ -40,7 +40,7 @@ class TestDatabaseConfigInterface:
     def test_database_config_async_engine_property(self):
         """Test that async_engine property returns AsyncEngine."""
         # Arrange
-        with patch('shared.infra.database.config.create_async_engine') as mock_create_engine:
+        with patch('src.shared.infra.database.config.create_async_engine') as mock_create_engine:
             mock_engine = Mock(spec=AsyncEngine)
             mock_create_engine.return_value = mock_engine
             

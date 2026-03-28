@@ -40,6 +40,20 @@ jobs:
         poetry run flake8 .
         poetry run mypy src
 
+    - name: Check for short (non-absolute) imports
+      run: |
+        echo "Checking for short package imports that should use absolute paths..."
+        if grep -rn --include="*.py" -E "^from (shared|domain|wine_fermentator_logging|api)\\."
+            src/ tests/; then
+          echo ""
+          echo "ERROR: Short imports found. Replace with absolute paths:"
+          echo "  from shared.*          -> from src.shared.*"
+          echo "  from domain.*          -> from src.modules.fermentation.src.domain.*"
+          echo "  from wine_fermentator_logging  -> from src.shared.wine_fermentator_logging"
+          exit 1
+        fi
+        echo "Import lint check passed."
+
   build:
     needs: test
     runs-on: ubuntu-latest

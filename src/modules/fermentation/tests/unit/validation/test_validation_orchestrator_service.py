@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from unittest.mock import Mock, AsyncMock
 
-from domain.enums.sample_type import SampleType
+from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 from service_component.interfaces.chronology_validation_service_interface import IChronologyValidationService
 from service_component.models.schemas.validations.validation_error import ValidationError
 from service_component.models.schemas.validations.validation_result import ValidationResult
