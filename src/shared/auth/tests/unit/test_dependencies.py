@@ -21,6 +21,7 @@ from src.shared.auth.domain.errors import (
 from src.shared.auth.infra.api.dependencies import (
     get_current_user,
     get_current_active_user,
+    get_auth_service,
     require_role,
 )
 
@@ -223,3 +224,38 @@ class TestRequireRole:
 
         # Assert
         assert result == user_context
+
+
+class TestGetAuthService:
+    """Test suite for get_auth_service dependency provider."""
+
+    def test_get_auth_service_returns_iauth_service(self):
+        """get_auth_service should return an object satisfying IAuthService."""
+        from unittest.mock import AsyncMock
+        from src.shared.auth.domain.interfaces import IAuthService
+
+        mock_session = AsyncMock()
+        service = get_auth_service(session=mock_session)
+
+        assert isinstance(service, IAuthService)
+
+    def test_get_auth_service_returns_new_instance_per_call(self):
+        """Each call should produce an independent AuthService instance."""
+        from unittest.mock import AsyncMock
+
+        mock_session = AsyncMock()
+        service_a = get_auth_service(session=mock_session)
+        service_b = get_auth_service(session=mock_session)
+
+        assert service_a is not service_b
+
+    def test_get_auth_service_uses_jwt_secret_from_env(self, monkeypatch):
+        """get_auth_service reads JWT_SECRET_KEY from environment."""
+        from unittest.mock import AsyncMock
+
+        monkeypatch.setenv("JWT_SECRET_KEY", "my-test-secret-key-at-least-32-chars!!")
+        mock_session = AsyncMock()
+        service = get_auth_service(session=mock_session)
+
+        # JwtService stores the key; verify it was passed through
+        assert service._jwt_service._secret_key == "my-test-secret-key-at-least-32-chars!!"

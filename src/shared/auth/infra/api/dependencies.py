@@ -5,9 +5,11 @@ This module provides reusable dependencies for securing FastAPI endpoints,
 including token validation, user context extraction, and role-based access control.
 """
 
+import os
 from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.domain.enums import UserRole
@@ -18,6 +20,11 @@ from src.shared.auth.domain.errors import (
     InsufficientPermissions,
 )
 from src.shared.auth.domain.interfaces import IAuthService
+from src.shared.auth.infra.repositories.user_repository import UserRepository
+from src.shared.auth.infra.services.auth_service import AuthService
+from src.shared.auth.infra.services.password_service import PasswordService
+from src.shared.auth.infra.services.jwt_service import JwtService
+from src.shared.infra.database.fastapi_session import get_db_session
 
 
 # OAuth2 scheme for bearer token authentication
@@ -28,9 +35,33 @@ bearer_scheme = HTTPBearer(
 )
 
 
+def get_auth_service(
+    session: AsyncSession = Depends(get_db_session),
+) -> IAuthService:
+    """
+    Build and return a concrete AuthService for the current request.
+
+    Composes UserRepository (requires DB session), PasswordService, and
+    JwtService (reads JWT_SECRET_KEY from the environment) into AuthService.
+
+    This is the single wiring point for auth DI — no main.py needs to know
+    about concrete implementations.
+
+    Returns:
+        AuthService instance satisfying IAuthService
+    """
+    return AuthService(
+        user_repository=UserRepository(session),
+        password_service=PasswordService(),
+        jwt_service=JwtService(
+            secret_key=os.getenv("JWT_SECRET_KEY", "change-me-in-production")
+        ),
+    )
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    auth_service: IAuthService = Depends(),
+    auth_service: IAuthService = Depends(get_auth_service),
 ) -> UserContext:
     """
     Extract and validate user context from JWT bearer token.
@@ -74,7 +105,7 @@ async def get_current_user(
 
 async def get_current_active_user(
     current_user: UserContext = Depends(get_current_user),
-    auth_service: IAuthService = Depends(),
+    auth_service: IAuthService = Depends(get_auth_service),
 ) -> UserContext:
     """
     Verify that the authenticated user is active.
