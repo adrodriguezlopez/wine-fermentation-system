@@ -54,7 +54,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 # Router instance
 router = APIRouter(
-    prefix="/api/v1/protocols",
+    prefix="/protocols",
     tags=["protocol-steps"]
 )
 

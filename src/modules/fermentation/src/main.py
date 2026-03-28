@@ -115,18 +115,19 @@ def create_app() -> FastAPI:
     )
     
     # Include routers (sample router first for route specificity)
-    app.include_router(sample_router, tags=["samples"])
-    app.include_router(samples_router, tags=["samples"])
-    app.include_router(fermentation_router, tags=["fermentations"])
+    # API version prefix centralised here — routers define only resource paths
+    app.include_router(sample_router, prefix="/api/v1", tags=["samples"])
+    app.include_router(samples_router, prefix="/api/v1", tags=["samples"])
+    app.include_router(fermentation_router, prefix="/api/v1", tags=["fermentations"])
     
     # Protocol routers (Phase 2 API)
-    app.include_router(protocol_router, tags=["protocols"])
-    app.include_router(protocol_step_router, tags=["protocol-steps"])
-    app.include_router(protocol_execution_router, tags=["protocol-executions"])
-    app.include_router(step_completion_router, tags=["step-completions"])
-    app.include_router(alert_router, tags=["protocol-alerts"])
-    app.include_router(action_router, tags=["winemaker-actions"])
-    app.include_router(historical_router)  # ADR-032: /api/v1/fermentation/historical
+    app.include_router(protocol_router, prefix="/api/v1", tags=["protocols"])
+    app.include_router(protocol_step_router, prefix="/api/v1", tags=["protocol-steps"])
+    app.include_router(protocol_execution_router, prefix="/api/v1", tags=["protocol-executions"])
+    app.include_router(step_completion_router, prefix="/api/v1", tags=["step-completions"])
+    app.include_router(alert_router, prefix="/api/v1", tags=["protocol-alerts"])
+    app.include_router(action_router, prefix="/api/v1", tags=["winemaker-actions"])
+    app.include_router(historical_router, prefix="/api/v1")  # ADR-032: /api/v1/fermentation/historical
     
     # Health check endpoint
     @app.get("/health", tags=["health"])

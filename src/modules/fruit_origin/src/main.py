@@ -78,9 +78,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Fruit Origin routers
-    app.include_router(vineyard_router)       # /api/v1/vineyards
-    app.include_router(harvest_lot_router)    # /api/v1/harvest-lots
+    # Fruit Origin routers — API version prefix centralised here
+    app.include_router(vineyard_router, prefix="/api/v1")       # /api/v1/vineyards
+    app.include_router(harvest_lot_router, prefix="/api/v1")    # /api/v1/harvest-lots
 
     # Health check
     @app.get("/health", tags=["health"])

@@ -208,9 +208,10 @@ def create_test_app(user_override: UserContext = None, db_override: AsyncSession
     app = FastAPI(title="Fermentation API - Test")
     
     # Include routers (sample router first for route specificity)
-    app.include_router(sample_router)
-    app.include_router(samples_router)  # New: non-nested sample endpoints
-    app.include_router(fermentation_router)
+    # Version prefix mirrors production main.py
+    app.include_router(sample_router, prefix="/api/v1")
+    app.include_router(samples_router, prefix="/api/v1")  # New: non-nested sample endpoints
+    app.include_router(fermentation_router, prefix="/api/v1")
     
     # Register error handlers for domain exceptions
     register_error_handlers(app)

@@ -48,7 +48,7 @@ from src.modules.fermentation.src.api.error_handlers import handle_service_error
 
 # Router instance
 router = APIRouter(
-    prefix="/api/v1/fermentations",
+    prefix="/fermentations",
     tags=["fermentations"]
 )
 

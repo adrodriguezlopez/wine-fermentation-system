@@ -40,7 +40,7 @@ from src.shared.auth.domain.dtos import UserContext
 
 
 router = APIRouter(
-    prefix="/api/v1/harvest-lots",
+    prefix="/harvest-lots",
     tags=["Harvest Lots"]
 )
 

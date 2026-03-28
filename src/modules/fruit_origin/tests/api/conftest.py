@@ -137,9 +137,9 @@ def create_fruit_origin_test_app(
     """
     app = FastAPI(title="Fruit Origin API - Test")
     
-    # Include routers
-    app.include_router(vineyard_router)
-    app.include_router(harvest_lot_router)
+    # Include routers — version prefix mirrors production main.py
+    app.include_router(vineyard_router, prefix="/api/v1")
+    app.include_router(harvest_lot_router, prefix="/api/v1")
     
     # Register error handlers
     register_error_handlers(app)

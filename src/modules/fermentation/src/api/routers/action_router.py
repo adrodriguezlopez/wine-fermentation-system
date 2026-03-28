@@ -28,7 +28,7 @@ from src.modules.fermentation.src.service_component.services.action_service impo
     ActionNotFoundError,
 )
 
-router = APIRouter(prefix="/api/v1", tags=["winemaker-actions"])
+router = APIRouter(tags=["winemaker-actions"])
 
 
 def _get_service(

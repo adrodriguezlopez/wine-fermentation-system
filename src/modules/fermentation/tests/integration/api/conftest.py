@@ -40,7 +40,7 @@ from src.modules.fermentation.src.domain.enums.fermentation_status import Fermen
 def app():
     """Create FastAPI app with historical router."""
     app = FastAPI()
-    app.include_router(router)
+    app.include_router(router, prefix="/api/v1")
     return app
 
 

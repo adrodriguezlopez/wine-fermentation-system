@@ -29,7 +29,7 @@ from src.shared.auth.domain.dtos import UserContext
 
 
 router = APIRouter(
-    prefix="/api/v1/vineyards",
+    prefix="/vineyards",
     tags=["Vineyards"]
 )
 

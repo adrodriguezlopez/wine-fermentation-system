@@ -57,7 +57,7 @@ def get_historical_data_service():
 logger = get_logger(__name__)
 
 router = APIRouter(
-    prefix="/api/v1/fermentation/historical",
+    prefix="/fermentation/historical",
     tags=["Historical Data"]
 )
 

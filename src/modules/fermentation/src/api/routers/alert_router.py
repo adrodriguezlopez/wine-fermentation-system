@@ -23,7 +23,6 @@ from src.modules.fermentation.src.repository_component.protocol_alert_repository
 from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
 
 router = APIRouter(
-    prefix="/api/v1",
     tags=["protocol-alerts"],
 )
 

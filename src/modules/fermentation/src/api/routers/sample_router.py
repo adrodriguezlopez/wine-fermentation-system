@@ -42,7 +42,7 @@ from src.shared.domain.errors import SampleNotFound
 # Import dependencies
 from src.modules.fermentation.src.api.dependencies import get_sample_service
 
-router = APIRouter(prefix="/api/v1/fermentations", tags=["samples"])
+router = APIRouter(prefix="/fermentations", tags=["samples"])
 
 
 # ======================================================================================
@@ -293,7 +293,7 @@ async def get_sample(
 # ======================================================================================
 
 # Create a separate router for non-nested sample endpoints
-samples_router = APIRouter(prefix="/api/v1/samples", tags=["samples"])
+samples_router = APIRouter(prefix="/samples", tags=["samples"])
 
 @samples_router.get(
     "/types",

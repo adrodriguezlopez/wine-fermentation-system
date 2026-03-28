@@ -36,7 +36,7 @@ from src.modules.fermentation.src.service_component.errors import NotFoundError
 def app():
     """Create FastAPI app with router."""
     app = FastAPI()
-    app.include_router(router)
+    app.include_router(router, prefix="/api/v1")
     return app
 
 
