@@ -335,7 +335,7 @@ Write-Host "--------------------------------------------" -ForegroundColor Yello
 
 try {
     Push-Location "src/modules/fermentation"
-    $output = & poetry run pytest tests/unit/ tests/integration/repository_component/ tests/integration/test_etl_integration.py tests/integration/api_component/ tests/api/ --ignore=tests/unit/api_security/ -q --tb=line 2>&1
+    $output = & poetry run pytest tests/unit/ tests/integration/repository_component/ tests/integration/test_etl_integration.py tests/integration/api/ tests/api/ --ignore=tests/unit/api_security/ -q --tb=line 2>&1
     $exitCode = $LASTEXITCODE
     Pop-Location
 } catch {
