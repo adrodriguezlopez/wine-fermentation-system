@@ -18,6 +18,7 @@ Usage:
 
 WARNING: Default credentials are "admin"/"admin" - CHANGE IN PRODUCTION!
 """
+import os
 import sys
 import argparse
 from pathlib import Path
@@ -46,7 +47,7 @@ def hash_password(password: str) -> str:
 logger = get_logger(__name__)
 
 # Database connection (sync mode for seed script)
-DATABASE_URL = "sqlite:///./wine_fermentation.db"  # Default SQLite
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./wine_fermentation.db")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

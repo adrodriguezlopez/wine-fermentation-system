@@ -14,6 +14,22 @@ services:
     ports:
       - "${POSTGRES_HOST_PORT:-5433}:5432"
 
+  # ---------------------------------------------------------------------------
+  # Seed runner — creates initial winery + admin user (idempotent, dev only)
+  # Reuses Dockerfile.migrate image; runs once after migrations complete.
+  # ---------------------------------------------------------------------------
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    command: python -m scripts.seed_initial_data
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
   fermentation:
     ports:
       - "${FERMENTATION_HOST_PORT:-8000}:8000"
@@ -24,6 +40,9 @@ services:
     command: >
       uvicorn src.modules.fermentation.src.main:app
       --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      seed:
+        condition: service_completed_successfully
 
   winery:
     ports:
@@ -34,6 +53,9 @@ services:
     command: >
       uvicorn src.modules.winery.src.main:app
       --host 0.0.0.0 --port 8001 --reload
+    depends_on:
+      seed:
+        condition: service_completed_successfully
 
   fruit_origin:
     ports:
@@ -44,6 +66,9 @@ services:
     command: >
       uvicorn src.modules.fruit_origin.src.main:app
       --host 0.0.0.0 --port 8002 --reload
+    depends_on:
+      seed:
+        condition: service_completed_successfully
 
   analysis_engine:
     ports:
@@ -54,3 +79,6 @@ services:
     command: >
       uvicorn src.modules.analysis_engine.src.main:app
       --host 0.0.0.0 --port 8003 --reload
+    depends_on:
+      seed:
+        condition: service_completed_successfully
