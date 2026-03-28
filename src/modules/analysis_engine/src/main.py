@@ -66,9 +66,15 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
-    # ADR-027: Structured logging middleware
-    app.add_middleware(LoggingMiddleware)
-    app.add_middleware(UserContextMiddleware)
+    # ADR-027: Structured logging middleware.
+    # Starlette wraps LIFO: the last add_middleware call is the outermost layer.
+    # We want:  LoggingMiddleware (outer, runs first — clears ctx, binds
+    #           correlation_id)  →  UserContextMiddleware (inner — decodes
+    #           JWT and binds user_id/winery_id after the clear).
+    # Therefore UserContextMiddleware is added first (inner) and
+    # LoggingMiddleware is added last (outer).
+    app.add_middleware(UserContextMiddleware)  # inner: runs after correlation bind
+    app.add_middleware(LoggingMiddleware)       # outer: runs first, clears context
 
     # ADR-026: Global RFC 7807 error handlers for DomainError subclasses
     register_error_handlers(app)

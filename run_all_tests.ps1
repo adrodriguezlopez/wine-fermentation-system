@@ -45,6 +45,7 @@ $testResults = @{
     SharedTestingUnitBuilders = $null
     SharedInfraUnit = $null
     SharedErrorHandlingUnit = $null
+    SharedLoggingMiddlewareUnit = $null
     SharedAuthUnit = $null
     SharedAuthIntegration = $null
     WineryUnit = $null
@@ -234,6 +235,16 @@ $testResults.SharedErrorHandlingUnit = Invoke-TestSuite `
     -Type "unit"
 
 if (-not $testResults.SharedErrorHandlingUnit.Success) { $allPassed = $false }
+
+# Run Shared Logging Middleware Unit Tests (G8 — UserContextMiddleware JWT binding)
+Write-Host "`n"
+$testResults.SharedLoggingMiddlewareUnit = Invoke-TestSuite `
+    -Name "Shared Logging Middleware - Unit Tests" `
+    -ModulePath "src/shared" `
+    -TestPath "../../tests/shared/test_user_context_middleware.py" `
+    -Type "unit"
+
+if (-not $testResults.SharedLoggingMiddlewareUnit.Success) { $allPassed = $false }
 
 # Run Shared Auth Unit Tests
 Write-Host "`n"

@@ -6,6 +6,7 @@ including token validation, user context extraction, and role-based access contr
 """
 
 import os
+import structlog
 from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -93,6 +94,13 @@ async def get_current_user(
         # Extract token and validate
         token = credentials.credentials
         user_context = await auth_service.verify_token(token)
+        # Bind to structlog context so user_id/winery_id appear in every
+        # log line emitted by the service and repository layers.
+        structlog.contextvars.bind_contextvars(
+            user_id=str(user_context.user_id),
+            winery_id=str(user_context.winery_id),
+            user_role=user_context.role.value,
+        )
         return user_context
         
     except (InvalidTokenError, TokenExpiredError):

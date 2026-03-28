@@ -9,6 +9,7 @@ import pytest
 from unittest.mock import AsyncMock, Mock, patch
 from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
+import structlog
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.domain.enums import UserRole
@@ -88,6 +89,32 @@ class TestGetCurrentUser:
         # Act & Assert - Now expects domain error instead of HTTPException
         with pytest.raises(InvalidTokenError):
             await get_current_user(mock_credentials, mock_auth_service)
+
+    @pytest.mark.asyncio
+    async def test_get_current_user_binds_user_context_to_logs(self):
+        """Successful auth binds user_id/winery_id/user_role to structlog context (G8)."""
+        # Arrange
+        mock_auth_service = AsyncMock()
+        mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
+        mock_credentials.credentials = "valid_token"
+        expected_context = UserContext(
+            user_id=42,
+            winery_id=7,
+            email="winemaker@acme.com",
+            role=UserRole.WINEMAKER,
+        )
+        mock_auth_service.verify_token.return_value = expected_context
+
+        # Act
+        with patch("structlog.contextvars.bind_contextvars") as mock_bind:
+            await get_current_user(mock_credentials, mock_auth_service)
+
+        # Assert — user context was bound for downstream log lines
+        mock_bind.assert_called_once_with(
+            user_id="42",
+            winery_id="7",
+            user_role="winemaker",
+        )
 
 
 class TestGetCurrentActiveUser:

@@ -15,9 +15,11 @@ Features:
 Related ADR: ADR-027 (Structured Logging & Observability)
 """
 
+import os
 import uuid
 import time
 from typing import Callable
+import jwt
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
@@ -194,88 +196,69 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
 class UserContextMiddleware(BaseHTTPMiddleware):
     """
-    Middleware to bind authenticated user context to logs.
-    
-    This should be added AFTER authentication middleware.
-    It extracts user information from the request and binds it
-    to the logging context.
-    
-    Usage:
-        from fastapi import FastAPI
-        from src.shared.wine_fermentator_logging import UserContextMiddleware
-        
-        app = FastAPI()
-        
-        # Add after LoggingMiddleware and auth middleware
-        app.add_middleware(UserContextMiddleware)
-        
-        # Now all logs will include user_id and winery_id
-    
-    What gets bound to context:
-        - user_id: ID of authenticated user (if available)
-        - winery_id: ID of user's winery (if available)
-        - username: Username (if available)
-    
+    Middleware to bind authenticated user context to structlog contextvars.
+
+    Decodes the JWT from the ``Authorization: Bearer <token>`` header using
+    the application secret key (``JWT_SECRET_KEY`` env var).  The decode is
+    best-effort: any failure (missing header, expired token, wrong key,
+    malformed token) is silently swallowed and the request continues
+    unaffected.
+
+    This middleware must be registered *before* ``LoggingMiddleware`` with
+    ``app.add_middleware`` so that Starlette's LIFO wrapping makes
+    ``LoggingMiddleware`` the outermost layer (runs first, clears context,
+    binds ``correlation_id``) and this middleware the inner layer (runs
+    second, adds ``user_id`` / ``winery_id`` / ``user_role`` after the
+    clear).
+
+    Security enforcement is **not** the responsibility of this middleware —
+    the ``get_current_user`` FastAPI dependency handles that and also calls
+    ``bind_contextvars`` with the validated ``UserContext`` as a definitive
+    binding inside the route handler.
+
+    What gets bound to context (when a valid JWT is present):
+        - ``user_id``   – JWT ``sub`` claim (str)
+        - ``winery_id`` – JWT ``winery_id`` claim (str)
+        - ``user_role`` – JWT ``role`` claim (str)
+
     Example log output:
-        {
-          "event": "fermentation_created",
-          "correlation_id": "123e4567...",
-          "user_id": "user-456",
-          "winery_id": "winery-abc",
-          "username": "john@winery.com",
-          ...
-        }
-    
-    Note:
-        This middleware expects request.state.user to be set by
-        authentication middleware. Adjust the attribute access
-        based on your auth implementation.
+        {"event": "fermentation_created", "correlation_id": "abc",
+         "user_id": "42", "winery_id": "7", "user_role": "winemaker", ...}
     """
-    
+
     async def dispatch(
         self,
         request: Request,
         call_next: Callable,
     ) -> Response:
         """
-        Bind user context to logs if user is authenticated.
-        
-        Args:
-            request: Incoming HTTP request
-            call_next: Next middleware/handler in the chain
-        
-        Returns:
-            HTTP response
+        Decode JWT from Authorization header and bind user context to logs.
+
+        Best-effort: silently skips if the header is absent, the token is
+        malformed, expired, or signed with a different key.  Security
+        enforcement is handled by the ``get_current_user`` dependency.
         """
-        # Try to extract user information from request
-        # (Adjust based on your auth middleware implementation)
-        user_context = {}
-        
-        # Check if user is authenticated
-        if hasattr(request.state, "user") and request.state.user:
-            user = request.state.user
-            
-            # Extract user information
-            # (Adjust field names based on your User model)
-            if hasattr(user, "id"):
-                user_context["user_id"] = str(user.id)
-            
-            if hasattr(user, "winery_id"):
-                user_context["winery_id"] = str(user.winery_id)
-            
-            if hasattr(user, "username"):
-                user_context["username"] = user.username
-            elif hasattr(user, "email"):
-                user_context["username"] = user.email
-        
-        # Bind user context if available
-        if user_context:
-            structlog.contextvars.bind_contextvars(**user_context)
-        
-        # Process request
-        response = await call_next(request)
-        
-        return response
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[len("Bearer "):]
+            try:
+                secret = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
+                payload = jwt.decode(
+                    token,
+                    secret,
+                    algorithms=["HS256"],
+                )
+                structlog.contextvars.bind_contextvars(
+                    user_id=str(payload.get("sub", "")),
+                    winery_id=str(payload.get("winery_id", "")),
+                    user_role=payload.get("role", ""),
+                )
+            except Exception:
+                # Invalid, expired, or malformed token — skip silently.
+                # The auth dependency will reject the request if needed.
+                pass
+
+        return await call_next(request)
 
 
 # Helper function for manual correlation ID management
