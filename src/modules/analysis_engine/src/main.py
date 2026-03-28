@@ -39,6 +39,7 @@ from src.modules.analysis_engine.src.api.routers.analysis_router import router a
 from src.modules.analysis_engine.src.api.routers.recommendation_router import router as recommendation_router
 from src.modules.analysis_engine.src.api.routers.advisory_router import router as advisory_router
 
+from src.shared.auth.infra.api.auth_router import router as auth_router
 from src.shared.infra.database.fastapi_session import initialize_database
 
 
@@ -81,6 +82,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Auth endpoints (shared across all modules)
+    app.include_router(auth_router, prefix="/api/v1")
 
     # Register Analysis Engine routers
     app.include_router(analysis_router)

@@ -25,6 +25,7 @@ class AuthenticationError(AuthError):
 
 class InvalidCredentialsError(AuthenticationError):
     """Legacy wrapper that maintains exact same API and inheritance."""
+    http_status = 401  # Unauthorized
     def __init__(self):
         AuthError.__init__(self, "Invalid email or password")
         self.error_code = "INVALID_CREDENTIALS"

@@ -39,6 +39,7 @@ from src.modules.fruit_origin.src.api_component.error_handlers import register_e
 from src.modules.fruit_origin.src.api_component.routers.vineyard_router import router as vineyard_router
 from src.modules.fruit_origin.src.api_component.routers.harvest_lot_router import router as harvest_lot_router
 
+from src.shared.auth.infra.api.auth_router import router as auth_router
 from src.shared.infra.database.fastapi_session import initialize_database
 
 
@@ -80,6 +81,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Auth endpoints (shared across all modules)
+    app.include_router(auth_router, prefix="/api/v1")
 
     # Fruit Origin routers — API version prefix centralised here
     app.include_router(vineyard_router, prefix="/api/v1")       # /api/v1/vineyards

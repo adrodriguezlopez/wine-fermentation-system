@@ -49,6 +49,7 @@ from src.modules.fermentation.src.api.routers.alert_router import router as aler
 from src.modules.fermentation.src.api.routers.action_router import router as action_router
 from src.modules.fermentation.src.api.routers.historical_router import router as historical_router
 
+from src.shared.auth.infra.api.auth_router import router as auth_router
 from src.shared.infra.database.fastapi_session import initialize_database, close_database
 
 
@@ -119,6 +120,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
+    # Auth endpoints (shared across all modules)
+    app.include_router(auth_router, prefix="/api/v1")
+
     # Include routers (sample router first for route specificity)
     # API version prefix centralised here — routers define only resource paths
     app.include_router(sample_router, prefix="/api/v1", tags=["samples"])
