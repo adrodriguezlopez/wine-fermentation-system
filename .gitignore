@@ -67,3 +67,12 @@ IMPLEMENTATION_PLAN_*.md
 src/modules/*/test_*
 .env.test.local
 .env.production.local
+
+# Test output / run artefacts dumped at repo root
+test_output.txt
+test_run_output.txt
+test_run_complete.txt
+hist_test.txt
+# General pattern: any *.txt test-dump at root level
+/*_test*.txt
+/*test_*.txt
