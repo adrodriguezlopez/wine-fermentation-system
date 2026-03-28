@@ -17,8 +17,14 @@ sys.path.insert(0, str(workspace_root))
 # This prevents "failed to locate a name" errors when SQLAlchemy configures relationships
 # Import order matters: base entities first, then entities with relationships
 try:
-    # Import entities that are referenced in relationships but might not be loaded yet
+    # Import entities that are referenced in relationships but might not be loaded yet.
+    # HarvestLot MUST be imported before FermentationLotSource because
+    # FermentationLotSource has ForeignKey("harvest_lots.id") — SQLAlchemy requires
+    # the referenced table to be in Base.metadata when create_all() is called.
     from src.shared.auth.domain.entities.user import User
+    from src.modules.fruit_origin.src.domain.entities.harvest_lot import HarvestLot
+    from src.modules.fruit_origin.src.domain.entities.vineyard import Vineyard
+    from src.modules.fruit_origin.src.domain.entities.vineyard_block import VineyardBlock
     from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
     from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
     from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample

@@ -29,9 +29,10 @@ from src.modules.winery.src.domain.dtos.winery_dtos import WineryCreate, WineryU
 # Repositories
 from src.modules.winery.src.domain.repositories.winery_repository_interface import IWineryRepository
 
-# Cross-module repositories (for deletion protection)
-from src.modules.fruit_origin.src.domain.repositories.vineyard_repository_interface import IVineyardRepository
-from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import IFermentationRepository
+# Guard interfaces (ACL): winery-local abstractions for deletion protection
+# Implemented by fruit_origin/fermentation repos — injected at composition root
+from src.modules.winery.src.domain.repositories.vineyard_guard_interface import IVineyardGuard
+from src.modules.winery.src.domain.repositories.fermentation_guard_interface import IFermentationGuard
 
 # Errors (ADR-026)
 from src.shared.domain.errors import (
@@ -64,16 +65,16 @@ class WineryService(IWineryService):
     def __init__(
         self,
         winery_repo: IWineryRepository,
-        vineyard_repo: IVineyardRepository,
-        fermentation_repo: IFermentationRepository,
+        vineyard_repo: IVineyardGuard,
+        fermentation_repo: IFermentationGuard,
     ):
         """
         Initialize service with dependencies (Dependency Injection).
         
         Args:
             winery_repo: Repository for winery data
-            vineyard_repo: Repository for vineyard data (cross-module for deletion check)
-            fermentation_repo: Repository for fermentation data (cross-module for deletion check)
+            vineyard_repo: Vineyard guard (ACL) for deletion protection check
+            fermentation_repo: Fermentation guard (ACL) for deletion protection check
         """
         self._winery_repo = winery_repo
         self._vineyard_repo = vineyard_repo

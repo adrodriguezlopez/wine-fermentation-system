@@ -18,7 +18,7 @@ from decimal import Decimal
 
 from src.modules.fermentation.src.service_component.etl.etl_service import ETLService, ImportResult
 from src.modules.fermentation.src.domain.enums.data_source import DataSource
-from src.modules.fruit_origin.src.service_component.interfaces.fruit_origin_service_interface import IFruitOriginService
+from src.modules.fermentation.src.domain.interfaces.harvest_lot_provider_interface import IHarvestLotProvider
 
 
 class TestETLService:
@@ -111,8 +111,8 @@ class TestETLService:
     
     @pytest.fixture
     def mock_fruit_origin_service(self):
-        """Mock fruit origin service with orchestration method."""
-        service = Mock(spec=IFruitOriginService)
+        """Mock harvest lot provider (ACL) for ETL orchestration."""
+        service = Mock(spec=IHarvestLotProvider)
         
         # Mock HarvestLot returned by ensure_harvest_lot_for_import()
         mock_lot = Mock()

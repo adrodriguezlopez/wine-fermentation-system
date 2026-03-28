@@ -20,8 +20,8 @@ from src.modules.winery.src.domain.dtos.winery_dtos import WineryCreate, WineryU
 
 # Repositories
 from src.modules.winery.src.domain.repositories.winery_repository_interface import IWineryRepository
-from src.modules.fruit_origin.src.domain.repositories.vineyard_repository_interface import IVineyardRepository
-from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import IFermentationRepository
+from src.modules.winery.src.domain.repositories.vineyard_guard_interface import IVineyardGuard
+from src.modules.winery.src.domain.repositories.fermentation_guard_interface import IFermentationGuard
 
 # Errors (ADR-026)
 from src.shared.domain.errors import (
@@ -42,13 +42,13 @@ class TestWineryService:
     
     @pytest.fixture
     def mock_vineyard_repo(self) -> Mock:
-        """Mock vineyard repository (for deletion protection)."""
-        return create_autospec(IVineyardRepository, instance=True)
+        """Mock vineyard guard (ACL) for deletion protection."""
+        return create_autospec(IVineyardGuard, instance=True)
     
     @pytest.fixture
     def mock_fermentation_repo(self) -> Mock:
-        """Mock fermentation repository (for deletion protection)."""
-        return create_autospec(IFermentationRepository, instance=True)
+        """Mock fermentation guard (ACL) for deletion protection."""
+        return create_autospec(IFermentationGuard, instance=True)
     
     @pytest.fixture
     def service(

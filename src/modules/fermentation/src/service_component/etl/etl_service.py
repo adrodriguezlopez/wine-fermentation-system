@@ -35,7 +35,7 @@ from src.modules.fermentation.src.domain.enums.fermentation_status import Fermen
 from src.modules.fermentation.src.repository_component.repositories.fermentation_repository import FermentationRepository
 from src.modules.fermentation.src.repository_component.repositories.sample_repository import SampleRepository
 from src.modules.fermentation.src.repository_component.repositories.lot_source_repository import LotSourceRepository
-from src.modules.fruit_origin.src.service_component.interfaces.fruit_origin_service_interface import IFruitOriginService
+from src.modules.fermentation.src.domain.interfaces.harvest_lot_provider_interface import IHarvestLotProvider
 from src.shared.infra.interfaces.session_manager import ISessionManager
 from src.shared.infra.session.transaction_scope import TransactionScope
 from decimal import Decimal
@@ -68,13 +68,13 @@ class ETLService:
     - Enables atomic operations across fermentation + fruit_origin modules
     """
     
-    def __init__(self, session_manager: ISessionManager, fruit_origin_service: IFruitOriginService):
+    def __init__(self, session_manager: ISessionManager, fruit_origin_service: IHarvestLotProvider):
         """
         Initialize ETL service.
         
         Args:
             session_manager: Session manager for transaction coordination (ADR-031)
-            fruit_origin_service: Service for fruit origin orchestration (ADR-030)
+            fruit_origin_service: Harvest lot provider (ACL) for ETL orchestration (ADR-030)
         """
         self._session_manager = session_manager
         self.fruit_origin_service = fruit_origin_service
