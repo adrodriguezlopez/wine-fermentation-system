@@ -55,8 +55,8 @@ Winery (root)
 ## Implementation status
 
 **Status:** ✅ **API LAYER COMPLETE** (ADR-016 ✅ + ADR-017 ✅)  
-**Last Updated:** January 13, 2026  
-**Total Tests:** 104 passing (44 unit + 35 integration + 25 API)
+**Last Updated:** March 2, 2026  
+**Total Tests:** 69 passing
 
 ### Component status
 - ✅ **Domain Layer**: Winery entity with SQLAlchemy mapping  
@@ -83,8 +83,6 @@ Winery (root)
   - Integration with shared auth module
 
 ### Next steps
-- ⏭️ **Current**: Integrate with main application (register router)
-- 📋 **Optional**: Seed script for bootstrap data
 - 🔮 **Future**: Relationship endpoints (vineyards, fermentations)
 - 🔮 **Future**: Advanced features (statistics, bulk operations, enhanced caching)
 
@@ -137,7 +135,7 @@ fermentation = await session.get(Fermentation, fermentation_id)
 - ✅ **Domain Component**: Winery entity with SQLAlchemy mapping
 - ✅ **Repository Component**: Data access for winery CRUD (ADR-009, ADR-016)
 - ✅ **Service Component**: Business logic for winery management (ADR-016)
-- 📋 **API Component**: Admin REST endpoints for winery operations (ADR-017 - proposed)
+- ✅ **API Component**: Admin REST endpoints for winery operations (ADR-017 ✅)
 
 ## Key architectural decisions
 See [ADR-004](/.ai-context/adr/ADR-004-harvest-module-consolidation.md):
@@ -156,6 +154,6 @@ See: [ARCHITECTURAL_GUIDELINES.md](/.ai-context/ARCHITECTURAL_GUIDELINES.md) - S
 1. ✅ Define repository interface in `src/domain/repositories/` (ADR-009)
 2. ✅ Implement repository in `repository_component/` (ADR-009, ADR-016)
 3. ✅ Create service layer for winery CRUD (ADR-016)
-4. 📋 Add API endpoints for winery management (ADR-017 - in progress)
-5. 📋 Add seed script for bootstrap (ADR-017 - Phase 3)
+4. ✅ Add API endpoints for winery management (ADR-017 ✅)
+5. ✅ Add seed script for bootstrap (ADR-017 - Phase 3)
 6. 🔮 Future: Advanced features (statistics, audit trail, bulk operations)

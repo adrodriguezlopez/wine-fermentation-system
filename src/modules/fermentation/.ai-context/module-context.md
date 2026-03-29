@@ -55,7 +55,7 @@
 ### Protocol Engine (ADR-035) - ✅ PHASE 1 COMPLETE
 **Purpose**: Master template definitions for fermentation protocols with step tracking and execution monitoring.
 
-**Status**: 29/29 tests PASSING ✅ | 903/903 system tests PASSING ✅
+**Status**: 29/29 tests PASSING ✅ | 1,390 system tests PASSING ✅
 
 - **Domain Layer** (4 entities, 595 LOC):
   - **FermentationProtocol**: Master protocol template with version control
@@ -95,7 +95,7 @@
 ## Implementation status
 
 **Status:** ✅ **Domain, Repository, Service, API & Integration Tests Complete**  
-**Last Updated:** 2026-01-13  
+**Last Updated:** 2026-03-02  
 **Reference:** ADR-006 (API Layer), ADR-005 (Service Layer), ADR-003 (Repository Layer), ADR-002 (Repository Architecture), ADR-011 Phase 3 (Integration Tests)
 
 **📋 Proposed Features (ADR-032 - Jan 13, 2026):**
@@ -190,7 +190,7 @@
 - **Architecture:** TransactionScope pattern for cross-module transactions
 - **References:** ADR-019, ADR-030, ADR-031 (all ✅ Implemented)
 
-**Total: 316 tests passing (267 unit + 49 integration + 90 API)**
+**Total: 728 tests passing (Engine + Protocol + ETL + Integration + API)**
 
 ### Test Execution Notes
 
@@ -203,7 +203,7 @@ poetry run pytest tests/ -v
 
 # Or use the system-wide test suite
 cd C:\dev\wine-fermentation-system
-.\run_all_tests.ps1  # 797 tests total, includes all 49 fermentation integration
+.\run_all_tests.ps1  # ~1,390 tests total, includes all fermentation integration
 
 # Run specific test suites
 poetry run pytest tests/unit/        # 234 tests
@@ -236,12 +236,8 @@ poetry run pytest tests/api/         # 90 tests
 1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`, `ADR-006`, `ADR-011 Phase 3`, `ADR-019`, `ADR-029`, `ADR-030`, `ADR-031`
 2. Review component contexts in `src/*/.ai-context/component-context.md`
 3. Run tests: 
-   - All tests: `poetry run pytest tests/` (316 tests)
-   - Unit: `poetry run pytest tests/unit/` (267 tests - includes 21 ETL unit tests)
-   - Integration: `poetry run pytest tests/integration/` (49 tests - includes 12 ETL integration tests)
-   - API: `poetry run pytest tests/api/` (90 tests)
-   - System-wide: `.\run_all_tests.ps1` from workspace root (983 tests)
-   - **Note**: Integration tests now included in main suite (ADR-011 Phase 3 complete)
+   - All tests: `poetry run pytest tests/` (728 tests)
+   - System-wide: `.\run_all_tests.ps1` from workspace root (~1,390 tests)
 
 **Architecture:**
 - Domain → Repository → Service → API ✅ **Complete**

@@ -98,13 +98,14 @@
 | `ComparisonService` | Computes `ComparisonResult` by comparing current values to historical baselines |
 | `AnomalyDetectionService` | Applies threshold rules to `ComparisonResult` → generates `Anomaly` list |
 | `RecommendationService` | Maps anomalies to `RecommendationTemplate` → creates `Recommendation` list |
-| `ProtocolAnalysisIntegrationService` | **(ADR-037 🔄)** Applies confidence boost, generates `ProtocolAdvisory` |
+| `ProtocolAnalysisIntegrationService` | **(ADR-037 ✅)** Applies confidence boost, generates `ProtocolAdvisory` |
 
 ### API Layer (`src/api/`) — ✅ COMPLETE
 
 **Routers** (`src/api/routers/`):
 - `analysis_router.py` — Analysis lifecycle endpoints (trigger, get, list, status)
 - `recommendation_router.py` — Recommendation retrieval and template management
+- `advisory_router.py` — Protocol advisory generation and retrieval (ADR-037 ✅)
 
 **Schemas** (`src/api/schemas/`):
 - `requests/` — Pydantic V2 input models for all endpoints
@@ -114,26 +115,29 @@
 - `dependencies.py` — FastAPI dependency injection (repositories, services, auth)
 - `error_handlers.py` — Centralized `@handle_analysis_errors` decorator; maps domain exceptions → HTTP codes
 
-**Port**: `8001` (configured in `src/main.py`)
+**Port**: `8003` (configured in `src/main.py`)
 
 ## Implementation status
 
 **Status**: ✅ **Domain + Repository + Service + API — Fully Implemented**  
-**Last Updated**: March 1, 2026  
+**Last Updated**: March 2, 2026  
 **ADR References**:
 - [ADR-020](../../.ai-context/adr/ADR-020-analysis-engine-architecture.md) — Analysis Engine Architecture ✅ **Implemented**
-- [ADR-037](../../.ai-context/adr/ADR-037-protocol-analysis-integration.md) — Protocol↔Analysis Integration 🔄 **In Progress**
+- [ADR-037](../../.ai-context/adr/ADR-037-protocol-analysis-integration.md) — Protocol↔Analysis Integration ✅ **Implemented**
 
 ### Test Summary
 
 | Layer | File | Tests |
 |-------|------|-------|
-| Service | `test_analysis_orchestrator_service.py` | ~30 |
-| Service | `test_comparison_service.py` | ~20 |
-| Service | `test_anomaly_detection_service.py` | ~25 |
-| Service | `test_recommendation_service.py` | ~20 |
-| API | `test_analysis_api.py` | ~13 |
-| **Total** | | **108 passing** ✅ |
+| Domain | `test_analysis.py` | 12 |
+| Service | `test_analysis_orchestrator_service.py` | 19 |
+| Service | `test_comparison_service.py` | 10 |
+| Service | `test_anomaly_detection_service.py` | 24 |
+| Service | `test_recommendation_service.py` | 12 |
+| Service | `test_protocol_integration_service.py` | 47 |
+| Repository | `test_protocol_advisory_repository.py` | 30 |
+| API | `test_analysis_api.py` | 31 |
+| **Total** | | **185 passing** ✅ |
 
 ### Test execution
 
@@ -142,7 +146,7 @@
 Set-Location "c:\dev\wine-fermentation-system\src\modules\analysis_engine"
 poetry run pytest "../../../tests/unit/modules/analysis_engine/" -q
 
-# System-wide (all 1,344 tests)
+# System-wide (all 1,390 tests)
 Set-Location "c:\dev\wine-fermentation-system"
 .\run_all_tests.ps1
 ```
@@ -153,7 +157,7 @@ Set-Location "c:\dev\wine-fermentation-system"
 2. **AsyncMock sessions**: JSONB columns require `AsyncMock` (not `MagicMock`) for SQLAlchemy async compatibility
 3. **Isolated venv**: All tests run inside the analysis_engine Poetry virtual environment
 
-## ADR-037 Protocol Integration (🔄 In Progress — March 1, 2026)
+## ADR-037 Protocol Integration (✅ Implemented — March 2, 2026)
 
 ### Integration flows
 
@@ -182,22 +186,30 @@ Set-Location "c:\dev\wine-fermentation-system"
 
 $$\text{adjusted\_confidence} = \min\left(\text{base\_confidence} \times \left(0.5 + \frac{\text{compliance\_score}}{100.0}\right),\ 1.0\right)$$
 
-### Files to create (ADR-037 implementation)
+### Files implemented (ADR-037 ✅)
 
 ```
 src/modules/analysis_engine/src/
   domain/
     entities/
-      protocol_advisory.py         ← NEW: ProtocolAdvisory entity
+      protocol_advisory.py         ✅ ProtocolAdvisory entity
     enums/
-      advisory_type.py             ← NEW: ACCELERATE_STEP, SKIP_STEP, ADD_STEP
+      advisory_type.py             ✅ ACCELERATE_STEP, SKIP_STEP, ADD_STEP
   service_component/
     services/
-      protocol_integration_service.py  ← NEW: ProtocolAnalysisIntegrationService
+      protocol_integration_service.py  ✅ ProtocolAnalysisIntegrationService
+  repository_component/
+    repositories/
+      protocol_advisory_repository.py  ✅ ProtocolAdvisoryRepository
+  api/
+    routers/
+      advisory_router.py               ✅ Protocol advisory endpoints
 
 tests/unit/modules/analysis_engine/
   service/
-    test_protocol_integration_service.py  ← NEW: ~20 tests
+    test_protocol_integration_service.py  ✅ 47 tests
+  repository/
+    test_protocol_advisory_repository.py  ✅ 30 tests
 ```
 
 ## Domain entities (quick reference)
@@ -236,7 +248,7 @@ repository_component
 ## How to work on this module
 
 1. Check ADRs: `ADR-020` (architecture), `ADR-037` (protocol integration), `ADR-025` (multi-tenancy)
-2. Run tests: `poetry run pytest "../../../tests/unit/modules/analysis_engine/" -q` (108 tests)
+2. Run tests: `poetry run pytest "../../../tests/unit/modules/analysis_engine/" -q` (185 tests)
 3. Component entry points:
    - **Service**: `src/service_component/services/analysis_orchestrator_service.py`
    - **API**: `src/api/routers/analysis_router.py` + `recommendation_router.py`

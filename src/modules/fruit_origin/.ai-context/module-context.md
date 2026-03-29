@@ -74,8 +74,8 @@ FermentationLotSource (fermentation module)
 ## Implementation status
 
 **Status:** ✅ **COMPLETE (Repository + Service + API)**  
-**Last Updated:** December 29, 2025  
-**Total Tests:** 177 passing (100 unit + 43 integration + 34 API)
+**Last Updated:** March 2, 2026  
+**Total Tests:** 147 passing
 
 ### Component status
 - ✅ **Domain Layer**: Entities (Vineyard, VineyardBlock, HarvestLot) with SQLAlchemy mappings  
@@ -95,10 +95,10 @@ FermentationLotSource (fermentation module)
 - ⏭️ Advanced filtering/search endpoints
 
 ## Module components
-Currently only **Domain** component (entities). Future:
-- **Repository Component**: Data access for vineyard hierarchy
-- **Service Component**: Business logic for harvest recording
-- **API Component**: Endpoints for vineyard/harvest management
+- ✅ **Domain Component**: Entities (Vineyard, VineyardBlock, HarvestLot) with SQLAlchemy mappings
+- ✅ **Repository Component**: Data access for vineyard hierarchy and harvest lots
+- ✅ **Service Component**: Business logic for harvest recording and vineyard management
+- ✅ **API Component**: REST endpoints for vineyard and harvest lot management (ADR-015 ✅)
 
 ## Key architectural decisions
 See [ADR-004](/.ai-context/adr/ADR-004-harvest-module-consolidation.md):
@@ -114,7 +114,5 @@ See [ADR-004](/.ai-context/adr/ADR-004-harvest-module-consolidation.md):
 See: [ARCHITECTURAL_GUIDELINES.md](/.ai-context/ARCHITECTURAL_GUIDELINES.md) - Section "SQLAlchemy Import Best Practices"
 
 ## Next steps
-1. Define repository interfaces in `src/domain/repositories/`
-2. Implement repositories in `repository_component/`
-3. Create service layer for harvest workflows
-4. Add API endpoints for vineyard management
+- 🔮 VineyardBlock API endpoints (future phase)
+- 🔮 Advanced filtering/search endpoints
