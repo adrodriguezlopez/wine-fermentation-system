@@ -18,22 +18,23 @@ Usage:
 
 WARNING: Default credentials are "admin"/"admin" - CHANGE IN PRODUCTION!
 """
-import os
+import asyncio
 import sys
 import argparse
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import yaml
 
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from src.modules.winery.src.domain.entities.winery import Winery
 from src.shared.auth.domain.entities.user import User
 from src.shared.auth.domain.enums.user_role import UserRole
+from src.shared.infra.database import DatabaseConfig, DatabaseSession
 from src.shared.wine_fermentator_logging import get_logger
 from passlib.context import CryptContext
 
@@ -45,11 +46,6 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 logger = get_logger(__name__)
-
-# Database connection (sync mode for seed script)
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./wine_fermentation.db")
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 # =============================================================================
@@ -95,13 +91,13 @@ def load_seed_config(config_path: str) -> Dict[str, Any]:
 # Winery Creation
 # =============================================================================
 
-def create_initial_winery(config: Dict[str, Any], session: Session) -> Winery:
+async def create_initial_winery(config: Dict[str, Any], session: AsyncSession) -> Winery:
     """
     Create initial winery if it doesn't exist (idempotent).
     
     Args:
         config: Full configuration dict with 'winery' section
-        session: Database session
+        session: Async database session
         
     Returns:
         Winery entity (existing or newly created)
@@ -112,7 +108,8 @@ def create_initial_winery(config: Dict[str, Any], session: Session) -> Winery:
     logger.info("Checking if winery exists", winery_code=winery_code)
     
     # Check if winery already exists (idempotent)
-    existing_winery = session.query(Winery).filter_by(code=winery_code).first()
+    result = await session.execute(select(Winery).filter_by(code=winery_code))
+    existing_winery = result.scalars().first()
     if existing_winery:
         logger.info(
             "Winery already exists - skipping creation",
@@ -132,8 +129,8 @@ def create_initial_winery(config: Dict[str, Any], session: Session) -> Winery:
     )
     
     session.add(winery)
-    session.commit()
-    session.refresh(winery)
+    await session.commit()
+    await session.refresh(winery)
     
     logger.info(
         "Winery created successfully",
@@ -149,14 +146,14 @@ def create_initial_winery(config: Dict[str, Any], session: Session) -> Winery:
 # User Creation
 # =============================================================================
 
-def create_admin_user(config: Dict[str, Any], winery_id: int, session: Session) -> User:
+async def create_admin_user(config: Dict[str, Any], winery_id: int, session: AsyncSession) -> User:
     """
     Create admin user if doesn't exist (idempotent).
     
     Args:
         config: Full configuration dict with 'admin_user' section
         winery_id: ID of winery to associate user with
-        session: Database session
+        session: Async database session
         
     Returns:
         User entity (existing or newly created)
@@ -167,7 +164,8 @@ def create_admin_user(config: Dict[str, Any], winery_id: int, session: Session) 
     logger.info("Checking if admin user exists", email=email)
     
     # Check if user already exists (idempotent)
-    existing_user = session.query(User).filter_by(email=email).first()
+    result = await session.execute(select(User).filter_by(email=email))
+    existing_user = result.scalars().first()
     if existing_user:
         logger.info(
             "Admin user already exists - skipping creation",
@@ -193,8 +191,8 @@ def create_admin_user(config: Dict[str, Any], winery_id: int, session: Session) 
     )
     
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
     
     logger.info(
         "Admin user created successfully",
@@ -210,7 +208,7 @@ def create_admin_user(config: Dict[str, Any], winery_id: int, session: Session) 
 # Main Orchestration
 # =============================================================================
 
-def seed_all(config_path: str = "scripts/seed_config.yaml") -> Dict[str, Any]:
+async def seed_all(config_path: str = "scripts/seed_config.yaml") -> Dict[str, Any]:
     """
     Main entry point for seeding initial data.
     
@@ -239,15 +237,17 @@ def seed_all(config_path: str = "scripts/seed_config.yaml") -> Dict[str, Any]:
         logger.warning("CHANGE THIS PASSWORD IMMEDIATELY in production!")
         logger.warning("")
     
-    # Get database session
-    session = SessionLocal()
+    # Build async session using shared DatabaseConfig + DatabaseSession
+    db_config = DatabaseConfig()
+    db_session = DatabaseSession(db_config)
     
     try:
-        # Create winery
-        winery = create_initial_winery(config, session)
-        
-        # Create admin user
-        admin_user = create_admin_user(config, winery.id, session)
+        async with db_session.get_session() as session:
+            # Create winery
+            winery = await create_initial_winery(config, session)
+            
+            # Create admin user
+            admin_user = await create_admin_user(config, winery.id, session)
         
         logger.info("=" * 80)
         logger.info("Seed script completed successfully!")
@@ -262,10 +262,9 @@ def seed_all(config_path: str = "scripts/seed_config.yaml") -> Dict[str, Any]:
         
     except Exception as e:
         logger.error("Seed script failed", error=str(e), error_type=type(e).__name__)
-        session.rollback()
         raise
     finally:
-        session.close()
+        await db_session.close()
 
 
 # =============================================================================
@@ -286,7 +285,7 @@ def main():
     args = parser.parse_args()
     
     try:
-        result = seed_all(args.config)
+        result = asyncio.run(seed_all(args.config))
         print(f"\n✅ Success! Created winery '{result['winery'].name}' and admin user '{result['admin_user'].email}'")
         sys.exit(0)
     except Exception as e:
