@@ -344,11 +344,15 @@ Write-Host "--------------------------------------------" -ForegroundColor Yello
 Write-Host "Running: Fermentation Module - Complete Test Suite" -ForegroundColor Yellow
 Write-Host "--------------------------------------------" -ForegroundColor Yellow
 
+$exitCode = -1; $output = @()
 try {
     Push-Location "src/modules/fermentation"
-    $output = & poetry run pytest tests/unit/ tests/integration/repository_component/ tests/integration/test_etl_integration.py tests/integration/api/ tests/api/ --ignore=tests/unit/api_security/ -q --tb=line 2>&1
-    $exitCode = $LASTEXITCODE
-    Pop-Location
+    try {
+        $output = & poetry run pytest tests/unit/ tests/integration/repository_component/ tests/integration/test_etl_integration.py tests/integration/api/ tests/api/ --ignore=tests/unit/api_security/ -q --tb=line 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        Pop-Location
+    }
 } catch {
     Write-Host "[FAIL] Fermentation Tests: Exception occurred" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
@@ -386,11 +390,15 @@ Write-Host "--------------------------------------------" -ForegroundColor Yello
 Write-Host "Running: Analysis Engine - Unit Tests" -ForegroundColor Yellow
 Write-Host "--------------------------------------------" -ForegroundColor Yellow
 
+$exitCode = -1; $output = @()
 try {
     Push-Location "src/modules/analysis_engine"
-    $output = & poetry run pytest "../../../tests/unit/modules/analysis_engine/" -q --tb=line 2>&1
-    $exitCode = $LASTEXITCODE
-    Pop-Location
+    try {
+        $output = & poetry run pytest "../../../tests/unit/modules/analysis_engine/" -q --tb=line 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        Pop-Location
+    }
 } catch {
     Write-Host "[FAIL] Analysis Engine Unit Tests: Exception occurred" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
@@ -427,12 +435,13 @@ if ($exitCode -eq 0) {
 }
 
 # Run Analysis Engine Integration Tests
-# Requires PostgreSQL test DB at localhost:5433. Skips gracefully if not available.
-Write-Host "`n"
-Write-Host "--------------------------------------------" -ForegroundColor Yellow
-Write-Host "Running: Analysis Engine - Integration Tests" -ForegroundColor Yellow
-Write-Host "--------------------------------------------" -ForegroundColor Yellow
+# Requires PostgreSQL on localhost:5433.
+# If Docker is available and port 5433 is free, docker-compose.inttest.yml is started
+# automatically (ephemeral container, torn down after all tests).
 
+$_inttestStarted = $false
+
+# 1. Quick TCP probe — is something already listening on 5433?
 $dbAvailable = $false
 try {
     $tcpClient = New-Object System.Net.Sockets.TcpClient
@@ -443,15 +452,58 @@ try {
     $dbAvailable = $false
 }
 
+# 2. If not running, try to start the integration-test DB via Docker
+if (-not $dbAvailable) {
+    $_dockerAvailable = $false
+    try {
+        $null = & docker version 2>&1
+        $_dockerAvailable = ($LASTEXITCODE -eq 0)
+    } catch { $_dockerAvailable = $false }
+
+    if ($_dockerAvailable) {
+        Write-Host "Starting integration-test DB (docker-compose.inttest.yml)..." -ForegroundColor Cyan
+        try {
+            # --wait blocks until all healthy / completed
+            & docker compose -f docker-compose.inttest.yml up --build --wait 2>&1 | ForEach-Object { Write-Host $_ -ForegroundColor DarkGray }
+            if ($LASTEXITCODE -eq 0) {
+                $_inttestStarted = $true
+                # Re-probe
+                try {
+                    $tcpClient = New-Object System.Net.Sockets.TcpClient
+                    $connectTask = $tcpClient.ConnectAsync("localhost", 5433)
+                    $dbAvailable = $connectTask.Wait(3000) -and $tcpClient.Connected
+                    $tcpClient.Close()
+                } catch { $dbAvailable = $false }
+                if ($dbAvailable) {
+                    Write-Host "Integration-test DB ready on localhost:5433" -ForegroundColor Cyan
+                }
+            } else {
+                Write-Host "[WARN] docker-compose.inttest.yml failed to start - integration tests will be skipped" -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "[WARN] Failed to start inttest DB: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+}
+
+Write-Host "`n"
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+Write-Host "Running: Analysis Engine - Integration Tests" -ForegroundColor Yellow
+Write-Host "--------------------------------------------" -ForegroundColor Yellow
+
 if (-not $dbAvailable) {
     Write-Host "[SKIP] Analysis Engine - Integration Tests: PostgreSQL not available at localhost:5433" -ForegroundColor Yellow
     $testResults.AnalysisEngineIntegration = @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
 } else {
+    $exitCode = -1; $output = @()
     try {
         Push-Location "src/modules/analysis_engine"
-        $output = & poetry run pytest "../../../tests/integration/modules/analysis_engine/repositories/" -q --tb=line 2>&1
-        $exitCode = $LASTEXITCODE
-        Pop-Location
+        try {
+            $output = & poetry run pytest "../../../tests/integration/modules/analysis_engine/repositories/" -q --tb=line 2>&1
+            $exitCode = $LASTEXITCODE
+        } finally {
+            Pop-Location
+        }
     } catch {
         Write-Host "[FAIL] Analysis Engine Integration Tests: Exception occurred" -ForegroundColor Red
         Write-Host $_.Exception.Message -ForegroundColor Red
@@ -495,11 +547,15 @@ if (-not $dbAvailable) {
     Write-Host "[SKIP] Protocol Migrations - Integration Tests: PostgreSQL not available at localhost:5433" -ForegroundColor Yellow
     $testResults.ProtocolMigrationIntegration = @{ Success = $true; Passed = 0; Failed = 0; Skipped = $true; ExitCode = 0 }
 } else {
+    $exitCode = -1; $output = @()
     try {
         Push-Location "src/modules/fermentation"
-        $output = & poetry run pytest "../../../tests/integration/modules/protocol_migrations/" -q --tb=line 2>&1
-        $exitCode = $LASTEXITCODE
-        Pop-Location
+        try {
+            $output = & poetry run pytest "../../../tests/integration/modules/protocol_migrations/" -q --tb=line 2>&1
+            $exitCode = $LASTEXITCODE
+        } finally {
+            Pop-Location
+        }
     } catch {
         Write-Host "[FAIL] Protocol Migration Integration Tests: Exception occurred" -ForegroundColor Red
         Write-Host $_.Exception.Message -ForegroundColor Red
@@ -537,11 +593,15 @@ Write-Host "--------------------------------------------" -ForegroundColor Yello
 Write-Host "Running: Protocol (ADR-035) - Unit Tests" -ForegroundColor Yellow
 Write-Host "--------------------------------------------" -ForegroundColor Yellow
 
+$exitCode = -1; $output = @()
 try {
     Push-Location "src/modules/fermentation"
-    $output = & poetry run pytest tests/unit/test_protocol_enums.py tests/unit/test_protocol_repositories.py -q --tb=line 2>&1
-    $exitCode = $LASTEXITCODE
-    Pop-Location
+    try {
+        $output = & poetry run pytest tests/unit/test_protocol_enums.py tests/unit/test_protocol_repositories.py -q --tb=line 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        Pop-Location
+    }
 } catch {
     Write-Host "[FAIL] Protocol Unit Tests: Exception occurred" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
@@ -608,6 +668,13 @@ if (-not $testResults.SeedScripts.Success) { $allPassed = $false }
 #   - src/modules/fermentation/tests/service_component/interfaces/ : placeholder (empty) files
 #   - src/modules/fermentation/tests/integration/test_etl_load_testing.py : slow load tests
 #   - src/modules/fermentation/tests/integration/test_etl_performance_benchmarks.py : perf benchmarks
+
+# Tear down integration-test DB if we started it
+if ($_inttestStarted) {
+    Write-Host "`nStopping integration-test DB..." -ForegroundColor Cyan
+    & docker compose -f docker-compose.inttest.yml down 2>&1 | Out-Null
+    Write-Host "Integration-test DB stopped." -ForegroundColor Cyan
+}
 
 # Summary
 $endTime = Get-Date

@@ -214,7 +214,7 @@ class TestGetMeEndpoint:
     """Tests for GET /api/v1/auth/me."""
 
     def test_get_me_returns_user_profile(self):
-        """Valid token → 200 with full Pydantic UserResponseSchema."""
+        """Valid token → 200 with full Pydantic UserResponse."""
         mock = AsyncMock()
         user_ctx = _make_user_context()
         mock.get_user.return_value = _make_user_response()

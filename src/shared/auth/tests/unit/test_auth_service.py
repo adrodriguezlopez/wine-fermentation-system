@@ -68,14 +68,16 @@ def sample_user_entity():
     user.id = 1
     user.username = "testuser"
     user.email = "test@example.com"
+    user.full_name = "Test User"
     user.password_hash = "$2b$12$hashed_password"
     user.winery_id = 1
     user.role = UserRole.WINEMAKER
     user.is_active = True
     user.is_verified = True
+    user.last_login_at = None
     user.created_at = datetime.now(timezone.utc)
     user.updated_at = datetime.now(timezone.utc)
-    
+
     return user
 
 

@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
+from pydantic import BaseModel, ConfigDict
+
 from .enums.user_role import UserRole
 
 
@@ -38,10 +40,9 @@ class LoginRequest:
     password: str
 
 
-@dataclass
-class LoginResponse:
+class LoginResponse(BaseModel):
     """Successful login response with JWT tokens."""
-    
+
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -81,10 +82,11 @@ class UserUpdate:
     is_verified: Optional[bool] = None
 
 
-@dataclass
-class UserResponse:
+class UserResponse(BaseModel):
     """Public user data returned by API (excludes password_hash)."""
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
     email: str
@@ -93,18 +95,18 @@ class UserResponse:
     role: UserRole
     is_active: bool
     is_verified: bool
-    last_login_at: Optional[datetime]
+    last_login_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-    
+
     @classmethod
     def from_entity(cls, user) -> "UserResponse":
         """
         Create UserResponse from User entity.
-        
+
         Args:
             user: User entity instance
-            
+
         Returns:
             UserResponse with safe public data
         """

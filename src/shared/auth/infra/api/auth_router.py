@@ -15,15 +15,13 @@ main.py, producing final paths:
 
 from fastapi import APIRouter, Depends, status
 
-from src.shared.auth.domain.dtos import LoginRequest, UserContext
+from src.shared.auth.domain.dtos import LoginRequest, LoginResponse, UserContext, UserResponse
 from src.shared.auth.domain.interfaces import IAuthService
 from src.shared.auth.infra.api.dependencies import get_auth_service, get_current_user
 from src.shared.auth.infra.api.schemas import (
     AccessTokenResponseSchema,
     LoginRequestSchema,
-    LoginResponseSchema,
     RefreshTokenRequestSchema,
-    UserResponseSchema,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -31,28 +29,22 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post(
     "/login",
-    response_model=LoginResponseSchema,
+    response_model=LoginResponse,
     status_code=status.HTTP_200_OK,
     summary="Authenticate and obtain JWT tokens",
 )
 async def login(
     request: LoginRequestSchema,
     auth_service: IAuthService = Depends(get_auth_service),
-) -> LoginResponseSchema:
+) -> LoginResponse:
     """
     Authenticate with email + password.
 
     Returns access_token (15 min) and refresh_token (7 days).
     Raises 401 on invalid credentials, 403 if account is inactive.
     """
-    result = await auth_service.login(
+    return await auth_service.login(
         LoginRequest(email=request.email, password=request.password)
-    )
-    return LoginResponseSchema(
-        access_token=result.access_token,
-        refresh_token=result.refresh_token,
-        token_type=result.token_type,
-        expires_in=result.expires_in,
     )
 
 
@@ -79,19 +71,18 @@ async def refresh_token(
 
 @router.get(
     "/me",
-    response_model=UserResponseSchema,
+    response_model=UserResponse,
     status_code=status.HTTP_200_OK,
     summary="Get authenticated user profile",
 )
 async def get_me(
     current_user: UserContext = Depends(get_current_user),
     auth_service: IAuthService = Depends(get_auth_service),
-) -> UserResponseSchema:
+) -> UserResponse:
     """
     Return full profile of the currently authenticated user.
 
     Requires a valid Bearer token in the Authorization header.
     Raises 401 if the token is missing or invalid.
     """
-    user = await auth_service.get_user(current_user.user_id)
-    return UserResponseSchema.model_validate(user)
+    return await auth_service.get_user(current_user.user_id)

@@ -1,0 +1,53 @@
+# =============================================================================
+# Integration-test database stack.
+#
+# Spun up automatically by run_all_tests.ps1 when Docker is available.
+# Provides an ephemeral PostgreSQL instance on localhost:5433 with two databases:
+#
+#   wine_fermentation       — used by Protocol Migration integration tests
+#                             (Alembic upgrade head is applied by migrate_inttest)
+#   wine_fermentation_test  — used by Analysis Engine integration tests
+#                             (tables created by Base.metadata.create_all())
+#
+# Usage:
+#   docker compose -f docker-compose.inttest.yml up --wait
+#   docker compose -f docker-compose.inttest.yml down
+# =============================================================================
+version: '3.8'
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Ephemeral PostgreSQL — data lives in tmpfs (no disk I/O, wiped on down)
+  # ---------------------------------------------------------------------------
+  db_inttest:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wine_fermentation
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wine_fermentation"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # ---------------------------------------------------------------------------
+  # Alembic migration runner — applies all migrations to wine_fermentation
+  # ---------------------------------------------------------------------------
+  migrate_inttest:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db_inttest:5432/wine_fermentation
+    depends_on:
+      db_inttest:
+        condition: service_healthy
+    restart: "no"
