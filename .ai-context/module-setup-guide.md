@@ -95,15 +95,15 @@ poetry install
 - **Location**: `src/modules/winery/`
 - **Tests**: 69 (unit + API)
 - **Dependencies**: FastAPI, SQLAlchemy, structlog, colorama
-- **API**: Yes (FastAPI application in `src/main.py`, port 8001)
+- **API**: Yes (FastAPI application in `src/modules/winery/src/main.py`, port 8001)
 - **Command**: `cd src/modules/winery; poetry run pytest tests/unit/ tests/api/`
 
 ### Fruit Origin Module
 - **Location**: `src/modules/fruit_origin/`
 - **Tests**: 147 (unit + API)
 - **Dependencies**: FastAPI, SQLAlchemy, structlog, colorama
-- **API**: Yes (FastAPI application in `src/main.py`, port 8002)
-- **Command**: `cd src/modules/fruit_origin; poetry run pytest tests/unit/`
+- **API**: Yes (FastAPI application in `src/modules/fruit_origin/src/main.py`, port 8002)
+- **Command**: `cd src/modules/fruit_origin; poetry run pytest tests/unit/ tests/api/`
 
 ## Import Path Resolution
 
@@ -232,7 +232,7 @@ All modules should include:
 - `mypy = "^1.5.0"`
 - `flake8 = "^6.1.0"`
 
-### API Modules (Fermentation only)
+### API Modules (fermentation, winery, fruit_origin, analysis_engine)
 - `fastapi = "^0.103.0"`
 - `uvicorn = {extras = ["standard"], version = "^0.23.2"}`
 
@@ -288,5 +288,5 @@ poetry run python -c "import structlog"  # Should not error
 ## Version History
 
 - **Dec 22, 2025**: Created as part of ADR-028 Phase 3
-- **Status**: All 3 modules standardized (fermentation, winery, fruit_origin)
-- **Test Coverage**: 317/317 unit tests passing across all modules
+- **Status**: All 4 modules standardized (fermentation, winery, fruit_origin, analysis_engine)
+- **Test Coverage**: 1129 tests passing across all modules (728 fermentation, 69 winery, 147 fruit_origin, 185 analysis_engine)
