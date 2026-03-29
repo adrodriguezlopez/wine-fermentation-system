@@ -118,6 +118,11 @@ def create_app() -> FastAPI:
     # CORS middleware — origins controlled by ALLOWED_ORIGINS env var
     # dev/test: default "*"; staging/prod: set to comma-separated list in .env
     _allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+    if _allowed_origins == ["*"]:
+        logger.warning(
+            "cors_wildcard_enabled",
+            hint="Set ALLOWED_ORIGINS to a comma-separated list of explicit origins in staging/prod.",
+        )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_allowed_origins,
