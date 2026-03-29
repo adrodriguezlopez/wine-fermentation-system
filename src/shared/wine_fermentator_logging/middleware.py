@@ -242,7 +242,11 @@ class UserContextMiddleware(BaseHTTPMiddleware):
         if auth_header.startswith("Bearer "):
             token = auth_header[len("Bearer "):]
             try:
-                secret = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
+                secret = os.environ.get("JWT_SECRET_KEY")
+                if not secret:
+                    # JWT_SECRET_KEY not configured — skip user-context binding.
+                    # Security enforcement is handled by the get_current_user dependency.
+                    return await call_next(request)
                 payload = jwt.decode(
                     token,
                     secret,

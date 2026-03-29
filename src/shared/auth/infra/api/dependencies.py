@@ -51,12 +51,16 @@ def get_auth_service(
     Returns:
         AuthService instance satisfying IAuthService
     """
+    _jwt_secret = os.environ.get("JWT_SECRET_KEY")
+    if not _jwt_secret:
+        raise ValueError(
+            "JWT_SECRET_KEY environment variable is required but not set. "
+            "Set a strong random secret (\u2265 32 chars) before starting the application."
+        )
     return AuthService(
         user_repository=UserRepository(session),
         password_service=PasswordService(),
-        jwt_service=JwtService(
-            secret_key=os.getenv("JWT_SECRET_KEY", "change-me-in-production")
-        ),
+        jwt_service=JwtService(secret_key=_jwt_secret),
     )
 
 
