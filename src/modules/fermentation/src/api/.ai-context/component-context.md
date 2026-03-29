@@ -11,6 +11,8 @@
 
 **Architectural Decision:** Following ADR-006, this component implements FastAPI routers with Pydantic v2 schemas, integrated with shared auth module (ADR-007) for JWT authentication and role-based access control.
 
+> **G7 Consolidation (2026-03-28):** The `src/api_component/historical/` stub directory (created during ADR-032 planning) has been deleted. All API code — including the historical router — lives here in `src/api/`. There is no `api_component/` folder in this module.
+
 
 ## Architecture pattern
 **RESTful API Pattern** with FastAPI framework and dependency injection.
