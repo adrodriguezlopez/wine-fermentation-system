@@ -15,7 +15,7 @@ Defines the core business model for fruit origin and vineyard hierarchy. Central
 
 ## Arquitectura específica del componente
 - **Entities**: Vineyard, VineyardBlock, HarvestLot (in `entities/`)
-- **Repository Interfaces**: (pending) IVineyardRepository, IHarvestLotRepository (future in `repositories/`)
+- **Repository Interfaces**: IVineyardRepository, IHarvestLotRepository (defined in `repositories/`)
 - **No infrastructure logic**: Only contracts, rules, and pure domain models
 
 ## Domain model hierarchy
@@ -84,16 +84,16 @@ FermentationLotSource.harvest_lot_id → HarvestLot.id (fermentation module)
 
 ## Component interfaces
 
-### Future Repository Interfaces (Pending Implementation)
+### Repository Interfaces (Implemented ✅)
 
-**IVineyardRepository** (future):
+**IVineyardRepository** ✅ IMPLEMENTED:
 - `create(vineyard: Vineyard) → Vineyard`
 - `get_by_id(id: int, winery_id: int) → Vineyard`
 - `get_by_winery(winery_id: int) → List[Vineyard]`
 - `update(vineyard: Vineyard) → Vineyard`
 - `delete(id: int, winery_id: int) → bool`
 
-**IHarvestLotRepository** (future):
+**IHarvestLotRepository** ✅ IMPLEMENTED:
 - `create(harvest_lot: HarvestLot) → HarvestLot`
 - `get_by_id(id: int, winery_id: int) → HarvestLot`
 - `get_by_block(block_id: int, winery_id: int) → List[HarvestLot]`
@@ -103,10 +103,10 @@ FermentationLotSource.harvest_lot_id → HarvestLot.id (fermentation module)
 
 ## Connection with other components
 
-**Future components** (pending):
-- **Repository Component**: Will implement IVineyardRepository, IHarvestLotRepository
-- **Service Component**: Will use entities and repository interfaces for harvest workflows
-- **API Component**: Will expose vineyard/harvest management endpoints
+**Module components** (all implemented ✅):
+- **Repository Component**: ✅ Implements IVineyardRepository, IVineyardBlockRepository, IHarvestLotRepository
+- **Service Component**: ✅ Complete — VineyardService, VineyardBlockService, HarvestLotService, FruitOriginService (ADR-014, ADR-030)
+- **API Component**: ✅ Complete — vineyard + harvest lot endpoints (ADR-015)
 
 **Cross-module dependencies**:
 - **Uses**: `winery.Winery` (for ownership)
@@ -114,8 +114,8 @@ FermentationLotSource.harvest_lot_id → HarvestLot.id (fermentation module)
 
 ## Implementation status
 
-**Status:** ✅ **Entities Complete** - Repository interfaces pending  
-**Last Updated:** 2025-10-05
+**Status:** ✅ **All Layers Complete** — Entities, Repository, Service, API all implemented  
+**Last Updated:** 2026-03-28
 
 ### Completed
 - ✅ Entity models (Vineyard, VineyardBlock, HarvestLot)
@@ -123,10 +123,10 @@ FermentationLotSource.harvest_lot_id → HarvestLot.id (fermentation module)
 - ✅ Business rules in entity constraints
 - ✅ Integration test fixtures
 
-### Pending
-- ⏭️ Repository interfaces definition (IVineyardRepository, IHarvestLotRepository)
-- ⏭️ Value objects (if needed: GpsCoordinate, BrixMeasurement)
-- ⏭️ Domain events (if needed: HarvestRecorded, VineyardCreated)
+### Also completed since initial entities
+- ✅ IVineyardRepository, IVineyardBlockRepository, IHarvestLotRepository implemented in domain/repositories/
+- ✅ Value objects: not needed (fields inline in entities)
+- ✅ Domain events: not needed (not part of current architecture)
 
 ## Key implementation considerations
 

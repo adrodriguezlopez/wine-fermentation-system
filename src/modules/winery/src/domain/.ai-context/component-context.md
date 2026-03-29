@@ -15,7 +15,7 @@ Defines the core business model for winery organization identity. Centralizes th
 
 ## Arquitectura específica del componente
 - **Entities**: Winery (in `entities/`)
-- **Repository Interfaces**: (pending) IWineryRepository (future in `repositories/`)
+- **Repository Interfaces**: IWineryRepository (defined in `repositories/`)
 - **No infrastructure logic**: Only contracts and pure domain model
 
 ## Domain model
@@ -55,9 +55,9 @@ Winery (Root Entity)
 
 ## Component interfaces
 
-### Future Repository Interface (Pending Implementation)
+### Repository Interface
 
-**IWineryRepository** (future):
+**IWineryRepository** ✅ IMPLEMENTED:
 - `create(winery: Winery) → Winery`
 - `get_by_id(id: int) → Winery`
 - `get_by_code(code: str) → Winery`
@@ -69,10 +69,10 @@ Winery (Root Entity)
 
 ## Connection with other components
 
-**Future components** (pending):
-- **Repository Component**: Will implement IWineryRepository
-- **Service Component**: Will use Winery entity for CRUD operations
-- **API Component**: Will expose winery management endpoints
+**Module components** (all implemented ✅):
+- **Repository Component**: ✅ Implements IWineryRepository (22 unit + 18 integration tests)
+- **Service Component**: ✅ Complete — WineryService (22 unit + 17 integration tests)
+- **API Component**: ✅ Complete — 6 REST endpoints, 25 API tests (ADR-017)
 
 **Cross-module dependencies**:
 - **Used by ALL modules**: Every module references `winery_id` for multi-tenancy
@@ -83,8 +83,8 @@ Winery (Root Entity)
 
 ## Implementation status
 
-**Status:** ✅ **Entity Complete** - Repository interface pending  
-**Last Updated:** 2025-10-05
+**Status:** ✅ **All Layers Complete** — Entity, Repository, Service, API all implemented  
+**Last Updated:** 2026-03-28
 
 ### Completed
 - ✅ Winery entity model
@@ -92,10 +92,10 @@ Winery (Root Entity)
 - ✅ Business rules in entity constraints
 - ✅ Integration test fixture (test_winery)
 
-### Pending
-- ⏭️ Repository interface definition (IWineryRepository)
-- ⏭️ Validation logic (code format, uniqueness)
-- ⏭️ Cascade delete prevention logic
+### Also completed since initial entity
+- ✅ IWineryRepository implemented in domain/repositories/
+- ✅ Validation logic implemented in WineryService (code format, uniqueness)
+- ✅ Cascade delete prevention via IVineyardGuard, IFermentationGuard in WineryService
 
 ## Key implementation considerations
 

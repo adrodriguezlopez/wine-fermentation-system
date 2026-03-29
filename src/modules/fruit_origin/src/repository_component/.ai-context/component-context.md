@@ -71,19 +71,19 @@
 
 **VineyardRepository** ✅ COMPLETE
 - **Methods:** 7 (create, get_by_id, get_by_code, list_by_winery, update, delete, exists_by_code)
-- **Tests:** Repository tests included in module's 100 unit + 43 integration totals
-- **Status:** Fully implemented with SQLAlchemy integration, multi-tenancy verified
+- **Tests:** Repository tests included in module's 190 total tests (100 unit + 43 integration + 34 API + 13 ETL)
+- **Status:** Fully implemented with relationship handling
 - **Compliance:** ADR-012 migrated (shared test infrastructure)
 
 **VineyardBlockRepository** ✅ COMPLETE
 - **Methods:** 7 (create, get_by_id, get_by_code, list_by_vineyard, update, delete, exists_by_code)
-- **Tests:** Repository tests included in module's 100 unit + 43 integration totals
+- **Tests:** Repository tests included in module's 190 total tests (100 unit + 43 integration + 34 API + 13 ETL)
 - **Status:** Fully implemented with relationship handling
 - **Compliance:** ADR-012 migrated (shared test infrastructure)
 
 **HarvestLotRepository** ✅ COMPLETE
 - **Methods:** 8 (create, get_by_id, get_by_code, list_by_block, list_by_winery, update, delete, exists_by_code)
-- **Tests:** Repository tests included in module's 100 unit + 43 integration totals (includes chronological sorting, temporal queries)
+- **Tests:** Repository tests included in module's 190 total tests (100 unit + 43 integration + 34 API + 13 ETL)
 - **Status:** Fully implemented with temporal query optimization
 - **Compliance:** ADR-012 migrated (shared test infrastructure)
 

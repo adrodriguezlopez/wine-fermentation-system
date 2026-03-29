@@ -71,7 +71,7 @@
 ## Implementation status
 
 **Status:** ✅ **PRODUCTION READY** | 🎯 **All Tests Passing (52 tests + Full Integration Resolution)**  
-**Last Updated:** December 30, 2025  
+**Last Updated:** 2026-03-28  
 **Reference:** ADR-012 Phase 3 Complete, ADR-011 Phase 3 Complete (Full Integration Test Resolution)
 
 ### Completed Components
@@ -119,12 +119,12 @@
   - Intercepts commit/rollback/close for test reusability
   - Enables multiple UoW contexts with same session
   - Prevents "closed transaction" errors
-- **ADR-011 Phase 3 Complete**: All 797 tests run together, fermentation integration tests fully resolved
+- **ADR-011 Phase 3 Complete**: All ~1,390+ tests run together, fermentation integration tests fully resolved
   - Isolated sample_repository fixtures
   - Triple try/except import pattern for ADR-028
   - Complete metadata conflict resolution
 
-**Total: 52 infrastructure tests + 797 system-wide tests passing (100%)**
+**Total: 52 infrastructure tests + ~1,390+ system-wide tests passing (100%)**
 
 ### Migration Status (ADR-012 Phase 3)
 
@@ -189,7 +189,7 @@
 - **Self-testing**: Infrastructure has its own test suite (138 tests)
 - **Continuous Integration**: All tests run on every commit
 - **Migration validation**: Each migrated file tested individually
-- **Regression prevention**: All 737 project tests must pass
+- **Regression prevention**: All ~1,390+ project tests must pass
 
 ## Documentation
 - [README.md](../unit/README.md) - Architecture and component overview
@@ -206,7 +206,7 @@
 
 ## Success metrics
 - ✅ 52 infrastructure tests passing (100%)
-- ✅ 797 project tests passing (100%)
+- ✅ ~1,390+ project tests passing (100%)
 - ✅ 8 repository files migrated (142+ tests)
 - ✅ ~800-1,000 lines of boilerplate eliminated
 - ✅ 50% faster test creation time

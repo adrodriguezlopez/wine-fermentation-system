@@ -104,13 +104,13 @@ Defines the core business model, domain entities, enums, DTOs, and repository in
 
 ## Connection with other components
 - **Repository Component (infra)**: Implements IUserRepository for data persistence
-- **Service Component (future)**: Implements IPasswordService, IJwtService, IAuthService for business logic
-- **API Component (future)**: Uses DTOs for request/response validation
+- **Service Component**: Implements IPasswordService, IJwtService, IAuthService for business logic
+- **API Component**: Uses DTOs for request/response validation
 
 ## Implementation status
 
 **Status:** ✅ **Domain Layer Complete (81 tests passing)**
-**Last Updated:** 2025-10-28
+**Last Updated:** 2026-03-28
 **Reference:** ADR-007 Phase 1
 
 ### Completed Components

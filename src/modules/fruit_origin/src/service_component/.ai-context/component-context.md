@@ -75,21 +75,21 @@
 
 **VineyardService** ✅ COMPLETE
 - **Methods:** 5 (create, get_by_id, list_by_winery, update, delete)
-- **Tests:** Service tests included in module's 100 unit test total (lifecycle, validation, error handling, multi-tenancy)
+- **Tests:** Service tests included in module's 190 total tests (100 unit + 43 integration + 34 API + 13 ETL)
 - **Status:** Fully implemented with repository integration
 - **Validation:** Code uniqueness, required fields, hierarchy protection
 - **Compliance:** ADR-014 compliant (orchestrated validation)
 
 **VineyardBlockService** ✅ COMPLETE
 - **Methods:** 5 (create, get_by_id, list_by_vineyard, update, delete)
-- **Tests:** Service tests included in module's 100 unit test total (CRUD operations, FK validation, hierarchy protection)
+- **Tests:** Service tests included in module's 190 total tests (100 unit + 43 integration + 34 API + 13 ETL)
 - **Status:** Fully implemented with vineyard relationship validation
 - **Validation:** Code uniqueness within vineyard, technical spec ranges, vineyard existence
 - **Compliance:** ADR-014 compliant (orchestrated validation)
 
 **HarvestLotService** ✅ COMPLETE
 - **Methods:** 6 (create, get_by_id, list_by_block, list_by_winery, update, delete)
-- **Tests:** Service tests included in module's 100 unit test total (complex validation scenarios, temporal logic, multi-tenancy)
+- **Tests:** Service tests included in module's 190 total tests (100 unit + 43 integration + 34 API + 13 ETL)
 - **Status:** Fully implemented with comprehensive 19-field validation
 - **Validation:** 
   - Value validation: brix range, weight > 0, temporal field formats

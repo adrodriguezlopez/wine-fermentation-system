@@ -163,9 +163,9 @@
 - **Admin vs User**: Separate test cases for admin and regular user access patterns
 
 **Test Counts:**
-- Phase 1: 15 CRUD tests (5 endpoints × ~3 tests each)
-- Phase 2: 6 relationship tests (2 endpoints × 3 tests each)
-- **Total: 21 API tests** (target 100% pass rate)
+- Phase 1: 25 CRUD tests (100% passing)
+- Phase 2: Relationship endpoints — deferred (optional future enhancement)
+- **Total: 25 API tests (100% pass rate)**
 
 ## DTOs to implement
 
@@ -262,7 +262,6 @@ Creates:
 **Note:** Change default password on first login (future enhancement).
 
 ## Next steps
-- ⏭️ Implement Phase 1: Core CRUD endpoints (6 endpoints, 15 tests)
-- ⏭️ Implement Phase 2: Relationship endpoints (2 endpoints, 6 tests)
-- ⏭️ Implement Phase 3: Seed script + documentation
-- ⏭️ Future enhancements: Statistics endpoints, audit trail, bulk operations
+- ✅ Phase 1: Core CRUD endpoints (6 endpoints, 25 tests) — COMPLETE
+- 🔮 Phase 2: Relationship endpoints (vineyards, fermentations) — deferred (optional future enhancement)
+- 🔮 Phase 3: Seed script + documentation — tracked in ADR-INDEX.md

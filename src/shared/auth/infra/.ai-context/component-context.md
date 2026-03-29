@@ -6,7 +6,7 @@
 ## Component responsibility
 **Data persistence and retrieval operations** for user entities within the Authentication & Authorization Module.
 
-**Position in module**: Foundation layer providing data access abstraction to Service Component (future), enforcing user uniqueness and soft delete patterns at persistence level.
+**Position in module**: Foundation layer providing data access abstraction to Service Component, enforcing user uniqueness and soft delete patterns at persistence level.
 
 **Architectural Decision:** Following ADR-007, this component implements the repository pattern with PostgreSQL-specific optimizations for user queries and authentication lookups.
 
@@ -24,13 +24,13 @@
 
 ## Component interfaces
 
-### **Receives from (Service Component - future)**
+### **Receives from (Service Component)**
 - User creation requests: Validated UserCreate data ready for persistence
 - Query requests: Lookup by ID, email, username
 - Update requests: User modifications with validation
 - Soft delete requests: Account deactivation
 
-### **Provides to (Service Component - future)**
+### **Provides to (Service Component)**
 - User instances: Complete user objects with all fields
 - Existence checks: Email/username uniqueness validation
 - Query results: Single user or None for lookups
@@ -56,17 +56,17 @@
 - **Referential integrity**: User-Fermentation-Sample relationships (via lazy="raise")
 
 ## Connection with other components
-**Service Component (future)**: Receives IUserRepository implementation via dependency injection
+**Service Component**: Receives IUserRepository implementation via dependency injection
 **Domain Component**: Implements IUserRepository interface, uses User entity
 **Database Layer**: Direct SQLAlchemy AsyncSession integration with PostgreSQL
 
 ## Implementation status
 
 **Status:** ✅ **Repository Layer Complete (21 tests passing)**  
-**Last Updated:** 2025-10-28  
+**Last Updated:** 2026-03-28  
 **Reference:** ADR-007 Phase 2
 
-**Note:** This component is production-ready for service layer usage. Service layer integration is next phase.
+**Note:** This component is production-ready. Service (Phase 3), FastAPI dependencies (Phase 4), integration tests (Phase 5), and API layer (Phase 6) are all complete.
 
 ### Implemented Components
 
@@ -241,15 +241,4 @@ async def exists_by_email/username(...) -> bool:
 
 ## Next steps
 
-**Phase 3: Service Layer**
-1. Implement PasswordService (bcrypt hashing)
-2. Implement JwtService (token encoding/decoding)
-3. Implement AuthService (orchestrates repository + services)
-4. Write service tests FIRST (TDD)
-5. Wire dependencies with dependency injection
-
-**Integration Points:**
-- AuthService will receive UserRepository via constructor injection
-- Services will coordinate repository calls with business logic
-- Error mapping from repository to service layer
-- Transaction coordination for multi-step operations
+None — all phases (Service, FastAPI Dependencies, Integration Tests, API Layer) complete ✅

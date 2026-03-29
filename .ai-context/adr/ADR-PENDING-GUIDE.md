@@ -252,9 +252,7 @@
 **Tests Passing:**
 - ✅ 21 ETL unit tests
 - ✅ 12 ETL integration tests (functional + performance)
-- ✅ **983/983 tests passing system-wide**
-
-**Referencia:** Ver [ADR-019](./ADR-019-etl-pipeline-historical-data.md)
+- ✅ **~1,390+ tests passing system-wide**
 
 ---
 
@@ -283,7 +281,7 @@
 - ✅ 13 FruitOriginService orchestration tests
 - ✅ 21 ETL service tests
 - ✅ 12 ETL integration tests (functional + performance)
-- ✅ **983/983 tests passing system-wide**
+- ✅ **~1,390+ tests passing system-wide**
 
 **Referencia:** Ver [ADR-030](./ADR-030-etl-cross-module-architecture-refactoring.md)
 
@@ -329,7 +327,7 @@ async with TransactionScope(session_manager):
 - ✅ 17 UnitOfWork facade tests
 - ✅ 21 ETL service tests (updated)
 - ✅ 12 ETL integration tests
-- ✅ **983/983 tests passing system-wide**
+- ✅ **~1,390+ tests passing system-wide**
 
 **Referencia:** Ver [ADR-031](./ADR-031-cross-module-transaction-coordination.md)
 

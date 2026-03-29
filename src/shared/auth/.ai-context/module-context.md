@@ -47,7 +47,7 @@
 ## Implementation status
 
 **Status:** ✅ **PRODUCTION READY (100% Test Coverage)** | 🎯 **All Tests Passing**  
-**Last Updated:** 2025-11-15  
+**Last Updated:** 2026-03-28  
 **Reference:** ADR-007 (Auth Module Design)
 
 ### Completed Components
@@ -77,14 +77,14 @@
 - **Infrastructure**: infra/repositories package with __init__.py exports
 - **Patterns**: AsyncSession integration, soft deletes, timestamp management
 
-**✅ Phase 3: Service Layer (61 tests passing)**
+**✅ Phase 3: Service Layer (50 tests passing)**
 - **PasswordService**: Bcrypt hashing, password verification, strength validation ✅
 - **JwtService**: Token encoding/decoding, user context extraction ✅
 - **AuthService**: Login, register, refresh, password reset workflows ✅
-- **Tests**: 61 service tests passing (100% coverage)
+- **Tests**: 50 service tests passing (auth_service=25, jwt_service=13, password_service=12)
 - **Dependencies**: PyJWT, passlib[bcrypt] installed
 
-**Total: 159 unit tests passing (100%) - Sub-second execution time**
+**Total: 180 unit tests passing (100%) + 39 integration tests = 219 total**
 
 ### Recent Fixes (Nov 15, 2025)
 
@@ -102,27 +102,25 @@
 
 ### Integration Status
 
-**⏳ Phase 4: FastAPI Dependencies** (Not yet implemented)
+**✅ Phase 4: FastAPI Dependencies** (16 tests passing)
 - **get_current_user()**: Dependency for extracting authenticated user
 - **require_role()**: Decorator for role-based endpoint protection
 - **OAuth2PasswordBearer**: Token extraction scheme
-- **Tests**: ~10 dependency tests
+- **Tests**: 16 dependency tests passing
 
-**⏳ Phase 5: Integration Tests** (Not yet implemented)
+**✅ Phase 5: Integration Tests** (39 tests passing)
 - **Database setup**: PostgreSQL test database configuration
 - **End-to-end flows**: Login → Token → Protected endpoint
 - **Role-based tests**: Permission enforcement across roles
 - **Multi-tenancy tests**: Winery isolation verification
-- **Tests**: ~15 integration tests
+- **Tests**: 39 integration tests passing
 
-**⏳ Phase 6: API Layer** (Estimated: 3-4 hours)
+**✅ Phase 6: API Layer** (12 tests passing)
 - **Auth Endpoints**: POST /login, POST /register, POST /refresh, POST /logout
 - **User Endpoints**: GET /users/me, PUT /users/me, DELETE /users/me
 - **Password Endpoints**: POST /password/change, POST /password/reset, POST /password/reset/confirm
 - **Admin Endpoints**: GET /users, PUT /users/{id}, DELETE /users/{id}
-- **Tests**: ~25 API tests needed
-
-**Completion Estimate**: Phases 3-6 require ~10-15 hours total
+- **Tests**: 12 API tests passing
 
 ## Quick Reference
 
@@ -161,8 +159,8 @@
 **Dependency Direction:**
 ```
 infra/repositories ─┐
-services (future)   │──► domain (entities, DTOs, interfaces, errors)
-api (future)        │
+services           │─► domain (entities, DTOs, interfaces, errors)
+api                │
 ```
 
 **Multi-tenancy:** All operations scoped by `winery_id` from User entity
@@ -175,18 +173,15 @@ api (future)        │
 
 ## How to work on this module
 
-**Current Phase: Implementing Service Layer (Phase 3)**
+**All Phases Complete (Production Ready)**
 
 Read component-level contexts:
 - `domain/.ai-context/component-context.md` - Domain contracts and business rules
 - `infra/.ai-context/component-context.md` - Repository implementation patterns
 
-**Next Steps:**
-1. Install dependencies: `poetry add PyJWT passlib[bcrypt]`
-2. Create service tests FIRST (TDD)
-3. Implement PasswordService, JwtService, AuthService
-4. Run tests to validate: `poetry run pytest tests/unit/ -v`
-5. Move to Phase 4 (FastAPI Dependencies)
+**All 6 phases implemented. No pending work.**
+
+To verify tests: run the auth module test suite (219 tests total: 180 unit + 39 integration).
 
 **Testing Strategy:**
 - Unit tests use Mock objects for fast, isolated testing
@@ -197,8 +192,8 @@ Read component-level contexts:
 **Dirección de dependencias:**
 ```
 infra/repositories ─┐
-services (future)   │
-api (future)        │
+services            │
+api                 │
         └───────────┴──► domain
 ```
 

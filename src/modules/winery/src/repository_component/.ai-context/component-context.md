@@ -6,7 +6,7 @@
 ## Component responsibility
 **Data persistence and retrieval operations** for winery entities within the Winery Module.
 
-**Position in module**: Foundation layer providing data access abstraction to Service Component (future), enforcing winery code uniqueness at persistence level.
+**Position in module**: Foundation layer providing data access abstraction to Service Component, enforcing winery code uniqueness at persistence level.
 
 **Architectural Decision:** Following ADR-009 (Missing Repositories) and ADR-012 (Unit Testing Phase 3), this component implements the root entity repository with WineryRepository handling winery lifecycle and serving as the multi-tenancy foundation for the entire system.
 
@@ -24,12 +24,12 @@
 
 ## Component interfaces
 
-### **Receives from (Service Component - future)**
+### **Receives from (Service Component)**
 - Entity creation/update requests: Validated winery data ready for persistence
 - Query requests: Lookup by ID, code, list all wineries
 - Transaction coordination: Single-repository operations (no multi-tenant filtering needed)
 
-### **Provides to (Service Component - future)**
+### **Provides to (Service Component)**
 - Entity instances: Winery objects with complete data
 - Query results: Collections with metadata
 - Operation confirmations: Success/failure status with conflict information
@@ -56,7 +56,7 @@
 - **Deletion protection**: Cannot hard-delete winery with active data in other modules
 
 ## Connection with other components
-**Service Component (future)**: Receives IWineryRepository implementation via dependency injection
+**Service Component**: Receives IWineryRepository implementation via dependency injection
 **Domain Component**: Implements IWineryRepository interface, uses Winery entity
 **Database Layer**: Direct SQLAlchemy ORM integration with PostgreSQL
 
@@ -66,7 +66,7 @@
 **Last Updated:** December 29, 2025  
 **Reference:** ADR-009 (Missing Repositories), ADR-012 (Unit Testing Phase 3)
 
-**Note:** This component is production-ready for service layer usage. Service layer implementation is next phase.
+**Note:** This component is production-ready. Service layer (ADR-016) and API layer (ADR-017) are both complete.
 
 ### Implemented Components
 
@@ -109,4 +109,4 @@
 - NOT NULL: `code`, `name`
 
 ## Next steps
-Service layer implementation (WineryService with CRUD operations)
+None — all layers complete ✅ (Service: ADR-016, API: ADR-017)

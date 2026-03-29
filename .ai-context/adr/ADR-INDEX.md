@@ -70,11 +70,11 @@
 **Key Points:**
 - Domain: 4 entities, 3 value objects, 4 enums (AnomalyType x8, SeverityLevel, AnalysisStatus, RecommendationCategory x11)
 - Services: AnalysisOrchestratorService, ComparisonService, AnomalyDetectionService, RecommendationService
-- API Layer: 2 routers (analysis + recommendation), Pydantic v2 schemas, error handlers, FastAPI port 8001
+- API Layer: 2 routers (analysis + recommendation), Pydantic v2 schemas, error handlers, FastAPI port 8003
 - 8 anomaly detection algorithms (validated by Susana Rodriguez Vasquez, 20-year enologist)
 - Confidence levels: weighted formula (historical 70% + detection 20% + recommendation 10%)
-- 108 unit tests passing (domain + service + API)
-- **Next**: ADR-037 Protocol↔Analysis integration
+- 185 unit tests passing (domain + service + API)
+- **ADR-037**: ✅ Implemented (March 1, 2026) — Protocol↔Analysis Integration complete
 
 | **[ADR-027](./ADR-027-structured-logging-observability.md)** | Structured Logging & Observability Infrastructure | ✅ Implemented | 2025-12-16 | Critical |
 | **[ADR-028](./ADR-028-module-dependency-management.md)** | Module Dependency Management Standardization | ✅ Implemented | 2025-12-23 | Medium |
@@ -207,7 +207,7 @@
   - Fermentation: 375 → 95 lines (75% reduction)
 - **Metadata fix**: Function-scoped db_engine resolves "index already exists" errors ✅
 - **SessionWrapper pattern**: Savepoint-based transaction management for UnitOfWork tests ✅
-- **Validation**: **797/797 tests passing** system-wide (100%) ✅
+- **Validation**: **~1,390+ tests passing** system-wide (100%) ✅
 - **Fermentation Integration**: 49/49 tests passing, included in main suite ✅
 - **Components**: TestSessionManager, IntegrationTestConfig, create_integration_fixtures(), EntityBuilder, SessionWrapper
 - **Previous limitation RESOLVED**: Sample models now work with isolated fixtures in repository_component/conftest.py
@@ -552,7 +552,7 @@
   - ✅ Phase 3: ETL service updates (21 tests updated)
   - ✅ Phase 4: Integration validation (6 tests with real database)
 - **Tests**: 14 TransactionScope + 17 UnitOfWork + 21 ETL updated = 52 tests
-- **System Tests**: 983/983 passing (all modules validated)
+- **System Tests**: ~1,390+ passing (all modules validated)
 - **Unblocked**: ADR-030 Phase 4 completion + production deployment
 
 ### ADR-019: ETL Pipeline Design for Historical Data

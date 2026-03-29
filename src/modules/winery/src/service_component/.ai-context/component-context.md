@@ -1,8 +1,8 @@
 # Component Context: Service Component (Winery Module)
 
 > **Status**: ✅ COMPLETE  
-> **Implementation**: 22/22 unit tests passing (100%)  
-> **Last updated**: 2025-12-29  
+> **Implementation**: 22 unit + 17 integration tests passing (100%); API layer via api_component (25 tests)  
+> **Last updated**: 2026-03-28  
 > **Parent Context**: See `../../.ai-context/module-context.md` for module-level decisions
 > **Collaboration Guidelines**: See `/.ai-context/collaboration-principles.md`
 
@@ -28,12 +28,12 @@
 
 ## Component interfaces
 
-### **Receives from (API Layer - future)**
+### **Receives from (API Layer)**
 - Command DTOs: WineryCreateRequest, WineryUpdateRequest with Pydantic-validated input data
 - Query parameters: Lookup by ID, code, list all wineries with pagination
 - User context: For audit trail and authorization (admin operations)
 
-### **Provides to (API Layer - future)**
+### **Provides to (API Layer)**
 - Domain entities: Winery objects with complete data
 - Operation results: Success/failure status with validation errors
 - Business rule violations: Detailed error information for duplicate codes
@@ -69,21 +69,16 @@
 - **Cross-module coordination**: TBD (how to check active data in other modules?)
 
 ## Connection with other components
-**API Component (future)**: Receives command DTOs and returns domain entities
-**Repository Component**: Uses IWineryRepository for data persistence
-**Domain Com🚀 **READY FOR IMPLEMENTATION** (ADR-016 Approved)  
-**Prerequisites:** ✅ Repository Layer Complete (40 tests passing)  
-**ADR Reference:** [ADR-016: Winery Service Layer](../../../.ai-context/adr/ADR-016-winery-service-layer.md)
+**API Component**: Receives command DTOs and returns domain entities  
+**Repository Component**: Uses IWineryRepository for data persistence  
+**Domain Component**: Uses Winery entity, IWineryService interface, DTOs, domain errors
 
-**Implementation Plan** (from ADR-016):
-1. Phase 1: Domain errors & interfaces (30 min) - WineryHasActiveDataError, IWineryService, DTOs
-2. Phase 2: Validation services (1-2 hours) - ValueValidationService, BusinessRuleValidationService, ValidationOrchestrator
-3. Phase 3: WineryService implementation (2-3 hours) - 8 core methods
-4. Phase 4: Unit tests (3-4 hours) - 15-20 tests
-5. Phase 5: Integration tests (optional, likely skipped)
+## Implementation status
 
-**Estimated Effort:** 1 day (6-8 hours)  
-**Estimated Tests:** 15-20 unit tests
+✅ **COMPLETE** (ADR-016 ✅, ADR-017 ✅)  
+- 22 unit tests passing (service logic, validation, error handling)  
+- 17 integration tests passing (full CRUD with real database)  
+- API layer complete via api_component (25 API tests, ADR-017)
 
 ### Decisions Made (ADR-016)
 **1. Validation Strategy**: ✅ ValidationOrchestrator pattern (consistent with Fruit Origin)  
@@ -103,17 +98,17 @@
 
 **WineryService** (8-10 methods):
 - `create_winery(winery_data: WineryCreateDTO) -> Winery`
-- `get_winery(winery_id: UUID) -> Winery`
+- `get_winery(winery_id: int) -> Winery`
 - `get_winery_by_code(code: str) -> Winery`
 - `list_wineries(skip: int = 0, limit: int = 100) -> List[Winery]`
-- `update_winery(winery_id: UUID, winery_data: WineryUpdateDTO) -> Winery`
-- `delete_winery(winery_id: UUID) -> None` (with protection checks)
-- `winery_exists(winery_id: UUID) -> bool`
+- `update_winery(winery_id: int, winery_data: WineryUpdateDTO) -> Winery`
+- `delete_winery(winery_id: int) -> None` (with protection checks)
+- `winery_exists(winery_id: int) -> bool`
 - `count_wineries() -> int`
-- `validate_code_uniqueness(code: str, exclude_id: Optional[UUID] = None) -> bool` (helper)
-- `check_can_delete(winery_id: UUID) -> bool` (helper for deletion protection)
+- `validate_code_uniqueness(code: str, exclude_id: Optional[int] = None) -> bool` (helper)
+- `check_can_delete(winery_id: int) -> bool` (helper for deletion protection)
 
-**Test Coverage** (estimated 15-20 tests):
+**Test Coverage** (22 unit + 17 integration = 39 tests passing):
 - Create winery (success, duplicate code)
 - Get winery (success, not found)
 - Get by code (success, not found)
