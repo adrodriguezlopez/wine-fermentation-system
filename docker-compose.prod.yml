@@ -18,20 +18,28 @@ services:
 
   fermentation:
     restart: always
+    environment:
+      ALLOWED_ORIGINS: "https://app.midominio.com"
     # No host port — reached via reverse proxy on the internal network
     # ports: []  ← intentionally omitted
 
   winery:
     restart: always
+    environment:
+      ALLOWED_ORIGINS: "https://app.midominio.com"
     # No host port — reached via reverse proxy on the internal network
     # ports: []  ← intentionally omitted
 
   fruit_origin:
     restart: always
+    environment:
+      ALLOWED_ORIGINS: "https://app.midominio.com"
     # No host port — reached via reverse proxy on the internal network
     # ports: []  ← intentionally omitted
 
   analysis_engine:
     restart: always
+    environment:
+      ALLOWED_ORIGINS: "https://app.midominio.com"
     # No host port — reached via reverse proxy on the internal network
     # ports: []  ← intentionally omitted

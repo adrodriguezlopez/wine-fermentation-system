@@ -15,17 +15,25 @@ services:
       - "${POSTGRES_HOST_PORT:-5432}:5432"
 
   fermentation:
+    environment:
+      ALLOWED_ORIGINS: "https://staging.app.midominio.com"
     ports:
       - "${FERMENTATION_HOST_PORT:-8000}:8000"
 
   winery:
+    environment:
+      ALLOWED_ORIGINS: "https://staging.app.midominio.com"
     ports:
       - "${WINERY_HOST_PORT:-8001}:8001"
 
   fruit_origin:
+    environment:
+      ALLOWED_ORIGINS: "https://staging.app.midominio.com"
     ports:
       - "${FRUIT_ORIGIN_HOST_PORT:-8002}:8002"
 
   analysis_engine:
+    environment:
+      ALLOWED_ORIGINS: "https://staging.app.midominio.com"
     ports:
       - "${ANALYSIS_ENGINE_HOST_PORT:-8003}:8003"
