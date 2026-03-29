@@ -93,16 +93,16 @@ poetry install
 
 ### Winery Module
 - **Location**: `src/modules/winery/`
-- **Tests**: 22 unit tests
-- **Dependencies**: SQLAlchemy, structlog, colorama
-- **API**: No (repository-only module)
-- **Command**: `cd src/modules/winery; poetry run pytest tests/unit/`
+- **Tests**: 69 (unit + API)
+- **Dependencies**: FastAPI, SQLAlchemy, structlog, colorama
+- **API**: Yes (FastAPI application in `src/main.py`, port 8001)
+- **Command**: `cd src/modules/winery; poetry run pytest tests/unit/ tests/api/`
 
 ### Fruit Origin Module
 - **Location**: `src/modules/fruit_origin/`
-- **Tests**: 72 unit tests
-- **Dependencies**: SQLAlchemy, structlog, colorama
-- **API**: No (repository-only module)
+- **Tests**: 147 (unit + API)
+- **Dependencies**: FastAPI, SQLAlchemy, structlog, colorama
+- **API**: Yes (FastAPI application in `src/main.py`, port 8002)
 - **Command**: `cd src/modules/fruit_origin; poetry run pytest tests/unit/`
 
 ## Import Path Resolution
