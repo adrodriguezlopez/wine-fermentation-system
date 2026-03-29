@@ -15,6 +15,7 @@ Docker:
 """
 
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,7 +39,7 @@ from src.modules.winery.src.api_component.routers.winery_router import router as
 
 from src.shared.auth.infra.api.auth_router import router as auth_router
 from src.shared.api.constants import API_V1_PREFIX
-from src.shared.infra.database.fastapi_session import initialize_database
+from src.shared.infra.database.fastapi_session import close_database, initialize_database
 
 
 # Configure structured logging before app creation
@@ -46,20 +47,29 @@ configure_logging(log_level="INFO")
 logger = get_logger(__name__)
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Initialise DB connection pool on startup; release it on shutdown."""
+    initialize_database()
+    logger.info("database_initialised")
+    yield
+    await close_database()
+
+
 def create_app() -> FastAPI:
     """
     Create and configure FastAPI application for Winery module
-    
+
     Returns:
         Configured FastAPI instance with middleware and routers
     """
-    initialize_database()
     app = FastAPI(
         title="Winery Management API",
         description="API for managing winery organizations (multi-tenancy root)",
         version="1.0.0",
         docs_url="/docs",
-        redoc_url="/redoc"
+        redoc_url="/redoc",
+        lifespan=_lifespan,
     )
     
     # ADR-027: Structured logging middleware.
