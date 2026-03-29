@@ -12,7 +12,7 @@ Provides REST API for:
 Following ADR-006 API Layer Design and ADR-020 Analysis Engine Architecture.
 
 Run with:
-    uvicorn src.modules.analysis_engine.src.main:app --reload --port 8001
+    uvicorn src.modules.analysis_engine.src.main:app --reload --port 8003
 """
 
 import os
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "src.modules.analysis_engine.src.main:app",
         host="0.0.0.0",
-        port=8001,
+        port=8003,
         reload=True,
         log_level="info",
     )
