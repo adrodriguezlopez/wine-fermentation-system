@@ -18,7 +18,7 @@ Run with:
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # ADR-027: Structured Logging
@@ -27,10 +27,6 @@ from src.shared.wine_fermentator_logging.middleware import (
     LoggingMiddleware,
     UserContextMiddleware,
 )
-
-# Auth
-from src.shared.auth.domain.dtos import UserContext
-from src.shared.auth.infra.api.dependencies import get_current_user
 
 # ADR-026: Global domain error handlers
 from src.shared.api.error_handlers import register_error_handlers
@@ -121,17 +117,6 @@ def create_app() -> FastAPI:
             "status": "healthy",
             "service": "analysis-engine",
             "version": "1.0.0",
-        }
-
-    @app.get("/me", tags=["auth"])
-    async def get_current_user_info(user: UserContext = Depends(get_current_user)):
-        """Return authenticated user information."""
-        logger.info("get_user_info", user_id=user.user_id, winery_id=user.winery_id)
-        return {
-            "user_id": user.user_id,
-            "winery_id": user.winery_id,
-            "email": user.email,
-            "role": user.role.value,
         }
 
     logger.info("application_started", title=app.title, version=app.version)

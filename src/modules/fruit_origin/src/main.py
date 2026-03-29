@@ -19,7 +19,7 @@ Docker:
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # ADR-027: Structured Logging Middleware
@@ -28,10 +28,6 @@ from src.shared.wine_fermentator_logging.middleware import (
     LoggingMiddleware,
     UserContextMiddleware,
 )
-
-# Auth dependencies
-from src.shared.auth.domain.dtos import UserContext
-from src.shared.auth.infra.api.dependencies import get_current_user
 
 # ADR-026: Domain error handlers (fruit_origin-specific)
 from src.modules.fruit_origin.src.api_component.error_handlers import register_error_handlers
@@ -119,18 +115,6 @@ def create_app() -> FastAPI:
             "status": "healthy",
             "service": "fruit_origin",
             "version": "1.0.0",
-        }
-
-    # Auth info endpoint
-    @app.get("/me", tags=["auth"])
-    async def get_current_user_info(user: UserContext = Depends(get_current_user)):
-        """Get current authenticated user information."""
-        logger.info("get_user_info", user_id=user.user_id, winery_id=user.winery_id)
-        return {
-            "user_id": user.user_id,
-            "winery_id": user.winery_id,
-            "email": user.email,
-            "role": user.role,
         }
 
     logger.info("fruit_origin_app_created", version="1.0.0")
