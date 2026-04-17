@@ -52,7 +52,7 @@
   - **Domain Interfaces**: `IFermentationRepository` with type-safe entities
   - **Concrete Repositories**: `FermentationRepository` extending BaseRepository
 
-### Protocol Engine (ADR-035) - ✅ PHASE 1 COMPLETE
+### Protocol Engine — ✅ COMPLETE
 **Purpose**: Master template definitions for fermentation protocols with step tracking and execution monitoring.
 
 **Status**: 29/29 tests PASSING ✅ | 1,390 system tests PASSING ✅
@@ -90,15 +90,26 @@
 
 **Reference**: See [ADR-035-protocol-data-model-schema.md](../../.ai-context/adr/ADR-035-protocol-data-model-schema.md) for full implementation details
 
-**Next Phase**: API Layer with endpoints for protocol CRUD and execution tracking (Proposed - ADR-035 Phase 2)
-
 ## Implementation status
 
-**Status:** ✅ **Domain, Repository, Service, API & Integration Tests Complete**  
-**Last Updated:** 2026-03-02  
-**Reference:** ADR-006 (API Layer), ADR-005 (Service Layer), ADR-003 (Repository Layer), ADR-002 (Repository Architecture), ADR-011 Phase 3 (Integration Tests)
+**Status:** ✅ **Fully Complete — Domain, Repository, Service, Protocol Engine, API, ETL**
+**Last Updated:** April 2026
+**Reference:** ADR-002 through ADR-040 (see ADR index)
 
-**📋 Proposed Features (ADR-032 - Jan 13, 2026):**
+### Component Summary
+
+| Component | Status | Tests |
+|-----------|--------|-------|
+| Domain Layer | ✅ Complete | Entities, DTOs, enums, interfaces |
+| Repository Layer | ✅ Complete | FermentationRepo, SampleRepo, NoteRepo, LotSourceRepo |
+| Service Layer | ✅ Complete | FermentationService, SampleService, ValidationOrchestrator, ETLService, PatternAnalysisService |
+| API Layer | ✅ Complete | 17 endpoints — Fermentation, Sample, Historical, Protocol, Actions, Alerts |
+| Protocol Engine | ✅ Complete | 4 entities, 4 repos, 3 services, 6 API routers |
+| ETL Pipeline | ✅ Complete | CSV import with 3-layer validation, partial success, cancellation |
+| Historical Data API | ✅ Complete | 8 endpoints, pattern extraction |
+| **Total tests** | ✅ | **~700 passing** |
+
+**✅ Completed Features (ADR-032):**
 - **Historical Data API Layer**: REST API for querying imported historical fermentations
   - 8 endpoints (list, get, samples, patterns, statistics, import management)
   - New HistoricalDataService with pattern extraction and aggregation
@@ -236,7 +247,7 @@ poetry run pytest tests/api/         # 90 tests
 1. Check ADRs: `.ai-context/adr/ADR-002`, `ADR-003`, `ADR-004`, `ADR-005`, `ADR-006`, `ADR-011 Phase 3`, `ADR-019`, `ADR-029`, `ADR-030`, `ADR-031`
 2. Review component contexts in `src/*/.ai-context/component-context.md`
 3. Run tests: 
-   - All tests: `poetry run pytest tests/` (728 tests)
+   - All tests: `poetry run pytest tests/` (~700 tests)
    - System-wide: `.\run_all_tests.ps1` from workspace root (~1,390 tests)
 
 **Architecture:**
