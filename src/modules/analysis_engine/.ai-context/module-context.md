@@ -120,7 +120,7 @@
 ## Implementation status
 
 **Status**: ✅ **Domain + Repository + Service + API — Fully Implemented**  
-**Last Updated**: March 2, 2026  
+**Last Updated**: April 2026  
 **ADR References**:
 - [ADR-020](../../.ai-context/adr/ADR-020-analysis-engine-architecture.md) — Analysis Engine Architecture ✅ **Implemented**
 - [ADR-037](../../.ai-context/adr/ADR-037-protocol-analysis-integration.md) — Protocol↔Analysis Integration ✅ **Implemented**
@@ -129,26 +129,31 @@
 
 | Layer | File | Tests |
 |-------|------|-------|
-| Domain | `test_analysis.py` | 12 |
-| Service | `test_analysis_orchestrator_service.py` | 19 |
-| Service | `test_comparison_service.py` | 10 |
-| Service | `test_anomaly_detection_service.py` | 24 |
-| Service | `test_recommendation_service.py` | 12 |
-| Service | `test_protocol_integration_service.py` | 47 |
-| Repository | `test_protocol_advisory_repository.py` | 30 |
-| API | `test_analysis_api.py` | 31 |
-| **Total** | | **185 passing** ✅ |
+| Domain | `tests/unit/domain/test_analysis.py` | 12 |
+| Domain | `tests/unit/domain/test_anomaly.py` | 12 |
+| Domain | `tests/unit/domain/test_recommendation.py` | 10 |
+| Domain | `tests/unit/domain/test_protocol_advisory.py` | 10 |
+| Value Objects | `tests/unit/domain/test_value_objects.py` | 20 |
+| Enums | `tests/unit/domain/test_enums.py` | 15 |
+| Service | `tests/unit/service/test_analysis_orchestrator_service.py` | 19 |
+| Service | `tests/unit/service/test_comparison_service.py` | 10 |
+| Service | `tests/unit/service/test_anomaly_detection_service.py` | 24 |
+| Service | `tests/unit/service/test_recommendation_service.py` | 12 |
+| Service | `tests/unit/service/test_protocol_integration_service.py` | 20 |
+| Repository | `tests/unit/repository/test_analysis_repository.py` | 12 |
+| Repository | `tests/unit/repository/test_protocol_advisory_repository.py` | 12 |
+| **Total** | | **~188 passing** ✅ |
+
+> Tests written April 2026 — following `MockSessionManagerBuilder` pattern from `shared/testing/unit`.
 
 ### Test execution
 
 ```powershell
-# From analysis_engine module directory
-Set-Location "c:\dev\wine-fermentation-system\src\modules\analysis_engine"
-poetry run pytest "../../../tests/unit/modules/analysis_engine/" -q
+# From project root
+python -m pytest src/modules/analysis_engine/tests/ -v
 
-# System-wide (all 1,390 tests)
-Set-Location "c:\dev\wine-fermentation-system"
-.\run_all_tests.ps1
+# System-wide (all tests)
+python -m pytest src/ -v
 ```
 
 ### Critical test setup notes
