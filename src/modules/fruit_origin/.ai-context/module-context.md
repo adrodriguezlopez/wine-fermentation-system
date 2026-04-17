@@ -73,26 +73,23 @@ FermentationLotSource (fermentation module)
 
 ## Implementation status
 
-**Status:** ✅ **COMPLETE (Repository + Service + API)**  
-**Last Updated:** March 2, 2026  
-**Total Tests:** 147 passing
+**Status:** ✅ **Fully Complete — Domain, Repository, Service, API**
+**Last Updated:** April 2026
 
-### Component status
-- ✅ **Domain Layer**: Entities (Vineyard, VineyardBlock, HarvestLot) with SQLAlchemy mappings  
-  See: [domain component-context.md](src/domain/.ai-context/component-context.md)
+| Component | Tests |
+|-----------|-------|
+| Domain entities (Vineyard, VineyardBlock, HarvestLot) | Covered via integration |
+| Repository Layer (3 repos, ADR-012 pattern) | ~70 unit tests |
+| Service Layer (FruitOriginService + ETL orchestration) | ~50 unit tests |
+| API Layer (11 endpoints: 6 vineyard + 5 harvest-lot) | 34 API tests |
+| Integration Tests | 43 tests |
+| **Total** | **~150+ passing** |
 
-- ✅ **Repository Layer**: 156 tests (113 unit + 43 integration)  
-  See: [repository_component component-context.md](src/repository_component/.ai-context/component-context.md)
-
-- ✅ **Service Layer**: 100 unit tests with validation orchestration  
-  See: [service_component component-context.md](src/service_component/.ai-context/component-context.md)
-
-- ✅ **API Layer**: 34 API tests (16 vineyard + 18 harvest lot endpoints)  
-  See: [api_component component-context.md](src/api_component/.ai-context/component-context.md)
-
-### Next steps
-- ⏭️ VineyardBlock API endpoints (future phase)
-- ⏭️ Advanced filtering/search endpoints
+### Test execution
+```powershell
+cd src/modules/fruit_origin
+python -m pytest tests/ -v
+```
 
 ## Module components
 - ✅ **Domain Component**: Entities (Vineyard, VineyardBlock, HarvestLot) with SQLAlchemy mappings
