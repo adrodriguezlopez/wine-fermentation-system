@@ -99,6 +99,7 @@ class TestProtocolAdvisoryAcknowledge:
         assert before <= advisory.acknowledged_at <= after
 
     def test_acknowledge_twice_overwrites_acknowledged_at(self):
+        # acknowledge() is intentionally idempotent — second call refreshes timestamp
         advisory = make_advisory()
         advisory.acknowledge()
         first_ts = advisory.acknowledged_at

@@ -8,21 +8,8 @@ from uuid import uuid4
 from src.modules.analysis_engine.src.service_component.services.recommendation_service import (
     RecommendationService,
 )
-from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly
 from src.modules.analysis_engine.src.domain.enums.anomaly_type import AnomalyType
 from src.modules.analysis_engine.src.domain.enums.severity_level import SeverityLevel
-from src.modules.analysis_engine.src.domain.value_objects.deviation_score import DeviationScore
-
-
-def make_anomaly(anomaly_type, severity=SeverityLevel.WARNING):
-    return Anomaly(
-        analysis_id=uuid4(),
-        anomaly_type=anomaly_type,
-        severity=severity,
-        sample_id=uuid4(),
-        deviation_score=DeviationScore(deviation=1.0),
-        description="test",
-    )
 
 
 @pytest.fixture
@@ -41,10 +28,10 @@ class TestGenerateRecommendations:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_returns_empty_when_no_templates(self, service, winery_id, mock_async_session):
+    async def test_returns_empty_when_no_templates(self, service, winery_id, mock_async_session, anomaly_factory):
         # session returns no templates
         mock_async_session.execute.return_value.scalars.return_value.all.return_value = []
-        anomaly = make_anomaly(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
+        anomaly = anomaly_factory(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
         result = await service.generate_recommendations(
             winery_id=winery_id,
             analysis_id=uuid4(),
@@ -54,23 +41,23 @@ class TestGenerateRecommendations:
 
 
 class TestCalculatePriority:
-    def test_critical_anomaly_has_high_priority(self):
-        anomaly = make_anomaly(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
+    def test_critical_anomaly_has_high_priority(self, anomaly_factory):
+        anomaly = anomaly_factory(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
         template = MagicMock()
         template.effectiveness_score = 80
         priority = RecommendationService._calculate_priority(anomaly, template)
         assert priority >= 1000
 
-    def test_info_anomaly_has_low_priority(self):
-        anomaly = make_anomaly(AnomalyType.UNUSUAL_DURATION, SeverityLevel.INFO)
+    def test_info_anomaly_has_low_priority(self, anomaly_factory):
+        anomaly = anomaly_factory(AnomalyType.UNUSUAL_DURATION, SeverityLevel.INFO)
         template = MagicMock()
         template.effectiveness_score = 50
         priority = RecommendationService._calculate_priority(anomaly, template)
         assert priority < 100
 
-    def test_critical_priority_greater_than_warning(self):
-        anomaly_critical = make_anomaly(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
-        anomaly_warning = make_anomaly(AnomalyType.DENSITY_DROP_TOO_FAST, SeverityLevel.WARNING)
+    def test_critical_priority_greater_than_warning(self, anomaly_factory):
+        anomaly_critical = anomaly_factory(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
+        anomaly_warning = anomaly_factory(AnomalyType.DENSITY_DROP_TOO_FAST, SeverityLevel.WARNING)
         template = MagicMock()
         template.effectiveness_score = 50
         p_critical = RecommendationService._calculate_priority(anomaly_critical, template)

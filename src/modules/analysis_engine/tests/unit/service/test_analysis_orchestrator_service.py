@@ -8,6 +8,7 @@ from uuid import uuid4
 from src.modules.analysis_engine.src.service_component.services.analysis_orchestrator_service import (
     AnalysisOrchestratorService,
 )
+from src.shared.domain.errors import CrossWineryAccessDenied
 from src.modules.analysis_engine.src.domain.entities.analysis import Analysis
 from src.modules.analysis_engine.src.domain.enums.analysis_status import AnalysisStatus
 from src.modules.analysis_engine.src.domain.value_objects.comparison_result import ComparisonResult
@@ -76,7 +77,7 @@ class TestGetAnalysis:
         analysis = MagicMock()
         analysis.winery_id = uuid4()  # Different winery
         mock_async_session.execute.return_value.scalar_one_or_none.return_value = analysis
-        with pytest.raises(Exception):
+        with pytest.raises(CrossWineryAccessDenied, match="belongs to winery"):
             await orchestrator.get_analysis(analysis_id=uuid4(), winery_id=winery_id)
 
 

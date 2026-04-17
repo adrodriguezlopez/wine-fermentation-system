@@ -90,6 +90,20 @@ def sample_anomaly(analysis_id, sample_deviation_score):
 
 
 @pytest.fixture
+def anomaly_factory(analysis_id, sample_deviation_score):
+    def _make(anomaly_type=AnomalyType.STUCK_FERMENTATION, severity=SeverityLevel.CRITICAL, description="test"):
+        return Anomaly(
+            analysis_id=analysis_id,
+            anomaly_type=anomaly_type,
+            severity=severity,
+            sample_id=uuid4(),
+            deviation_score=sample_deviation_score,
+            description=description,
+        )
+    return _make
+
+
+@pytest.fixture
 def mock_async_session():
     """AsyncMock session for services that use AsyncSession directly."""
     session = AsyncMock()

@@ -7,29 +7,16 @@ from uuid import uuid4
 from src.modules.analysis_engine.src.service_component.services.protocol_integration_service import (
     ProtocolAnalysisIntegrationService,
 )
-from src.modules.analysis_engine.src.domain.entities.anomaly import Anomaly
 from src.modules.analysis_engine.src.domain.entities.protocol_advisory import ProtocolAdvisory
 from src.modules.analysis_engine.src.domain.enums.anomaly_type import AnomalyType
 from src.modules.analysis_engine.src.domain.enums.severity_level import SeverityLevel
 from src.modules.analysis_engine.src.domain.enums.risk_level import RiskLevel
 from src.modules.analysis_engine.src.domain.enums.advisory_type import AdvisoryType
-from src.modules.analysis_engine.src.domain.value_objects.deviation_score import DeviationScore
 
 
 @pytest.fixture
 def service():
     return ProtocolAnalysisIntegrationService()
-
-
-def make_anomaly(anomaly_type, severity=SeverityLevel.WARNING):
-    return Anomaly(
-        analysis_id=uuid4(),
-        anomaly_type=anomaly_type,
-        severity=severity,
-        sample_id=uuid4(),
-        deviation_score=DeviationScore(deviation=1.0),
-        description="test",
-    )
 
 
 class TestBoostConfidence:
@@ -79,8 +66,8 @@ class TestBoostConfidence:
 
 
 class TestGenerateAdvisory:
-    def test_generates_advisory_for_stuck_fermentation(self, service):
-        anomaly = make_anomaly(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
+    def test_generates_advisory_for_stuck_fermentation(self, service, anomaly_factory):
+        anomaly = anomaly_factory(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
         advisory = service.generate_advisory(
             fermentation_id=uuid4(),
             analysis_id=uuid4(),
@@ -99,9 +86,9 @@ class TestGenerateAdvisory:
         )
         assert advisory is None
 
-    def test_picks_highest_priority_anomaly(self, service):
-        low_anomaly = make_anomaly(AnomalyType.UNUSUAL_DURATION, SeverityLevel.INFO)
-        critical_anomaly = make_anomaly(AnomalyType.HYDROGEN_SULFIDE_RISK, SeverityLevel.WARNING)
+    def test_picks_highest_priority_anomaly(self, service, anomaly_factory):
+        low_anomaly = anomaly_factory(AnomalyType.UNUSUAL_DURATION, SeverityLevel.INFO)
+        critical_anomaly = anomaly_factory(AnomalyType.HYDROGEN_SULFIDE_RISK, SeverityLevel.WARNING)
         advisory = service.generate_advisory(
             fermentation_id=uuid4(),
             analysis_id=uuid4(),
@@ -110,9 +97,9 @@ class TestGenerateAdvisory:
         # H2S maps to CRITICAL risk, so it should be chosen
         assert advisory.risk_level == RiskLevel.CRITICAL.value
 
-    def test_advisory_has_correct_fermentation_id(self, service):
+    def test_advisory_has_correct_fermentation_id(self, service, anomaly_factory):
         ferm_id = uuid4()
-        anomaly = make_anomaly(AnomalyType.STUCK_FERMENTATION)
+        anomaly = anomaly_factory(AnomalyType.STUCK_FERMENTATION)
         advisory = service.generate_advisory(
             fermentation_id=ferm_id,
             analysis_id=uuid4(),
@@ -122,9 +109,9 @@ class TestGenerateAdvisory:
 
 
 class TestGenerateAllAdvisories:
-    def test_generates_multiple_advisories(self, service):
-        anomaly1 = make_anomaly(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
-        anomaly2 = make_anomaly(AnomalyType.TEMPERATURE_OUT_OF_RANGE_CRITICAL, SeverityLevel.CRITICAL)
+    def test_generates_multiple_advisories(self, service, anomaly_factory):
+        anomaly1 = anomaly_factory(AnomalyType.STUCK_FERMENTATION, SeverityLevel.CRITICAL)
+        anomaly2 = anomaly_factory(AnomalyType.TEMPERATURE_OUT_OF_RANGE_CRITICAL, SeverityLevel.CRITICAL)
         advisories = service.generate_all_advisories(
             fermentation_id=uuid4(),
             analysis_id=uuid4(),
@@ -132,10 +119,10 @@ class TestGenerateAllAdvisories:
         )
         assert len(advisories) >= 1
 
-    def test_deduplicates_by_step_type(self, service):
+    def test_deduplicates_by_step_type(self, service, anomaly_factory):
         # Two anomalies that both map to "MONITORING" step type
-        anomaly1 = make_anomaly(AnomalyType.DENSITY_DROP_TOO_FAST)
-        anomaly2 = make_anomaly(AnomalyType.TEMPERATURE_OUT_OF_RANGE_CRITICAL)
+        anomaly1 = anomaly_factory(AnomalyType.DENSITY_DROP_TOO_FAST)
+        anomaly2 = anomaly_factory(AnomalyType.TEMPERATURE_OUT_OF_RANGE_CRITICAL)
         advisories = service.generate_all_advisories(
             fermentation_id=uuid4(),
             analysis_id=uuid4(),
