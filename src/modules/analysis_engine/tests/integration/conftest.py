@@ -38,6 +38,10 @@ from src.shared.auth.domain.entities.user import User
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
 from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
+from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
+from src.modules.fermentation.src.domain.entities.samples.celcius_temperature_sample import CelsiusTemperatureSample
+from src.modules.fermentation.src.domain.entities.samples.density_sample import DensitySample
+from src.modules.fermentation.src.domain.entities.samples.sugar_sample import SugarSample
 
 # ── Analysis-engine models ─────────────────────────────────────────────────────
 from src.modules.analysis_engine.src.domain.entities.analysis import Analysis
@@ -62,6 +66,10 @@ config = IntegrationTestConfig(
         Fermentation,
         FermentationNote,
         FermentationLotSource,
+        BaseSample,
+        CelsiusTemperatureSample,
+        DensitySample,
+        SugarSample,
         # Analysis-engine models
         RecommendationTemplate,
         Analysis,
