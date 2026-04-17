@@ -157,6 +157,36 @@ class TestUnusualDuration:
         assert result is None
 
 
+class TestVolatileAcidityDetection:
+    """
+    Tests for volatile acidity detection.
+
+    NOTE: detect_volatile_acidity() is marked as TODO in the service
+    (requires chemical data not yet in schema — see AnomalyDetectionService source).
+    These tests are skipped until the method is implemented and are here to
+    document the expected contract per ADR-020 / spec requirements.
+    """
+
+    @pytest.mark.skip(reason="detect_volatile_acidity not yet implemented in service (TODO)")
+    def test_detects_anomaly_when_volatile_acidity_high(self, service):
+        result = service.detect_volatile_acidity(volatile_acidity_g_l=1.4)
+        assert result is not None
+        assert result.anomaly_type == AnomalyType.VOLATILE_ACIDITY_HIGH.value
+        assert result.severity == SeverityLevel.CRITICAL.value
+
+    @pytest.mark.skip(reason="detect_volatile_acidity not yet implemented in service (TODO)")
+    def test_no_anomaly_when_volatile_acidity_within_normal_range(self, service):
+        result = service.detect_volatile_acidity(volatile_acidity_g_l=0.4)
+        assert result is None
+
+    @pytest.mark.skip(reason="detect_volatile_acidity not yet implemented in service (TODO)")
+    def test_returns_correct_anomaly_type_and_critical_severity(self, service):
+        result = service.detect_volatile_acidity(volatile_acidity_g_l=1.2)
+        assert result is not None
+        assert result.anomaly_type == AnomalyType.VOLATILE_ACIDITY_HIGH.value
+        assert result.severity == SeverityLevel.CRITICAL.value
+
+
 class TestAtypicalPattern:
     def test_detects_outside_2_sigma_band(self, service):
         band = {"mean": 100.0, "stdev": 5.0}

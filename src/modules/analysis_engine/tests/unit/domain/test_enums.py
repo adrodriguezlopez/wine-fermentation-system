@@ -94,3 +94,43 @@ class TestAdvisoryType:
     def test_label_es_not_empty(self):
         for at in AdvisoryType:
             assert len(at.label_es) > 0
+
+
+class TestRecommendationCategory:
+    def test_has_11_members(self):
+        assert len(RecommendationCategory) == 11
+
+    def test_temperature_control_exists(self):
+        assert RecommendationCategory.TEMPERATURE_CONTROL.value == "TEMPERATURE_CONTROL"
+
+    def test_nutrient_management_exists(self):
+        assert RecommendationCategory.NUTRIENT_MANAGEMENT.value == "NUTRIENT_MANAGEMENT"
+
+    def test_temperature_adjustment_exists(self):
+        assert RecommendationCategory.TEMPERATURE_ADJUSTMENT.value == "TEMPERATURE_ADJUSTMENT"
+
+    def test_aeration_remontage_exists(self):
+        assert RecommendationCategory.AERATION_REMONTAGE.value == "AERATION_REMONTAGE"
+
+    def test_sanitation_exists(self):
+        assert RecommendationCategory.SANITATION.value == "SANITATION"
+
+    def test_label_es_not_empty_for_all(self):
+        for cat in RecommendationCategory:
+            assert len(cat.label_es) > 0
+
+    def test_typical_urgency_returns_string_for_all(self):
+        for cat in RecommendationCategory:
+            assert isinstance(cat.typical_urgency, str)
+            assert len(cat.typical_urgency) > 0
+
+    def test_temperature_categories_have_immediate_urgency(self):
+        assert RecommendationCategory.TEMPERATURE_ADJUSTMENT.typical_urgency == "immediate"
+        assert RecommendationCategory.TEMPERATURE_CONTROL.typical_urgency == "immediate"
+
+    def test_monitoring_categories_have_routine_urgency(self):
+        assert RecommendationCategory.MONITORING.typical_urgency == "routine"
+        assert RecommendationCategory.MONITORING_FREQUENCY.typical_urgency == "routine"
+
+    def test_preventive_has_future_urgency(self):
+        assert RecommendationCategory.PREVENTIVE.typical_urgency == "future"
