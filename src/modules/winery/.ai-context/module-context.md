@@ -54,37 +54,23 @@ Winery (root)
 
 ## Implementation status
 
-**Status:** ✅ **API LAYER COMPLETE** (ADR-016 ✅ + ADR-017 ✅)  
-**Last Updated:** March 2, 2026  
-**Total Tests:** 69 passing
+**Status:** ✅ **Fully Complete**
+**Last Updated:** April 2026
 
-### Component status
-- ✅ **Domain Layer**: Winery entity with SQLAlchemy mapping  
-  See: [domain component-context.md](src/domain/.ai-context/component-context.md)
+| Component | Tests |
+|-----------|-------|
+| Domain (Winery entity, DTOs, repository interface) | Unit |
+| Repository (WineryRepository, ADR-012) | 22 unit tests |
+| Service (WineryService) | ~20 unit tests |
+| API (5 endpoints) | 25 API tests |
+| Integration | 18 tests |
+| **Total** | **~75+ passing** |
 
-- ✅ **Repository Layer**: 22 unit tests passing (100%)  
-  See: [repository_component component-context.md](src/repository_component/.ai-context/component-context.md)
-
-- ✅ **Service Layer**: 22 unit tests + 17 integration tests (100%) - ADR-016 ✅  
-  See: [service_component component-context.md](src/service_component/.ai-context/component-context.md)
-  - WineryService with 9 methods
-  - ValidationOrchestrator pattern
-  - Cross-module deletion protection
-  - Structured logging integration
-
-- ✅ **API Layer**: COMPLETE (ADR-017 ✅) - 25 API tests passing (100%)  
-  See: [api_component component-context.md](src/api_component/.ai-context/component-context.md)
-  - Admin namespace: `/api/v1/admin/wineries`
-  - 6 REST endpoints (CREATE, GET by ID, GET by code, LIST, UPDATE, DELETE)
-  - Role-based authorization (ADMIN vs users)
-  - 25 API tests (6 CREATE + 8 GET + 3 LIST + 5 UPDATE + 3 DELETE)
-  - Pydantic v2 request/response DTOs
-  - FastAPI dependency injection
-  - Integration with shared auth module
-
-### Next steps
-- 🔮 **Future**: Relationship endpoints (vineyards, fermentations)
-- 🔮 **Future**: Advanced features (statistics, bulk operations, enhanced caching)
+### Test execution
+```powershell
+cd src/modules/winery
+python -m pytest tests/ -v
+```
 
 ## Cross-module dependencies
 
