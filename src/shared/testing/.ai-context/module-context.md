@@ -70,91 +70,24 @@
 
 ## Implementation status
 
-**Status:** ✅ **PRODUCTION READY** | 🎯 **All Tests Passing (52 tests + Full Integration Resolution)**  
-**Last Updated:** 2026-03-28  
-**Reference:** ADR-012 Phase 3 Complete, ADR-011 Phase 3 Complete (Full Integration Test Resolution)
+**Status:** ✅ **Production Ready**
+**Last Updated:** April 2026
 
-### Completed Components
+| Component | Tests |
+|-----------|-------|
+| MockSessionManagerBuilder | 14 |
+| QueryResultBuilder | 23 |
+| EntityFactory | 23 |
+| ValidationResultFactory | 26 |
+| Integration test infrastructure | 52 |
+| **Total infrastructure tests** | **138** |
 
-**✅ Unit Testing Infrastructure (86 tests passing) - ADR-012**
-- **MockSessionManagerBuilder** (14 tests)
-  - Fluent API with method chaining
-  - Execute result configuration
-  - Side effects for commit, rollback, flush, close
-  - Async context manager support
-- **QueryResultBuilder** (23 tests)
-  - All SQLAlchemy query patterns supported
-  - scalar_one_or_none, first, all, scalars
-  - Convenience functions
-- **EntityFactory** (23 tests)
-  - Registry-based default values
-  - Support for all entity types
-  - Batch creation support
-- **ValidationResultFactory** (26 tests)
-  - Dataclass-based results
-  - Success/error builders
-  - Helper methods for common scenarios
+**Modules using shared utilities:** fermentation (62 test files), fruit_origin (11), winery (5), auth (14), analysis_engine (after Apr 2026).
 
-**✅ Migration Status (Phase 3 Complete) - 142+ Tests**
-- **Phase 2 (Fermentation)**: 4 files, 50 tests migrated ✅
-  - test_fermentation_note_repository.py (19 tests)
-  - test_sample_repository.py (12 tests)
-  - test_lot_source_repository.py (11 tests)
-  - test_fermentation_repository.py (8 tests)
-- **Phase 3 (Fruit Origin & Winery)**: 4 files, 93 tests migrated ✅
-  - test_harvest_lot_repository.py (12 tests)
-  - test_vineyard_repository.py (28 tests)
-  - test_vineyard_block_repository.py (31 tests)
-  - test_winery_repository.py (22 tests)
-- **Total Migration**: 8 files, 142+ tests, ~800-1,000 lines eliminated
-- **Time Savings**: 50% faster test creation (45min → 15min)
-- **Code Reduction**: ~50-70% fixture code per file
-
-**✅ Integration Testing Infrastructure (52 tests + System-Wide Resolution) - ADR-011 Phase 3**
-- **Base Conftest**: Database setup and teardown
-- **Session Manager**: Test-specific async session handling
-- **Entity Builders**: Helper functions for test data creation
-- **Fixtures**: Reusable pytest fixtures
-- **SessionWrapper Pattern**: Savepoint-based transaction management for UnitOfWork tests (Dec 30, 2025)
-  - Intercepts commit/rollback/close for test reusability
-  - Enables multiple UoW contexts with same session
-  - Prevents "closed transaction" errors
-- **ADR-011 Phase 3 Complete**: All ~1,390+ tests run together, fermentation integration tests fully resolved
-  - Isolated sample_repository fixtures
-  - Triple try/except import pattern for ADR-028
-  - Complete metadata conflict resolution
-
-**Total: 52 infrastructure tests + ~1,390+ system-wide tests passing (100%)**
-
-### Migration Status (ADR-012 Phase 3)
-
-**✅ Completed Migrations:**
-- Fermentation Module: 4 files, 50 tests ✅
-- Fruit Origin Module: 3 files, 92 tests ✅
-- Winery Module: 1 file ✅
-
-**Total Migrated**: 8 repository test files, 142+ tests
-
-**Benefits Achieved:**
-- ~50% fixture code reduction per file
-- ~80-100 lines of boilerplate eliminated per file
-- 100% pattern consistency across all files
-- ~50% faster test creation time
-- Single source of truth for all mocks
-
-### Recent Enhancements (December 15, 2025)
-
-**Enhancement 1: Flush Side Effect Support**
-- **Need**: Fruit Origin tests required testing database constraint errors during flush
-- **Solution**: Added `with_flush_side_effect()` method to MockSessionManagerBuilder
-- **Usage**: Test integrity errors, duplicate key violations
-- **Result**: Complete error handling test coverage ✅
-
-**Enhancement 2: Comprehensive Documentation**
-- Created README.md with architecture and usage patterns
-- Created USAGE_EXAMPLES.md with practical examples
-- Documented all utilities and their APIs
-- Added migration guide for teams
+### Test execution
+```powershell
+python -m pytest src/shared/testing/ -v
+```
 
 ## Design patterns
 - **Builder Pattern**: MockSessionManagerBuilder uses fluent API
