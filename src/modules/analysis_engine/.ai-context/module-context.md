@@ -129,31 +129,32 @@
 
 | Layer | File | Tests |
 |-------|------|-------|
-| Domain | `tests/unit/domain/test_analysis.py` | 12 |
+| Domain | `tests/unit/domain/test_analysis.py` | 16 |
 | Domain | `tests/unit/domain/test_anomaly.py` | 12 |
-| Domain | `tests/unit/domain/test_recommendation.py` | 10 |
-| Domain | `tests/unit/domain/test_protocol_advisory.py` | 10 |
-| Value Objects | `tests/unit/domain/test_value_objects.py` | 20 |
+| Domain | `tests/unit/domain/test_protocol_advisory.py` | 22 |
+| Value Objects | `tests/unit/domain/test_value_objects.py` | 30 |
 | Enums | `tests/unit/domain/test_enums.py` | 15 |
-| Service | `tests/unit/service/test_analysis_orchestrator_service.py` | 19 |
-| Service | `tests/unit/service/test_comparison_service.py` | 10 |
-| Service | `tests/unit/service/test_anomaly_detection_service.py` | 24 |
-| Service | `tests/unit/service/test_recommendation_service.py` | 12 |
-| Service | `tests/unit/service/test_protocol_integration_service.py` | 20 |
-| Repository | `tests/unit/repository/test_analysis_repository.py` | 12 |
-| Repository | `tests/unit/repository/test_protocol_advisory_repository.py` | 12 |
-| **Total** | | **~188 passing** ✅ |
+| Service | `tests/unit/service/test_analysis_orchestrator_service.py` | 14 |
+| Service | `tests/unit/service/test_comparison_service.py` | 8 |
+| Service | `tests/unit/service/test_anomaly_detection_service.py` | 23 |
+| Service | `tests/unit/service/test_recommendation_service.py` | 11 |
+| Service | `tests/unit/service/test_protocol_analysis_integration_service.py` | 20 |
+| Repository | `tests/unit/repository/test_analysis_repository.py` | 10 |
+| Repository | `tests/unit/repository/test_protocol_advisory_repository.py` | 14 |
+| **Total** | | **201 passed, 7 skipped** ✅ |
 
-> Tests written April 2026 — following `MockSessionManagerBuilder` pattern from `shared/testing/unit`.
+> Tests written April 2026. 7 skips: 3 for `detect_volatile_acidity` (method is a source TODO), 4 for cross-module ORM boundary in ComparisonService/Orchestrator.
+> Uses `AsyncMock` directly (services inject `AsyncSession`, not `ISessionManager`).
 
 ### Test execution
 
 ```powershell
-# From project root
-python -m pytest src/modules/analysis_engine/tests/ -v
+# From analysis_engine module directory
+cd src/modules/analysis_engine
+poetry run pytest tests/ -v
 
 # System-wide (all tests)
-python -m pytest src/ -v
+.\run_all_tests.ps1
 ```
 
 ### Critical test setup notes
