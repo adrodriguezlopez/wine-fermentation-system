@@ -49,7 +49,7 @@ class TestCalculateSimilarityScore:
 
 class TestFindSimilarFermentations:
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="find_similar_fermentations imports cross-module Fermentation ORM model not available in isolated env")
+    @pytest.mark.skip(reason="covered by integration tests in tests/integration/service/test_comparison_service_integration.py — requires real PostgreSQL for cross-module Fermentation query")
     async def test_calculate_similarity_score_no_brix_provided(self, service, mock_async_session):
         mock_async_session.execute.return_value.scalars.return_value.all.return_value = []
         ids, count = await service.find_similar_fermentations(
@@ -64,7 +64,7 @@ class TestFindSimilarFermentations:
 
 class TestBuildComparisonResult:
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="build_comparison_result imports cross-module Fermentation ORM model not available in isolated env")
+    @pytest.mark.skip(reason="covered by integration tests in tests/integration/service/test_comparison_service_integration.py — requires real PostgreSQL for cross-module Fermentation query")
     async def test_returns_comparison_result_with_zero_count_when_no_similar(self, service, mock_async_session):
         mock_async_session.execute.return_value.scalar_one_or_none.return_value = None
         mock_async_session.execute.return_value.scalars.return_value.all.return_value = []
@@ -77,7 +77,7 @@ class TestBuildComparisonResult:
         assert result.similar_fermentation_count == 0
 
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="build_comparison_result imports cross-module Fermentation ORM model not available in isolated env")
+    @pytest.mark.skip(reason="covered by integration tests in tests/integration/service/test_comparison_service_integration.py — requires real PostgreSQL for cross-module Fermentation query")
     async def test_returns_comparison_result_type(self, service, mock_async_session):
         mock_async_session.execute.return_value.scalar_one_or_none.return_value = None
         mock_async_session.execute.return_value.scalars.return_value.all.return_value = []

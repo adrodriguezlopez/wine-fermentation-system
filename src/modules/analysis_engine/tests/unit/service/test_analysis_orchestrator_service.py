@@ -106,7 +106,7 @@ class TestGetFermentationAnalyses:
 
 class TestExecuteAnalysis:
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="execute_analysis calls ComparisonService which imports cross-module Fermentation ORM model")
+    @pytest.mark.skip(reason="covered by integration tests in tests/integration/service/test_analysis_orchestrator_integration.py — requires real PostgreSQL for cross-module Fermentation query via ComparisonService")
     async def test_execute_analysis_completes_status(self, mock_async_session, winery_id, fermentation_id):
         orchestrator = AnalysisOrchestratorService(session=mock_async_session)
         result = await orchestrator.execute_analysis(
