@@ -46,81 +46,22 @@
 
 ## Implementation status
 
-**Status:** ✅ **PRODUCTION READY (100% Test Coverage)** | 🎯 **All Tests Passing**  
-**Last Updated:** 2026-03-28  
-**Reference:** ADR-007 (Auth Module Design)
+**Status:** ✅ **Fully Complete — JWT auth, RBAC, UserRepository**
+**Last Updated:** April 2026
 
-### Completed Components
+| Component | Tests |
+|-----------|-------|
+| Domain (User entity, enums, interfaces, errors) | ~35 unit tests |
+| Infra (AuthService, JWTService, PasswordService) | ~50 unit tests |
+| API (AuthRouter, dependencies, schemas) | ~20 unit tests |
+| Integration (auth flows, multi-tenancy) | ~24 integration tests |
+| **Total** | **~160+ passing** |
 
-**✅ Phase 1: Domain Layer (81 tests passing)**
-- **Entities**: User (with soft delete support via deleted_at field)
-  - **Critical Fix (Nov 15, 2025)**: Removed relationships to Fermentation/BaseSample entities
-  - Allows Auth module to be tested independently without Fermentation module loaded
-  - Fermentation module's back-references (fermented_by_user, recorded_by_user) are sufficient
-- **Enums**: UserRole (ADMIN, WINEMAKER, OPERATOR, VIEWER) with permission methods
-- **DTOs**: 9 DTOs (UserContext, LoginRequest/Response, UserCreate/Update/Response, PasswordChangeRequest, PasswordResetRequest, PasswordResetConfirm, RefreshTokenRequest)
-- **Interfaces**: 4 Protocol interfaces (IUserRepository, IPasswordService, IJwtService, IAuthService)
-- **Errors**: 9 custom exceptions (AuthenticationError, InvalidCredentialsError, TokenExpiredError, InvalidTokenError, AuthorizationError, UserNotFoundError, UserAlreadyExistsError, UserInactiveError, UserNotVerifiedError)
-- **Tests**: 81 tests passing (80 passed, 1 skipped → re-enabled)
-
-**✅ Phase 2: Repository Layer (21 tests passing)**
-- **UserRepository**: Complete implementation with 8 async methods
-  - `create()`: User creation with duplicate checking
-  - `get_by_id()`: Retrieve by UUID, excludes soft-deleted
-  - `get_by_email()`: Retrieve by email, excludes soft-deleted
-  - `get_by_username()`: Retrieve by username, excludes soft-deleted
-  - `update()`: Update user with timestamp management
-  - `delete()`: Soft delete (sets deleted_at, returns bool)
-  - `exists_by_email()`: Check email uniqueness
-  - `exists_by_username()`: Check username uniqueness
-- **Tests**: 21 repository tests (100% coverage)
-- **Infrastructure**: infra/repositories package with __init__.py exports
-- **Patterns**: AsyncSession integration, soft deletes, timestamp management
-
-**✅ Phase 3: Service Layer (50 tests passing)**
-- **PasswordService**: Bcrypt hashing, password verification, strength validation ✅
-- **JwtService**: Token encoding/decoding, user context extraction ✅
-- **AuthService**: Login, register, refresh, password reset workflows ✅
-- **Tests**: 50 service tests passing (auth_service=25, jwt_service=13, password_service=12)
-- **Dependencies**: PyJWT, passlib[bcrypt] installed
-
-**Total: 180 unit tests passing (100%) + 39 integration tests = 219 total**
-
-### Recent Fixes (Nov 15, 2025)
-
-**Problem 1: test_register_user_success failing**
-- **Error**: `InvalidRequestError: expression 'Fermentation' failed to locate a name`
-- **Root Cause**: User entity had relationships to Fermentation/BaseSample, but Auth tests run without Fermentation module loaded
-- **Solution**: Commented out fermentations and samples relationships in User entity
-- **Result**: Auth module can now be tested independently ✅
-
-**Problem 2: test_from_entity skipped unnecessarily**
-- **Original Skip Reason**: "Requires fermentation module for User entity relationships"
-- **Investigation**: Test uses Mock fixture (sample_user), not real entity
-- **Solution**: Removed @pytest.mark.skip decorator
-- **Result**: Test now runs and passes (158 → 159 passing tests) ✅
-
-### Integration Status
-
-**✅ Phase 4: FastAPI Dependencies** (16 tests passing)
-- **get_current_user()**: Dependency for extracting authenticated user
-- **require_role()**: Decorator for role-based endpoint protection
-- **OAuth2PasswordBearer**: Token extraction scheme
-- **Tests**: 16 dependency tests passing
-
-**✅ Phase 5: Integration Tests** (39 tests passing)
-- **Database setup**: PostgreSQL test database configuration
-- **End-to-end flows**: Login → Token → Protected endpoint
-- **Role-based tests**: Permission enforcement across roles
-- **Multi-tenancy tests**: Winery isolation verification
-- **Tests**: 39 integration tests passing
-
-**✅ Phase 6: API Layer** (12 tests passing)
-- **Auth Endpoints**: POST /login, POST /register, POST /refresh, POST /logout
-- **User Endpoints**: GET /users/me, PUT /users/me, DELETE /users/me
-- **Password Endpoints**: POST /password/change, POST /password/reset, POST /password/reset/confirm
-- **Admin Endpoints**: GET /users, PUT /users/{id}, DELETE /users/{id}
-- **Tests**: 12 API tests passing
+### Test execution
+```powershell
+cd src/shared/auth
+python -m pytest tests/ -v
+```
 
 ## Quick Reference
 
