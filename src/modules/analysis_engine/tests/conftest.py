@@ -112,3 +112,18 @@ def mock_async_session():
     result_mock.scalar_one_or_none.return_value = None
     session.execute.return_value = result_mock
     return session
+
+
+from pathlib import Path
+
+@pytest.fixture
+def threshold_config():
+    """
+    Real ThresholdConfigService pointing at the test TOML.
+    Use this in any test that instantiates AnomalyDetectionService.
+    """
+    from src.modules.analysis_engine.src.service_component.services.threshold_config_service import (
+        ThresholdConfigService,
+    )
+    config_path = Path(__file__).parents[1] / "config" / "thresholds_test.toml"
+    return ThresholdConfigService(config_path=config_path)
