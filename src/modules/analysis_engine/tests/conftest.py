@@ -2,6 +2,7 @@
 Shared fixtures for analysis_engine tests.
 """
 import pytest
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -113,8 +114,6 @@ def mock_async_session():
     session.execute.return_value = result_mock
     return session
 
-
-from pathlib import Path
 
 @pytest.fixture
 def threshold_config():

@@ -344,7 +344,7 @@ class AnomalyDetectionService:
 
         deviation = DeviationScore(
             deviation=volatile_acidity_in_grams_per_liter,
-            threshold=warning,
+            threshold=critical if severity == SeverityLevel.CRITICAL else warning,
             magnitude="HIGH" if severity == SeverityLevel.CRITICAL else "MEDIUM",
             details={
                 "current_g_l": round(volatile_acidity_in_grams_per_liter, 3),
