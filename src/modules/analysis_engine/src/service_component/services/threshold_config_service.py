@@ -98,14 +98,21 @@ class ThresholdConfigService:
 
         Resolves to 'red' group for Cabernet Sauvignon, Merlot, Pinot Noir,
         Zinfandel; falls back to 'white' for everything else.
+        Unknown varietals silently fall back to white — this is intentional and safe.
         """
-        group = (
-            "red"
-            if variety.upper() in RED_VARIETALS
-            else "white"
-        )
-        varietal_cfg = self._config["varietals"][group]
-        defaults = self._config["defaults"]
+        try:
+            group = (
+                "red"
+                if variety.upper() in RED_VARIETALS
+                else "white"
+            )
+            varietal_cfg = self._config["varietals"][group]
+            defaults = self._config["defaults"]
+        except KeyError as exc:
+            raise ThresholdConfigError(
+                f"Missing key in threshold config: {exc}. "
+                f"Check that thresholds.toml has [defaults] and [varietals.red/white] sections."
+            ) from exc
 
         return VarietalThresholds(
             temperature_critical_min_celsius=varietal_cfg["temperature_critical_min_celsius"],

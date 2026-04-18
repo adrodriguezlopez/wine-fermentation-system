@@ -163,6 +163,8 @@ class AnomalyDetectionService:
         time_span = (recent_readings[-1][0] - recent_readings[0][0]).total_seconds() / 86400
         
         # Check if stuck: minimal change over significant time
+        # TODO Task 3: replace 1.0 with thresholds.stuck_fermentation_min_density_change_points
+        # TODO Task 3: replace 0.5 with thresholds.stuck_fermentation_min_stall_duration_days
         is_stuck = density_change < 1.0 and time_span > 0.5 and current_density > 2.0
         
         if not is_stuck:
@@ -170,7 +172,7 @@ class AnomalyDetectionService:
         
         deviation = DeviationScore(
             deviation=density_change,
-            threshold=1.0,
+            threshold=1.0,  # TODO Task 3: thresholds.stuck_fermentation_min_density_change_points
             magnitude="LOW",
             details={
                 "time_span_days": round(time_span, 2),
@@ -211,14 +213,15 @@ class AnomalyDetectionService:
             Anomaly object if critical temp detected, None otherwise
         """
         # Determine critical limits by variety
+        # TODO Task 3: replace with thresholds = self.config.get_thresholds(variety)
         if variety.upper() in ("CABERNET SAUVIGNON", "MERLOT", "PINOT NOIR", "ZINFANDEL"):
-            min_temp = 23.9  # 75°F
-            max_temp = 32.2  # 90°F
+            min_temp = 23.9  # TODO Task 3: thresholds.temperature_critical_min_celsius
+            max_temp = 32.2  # TODO Task 3: thresholds.temperature_critical_max_celsius
             variety_type = "red"
         else:
             # Default: whites and rosés
-            min_temp = 11.7  # 53°F
-            max_temp = 16.7  # 62°F
+            min_temp = 11.7  # TODO Task 3: thresholds.temperature_critical_min_celsius
+            max_temp = 16.7  # TODO Task 3: thresholds.temperature_critical_max_celsius
             variety_type = "white/rosé"
         
         is_critical = temperature_celsius < min_temp or temperature_celsius > max_temp
@@ -268,12 +271,13 @@ class AnomalyDetectionService:
             Anomaly object if suboptimal, None otherwise
         """
         # Determine optimal ranges
+        # TODO Task 3: replace with thresholds = self.config.get_thresholds(variety)
         if variety.upper() in ("CABERNET SAUVIGNON", "MERLOT", "PINOT NOIR", "ZINFANDEL"):
-            min_opt = 24.0
-            max_opt = 30.0
+            min_opt = 24.0  # TODO Task 3: thresholds.temperature_optimal_min_celsius
+            max_opt = 30.0  # TODO Task 3: thresholds.temperature_optimal_max_celsius
         else:
-            min_opt = 12.0
-            max_opt = 16.0
+            min_opt = 12.0  # TODO Task 3: thresholds.temperature_optimal_min_celsius
+            max_opt = 16.0  # TODO Task 3: thresholds.temperature_optimal_max_celsius
         
         is_suboptimal = temperature_celsius < min_opt or temperature_celsius > max_opt
         if not is_suboptimal:
@@ -335,10 +339,10 @@ class AnomalyDetectionService:
                 
                 percent_change = abs(density_2 - density_1) / max(density_1, 0.1) * 100
                 
-                if percent_change > 15.0:
+                if percent_change > 15.0:  # TODO Task 3: thresholds.density_drop_max_percent_per_24_hours
                     deviation = DeviationScore(
                         deviation=percent_change,
-                        threshold=15.0,
+                        threshold=15.0,  # TODO Task 3: thresholds.density_drop_max_percent_per_24_hours
                         magnitude="MEDIUM",
                         details={
                             "time_span_hours": round(time_diff, 1),
@@ -380,14 +384,15 @@ class AnomalyDetectionService:
             Anomaly object if risk detected, None otherwise
         """
         # H2S risk: cold fermentation early on
-        is_risk = temperature_celsius < 18.0 and days_fermenting < 10.0
+        # TODO Task 3: replace with thresholds = self.config.get_thresholds(variety) and use thresholds.hydrogen_sulfide_risk_*
+        is_risk = temperature_celsius < 18.0 and days_fermenting < 10.0  # TODO Task 3: thresholds.hydrogen_sulfide_risk_max_temperature_celsius / _critical_window_days
         
         if not is_risk:
             return None
         
         deviation = DeviationScore(
             deviation=temperature_celsius,
-            threshold=18.0,
+            threshold=18.0,  # TODO Task 3: thresholds.hydrogen_sulfide_risk_max_temperature_celsius
             magnitude="MEDIUM",
             details={
                 "critical_period_days": min(days_fermenting, 10),
