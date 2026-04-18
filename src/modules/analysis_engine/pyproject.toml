@@ -15,6 +15,7 @@ greenlet = ">=3.0,<3.2.5"
 pydantic = "^2.3.0"
 psycopg2-binary = "^2.9.7"
 loguru = "^0.7.0"
+tomli = {version = "^2.0", python = "<3.11"}
 shared = {path = "../../shared", develop = true}
 pytest-cov = "^4.1.0"
 

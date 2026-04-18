@@ -1,0 +1,23 @@
+# Test-only threshold values — identical to production values.
+# Having a separate file lets tests run without depending on production config path.
+
+[defaults]
+volatile_acidity_warning_in_grams_per_liter   = 0.6
+volatile_acidity_critical_in_grams_per_liter  = 0.8
+density_drop_max_percent_per_24_hours         = 15.0
+hydrogen_sulfide_risk_max_temperature_celsius = 18.0
+hydrogen_sulfide_risk_critical_window_days    = 10.0
+stuck_fermentation_min_density_change_points  = 1.0
+stuck_fermentation_min_stall_duration_days    = 0.5
+
+[varietals.red]
+temperature_critical_min_celsius = 23.9
+temperature_critical_max_celsius = 32.2
+temperature_optimal_min_celsius  = 24.0
+temperature_optimal_max_celsius  = 30.0
+
+[varietals.white]
+temperature_critical_min_celsius = 11.7
+temperature_critical_max_celsius = 16.7
+temperature_optimal_min_celsius  = 12.0
+temperature_optimal_max_celsius  = 16.0

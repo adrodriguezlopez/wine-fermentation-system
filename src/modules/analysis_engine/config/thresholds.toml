@@ -1,0 +1,34 @@
+# Anomaly detection thresholds by varietal
+#
+# MIGRATION PATH → per-winery DB overrides (Option B):
+#   1. Create table: winery_varietal_thresholds(winery_id, varietal_group, key, value)
+#   2. ThresholdConfigService.get_thresholds(variety, winery_id=None):
+#      - If winery_id: SELECT from DB, fallback to this file on miss
+#      - If no winery_id: use this file only
+#   This file becomes the global default — no schema changes to detection logic needed.
+
+[defaults]
+# Applied to all varietals — not varietal-specific thresholds
+volatile_acidity_warning_in_grams_per_liter   = 0.6
+volatile_acidity_critical_in_grams_per_liter  = 0.8
+density_drop_max_percent_per_24_hours         = 15.0
+hydrogen_sulfide_risk_max_temperature_celsius = 18.0
+hydrogen_sulfide_risk_critical_window_days    = 10.0
+stuck_fermentation_min_density_change_points  = 1.0
+stuck_fermentation_min_stall_duration_days    = 0.5
+
+[varietals.red]
+# Cabernet Sauvignon, Merlot, Pinot Noir, Zinfandel
+# Expert validation: Susana Rodriguez Vasquez (LangeTwins Winery)
+temperature_critical_min_celsius = 23.9   # 75°F — yeast death below
+temperature_critical_max_celsius = 32.2   # 90°F — yeast death above
+temperature_optimal_min_celsius  = 24.0
+temperature_optimal_max_celsius  = 30.0
+
+[varietals.white]
+# All other varietals (whites, rosés) — also the fallback category
+# Expert validation: Susana Rodriguez Vasquez (LangeTwins Winery)
+temperature_critical_min_celsius = 11.7   # 53°F
+temperature_critical_max_celsius = 16.7   # 62°F
+temperature_optimal_min_celsius  = 12.0
+temperature_optimal_max_celsius  = 16.0
