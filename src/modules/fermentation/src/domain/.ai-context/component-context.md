@@ -20,6 +20,27 @@ Defines the core business model, domain entities, enums, and repository interfac
   - ADR-029: Métodos `list_by_data_source()` en ambas interfaces
 - **No lógica de infraestructura**: Solo contratos, reglas y modelos puros.
 
+## Sample types (STI — single table inheritance on `samples` table)
+
+All sample subclasses extend `BaseSample`. No DB migration needed to add a new type — all rows share the `samples` table, differentiated by `polymorphic_identity`.
+
+| Class | `polymorphic_identity` | `units` | Measures |
+|-------|------------------------|---------|----------|
+| `SugarSample` | `sugar` | brix | Sugar content |
+| `DensitySample` | `density` | specific_gravity | Density |
+| `CelsiusTemperatureSample` | `temperature` | °C | Temperature |
+| `AceticAcidSample` | `acetic_acid` | g/L | Volatile acidity (acetic acid) |
+
+**Adding a new sample type:**
+1. Create `src/domain/entities/samples/<name>_sample.py` extending `BaseSample`
+2. Set `polymorphic_identity` in `__mapper_args__` and default `units` in `__init__` (use relative import `.base_sample`)
+3. Add enum value to `SampleType` (and update any guard tests that assert on `len(SampleType)`)
+4. Add class name to `__all__` in `samples/__init__.py` (no import — prevents SQLAlchemy mapper conflicts in pytest)
+
+**Planned (add when frontend + client ready):**
+- `LacticAcidSample` (g/L) — malolactic fermentation monitoring
+- `SulfurDioxideSample` (mg/L) — SO₂ preservation monitoring
+
 ## Component interfaces
 - IFermentationRepository: Contrato para persistencia de fermentaciones - create, get_by_id, update, delete get_fermentation_temperature_range, etc.
 - ISampleRepository: Contrato para persistencia de muestras - upsert_sample, get_by_id, get_by_fermentation, delete, soft_delete_sample, check_duplicate_timestamp, etc.
