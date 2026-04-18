@@ -441,10 +441,10 @@ class TestGetSampleTypes:
         
         # Verify response is a list
         assert isinstance(data, list)
-        assert len(data) == 3  # sugar, temperature, density
-        
+        assert len(data) == 4  # sugar, temperature, density, acetic_acid
+
         # Verify expected sample types are present
-        expected_types = ["sugar", "temperature", "density"]
+        expected_types = ["sugar", "temperature", "density", "acetic_acid"]
         assert set(data) == set(expected_types)
     
     def test_get_sample_types_no_auth_required(self, unauthenticated_client):
@@ -460,7 +460,7 @@ class TestGetSampleTypes:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert isinstance(data, list)
-        assert len(data) == 3
+        assert len(data) == 4
 
 
 # ======================================================================================

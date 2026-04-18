@@ -7,3 +7,4 @@ class SampleType(str, Enum):
     SUGAR = "sugar"
     TEMPERATURE = "temperature"
     DENSITY = "density"
+    ACETIC_ACID = "acetic_acid"

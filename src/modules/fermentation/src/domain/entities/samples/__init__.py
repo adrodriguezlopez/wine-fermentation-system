@@ -12,5 +12,6 @@ __all__ = [
     'BaseSample',
     'SugarSample',
     'DensitySample',
-    'CelsiusTemperatureSample'
+    'CelsiusTemperatureSample',
+    'AceticAcidSample'
 ]
