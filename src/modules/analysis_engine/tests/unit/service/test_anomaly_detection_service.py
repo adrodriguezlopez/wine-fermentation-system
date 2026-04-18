@@ -165,28 +165,37 @@ class TestUnusualDuration:
 
 
 class TestVolatileAcidityDetection:
-    """Tests for volatile acidity (acetic acid) detection — unlocked in Task 4."""
+    """Tests for volatile acidity (acetic acid) detection via AceticAcidSample."""
 
-    @pytest.mark.skip(reason="Task 4: remove skip to unlock — detect_volatile_acidity is implemented and ready")
     def test_detects_critical_anomaly_when_above_critical_threshold(self, service, threshold_config):
+        # 1.4 g/L > 0.8 g/L critical threshold → CRITICAL
         thresholds = threshold_config.get_thresholds("Chardonnay")
-        result = service.detect_volatile_acidity(0.9, thresholds)  # > 0.8 critical
+        result = service.detect_volatile_acidity(
+            volatile_acidity_in_grams_per_liter=1.4,
+            thresholds=thresholds,
+        )
         assert result is not None
         assert result.anomaly_type == AnomalyType.VOLATILE_ACIDITY_HIGH.value
         assert result.severity == SeverityLevel.CRITICAL.value
 
-    @pytest.mark.skip(reason="Task 4: remove skip to unlock — detect_volatile_acidity is implemented and ready")
-    def test_detects_warning_anomaly_when_above_warning_threshold(self, service, threshold_config):
+    def test_detects_warning_anomaly_when_between_warning_and_critical(self, service, threshold_config):
+        # 0.7 g/L is between 0.6 (warning) and 0.8 (critical) → WARNING
         thresholds = threshold_config.get_thresholds("Chardonnay")
-        result = service.detect_volatile_acidity(0.7, thresholds)  # > 0.6 warning, <= 0.8 critical
+        result = service.detect_volatile_acidity(
+            volatile_acidity_in_grams_per_liter=0.7,
+            thresholds=thresholds,
+        )
         assert result is not None
         assert result.anomaly_type == AnomalyType.VOLATILE_ACIDITY_HIGH.value
         assert result.severity == SeverityLevel.WARNING.value
 
-    @pytest.mark.skip(reason="Task 4: remove skip to unlock — detect_volatile_acidity is implemented and ready")
-    def test_no_anomaly_below_warning_threshold(self, service, threshold_config):
+    def test_no_anomaly_when_below_warning_threshold(self, service, threshold_config):
+        # 0.4 g/L < 0.6 g/L warning threshold → no anomaly
         thresholds = threshold_config.get_thresholds("Chardonnay")
-        result = service.detect_volatile_acidity(0.5, thresholds)  # <= 0.6 warning
+        result = service.detect_volatile_acidity(
+            volatile_acidity_in_grams_per_liter=0.4,
+            thresholds=thresholds,
+        )
         assert result is None
 
 
