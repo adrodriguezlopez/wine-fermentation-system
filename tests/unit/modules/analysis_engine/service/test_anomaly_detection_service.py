@@ -20,46 +20,48 @@ from src.modules.analysis_engine.src.domain.enums.severity_level import Severity
 
 
 @pytest.fixture
-def anomaly_service(session: AsyncSession):
+def anomaly_service(session: AsyncSession, threshold_config):
     """Create an Anomaly Detection Service instance."""
-    return AnomalyDetectionService(session)
+    return AnomalyDetectionService(session, threshold_config)
 
 
 class TestStuckFermentationDetection:
     """Tests for stuck fermentation detection."""
-    
+
     @pytest.mark.asyncio
-    async def test_no_stuck_with_active_fermentation(self, anomaly_service: AnomalyDetectionService):
+    async def test_no_stuck_with_active_fermentation(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Active fermentation should not be flagged."""
         now = datetime.now(timezone.utc)
         previous_densities = [
             (now - timedelta(days=1), 1010.0),
             (now, 1005.0),
         ]
-        
+        thresholds = threshold_config.get_thresholds("Cabernet Sauvignon")
         anomaly = await anomaly_service.detect_stuck_fermentation(
             current_density=1005.0,
             previous_densities=previous_densities,
-            days_fermenting=1.0
+            days_fermenting=1.0,
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is None
-    
+
     @pytest.mark.asyncio
-    async def test_stuck_fermentation_detected(self, anomaly_service: AnomalyDetectionService):
+    async def test_stuck_fermentation_detected(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Fermentation with no density change for >0.5 days should be flagged."""
         now = datetime.now(timezone.utc)
         previous_densities = [
             (now - timedelta(hours=13), 1005.0),
             (now, 1005.0),  # No change in 13 hours
         ]
-        
+        thresholds = threshold_config.get_thresholds("Cabernet Sauvignon")
         anomaly = await anomaly_service.detect_stuck_fermentation(
             current_density=1005.0,
             previous_densities=previous_densities,
-            days_fermenting=2.0
+            days_fermenting=2.0,
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is not None
         assert anomaly.anomaly_type == AnomalyType.STUCK_FERMENTATION.value
         assert anomaly.severity == SeverityLevel.CRITICAL.value
@@ -67,125 +69,143 @@ class TestStuckFermentationDetection:
 
 class TestTemperatureCriticalDetection:
     """Tests for critical temperature detection."""
-    
-    def test_red_wine_too_cold(self, anomaly_service: AnomalyDetectionService):
+
+    def test_red_wine_too_cold(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Red wine below 23.9°C should be critical."""
+        thresholds = threshold_config.get_thresholds("Cabernet Sauvignon")
         anomaly = anomaly_service.detect_temperature_critical(
             temperature_celsius=23.0,
-            variety="Cabernet Sauvignon"
+            variety="Cabernet Sauvignon",
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is not None
         assert anomaly.anomaly_type == AnomalyType.TEMPERATURE_OUT_OF_RANGE_CRITICAL.value
         assert anomaly.severity == SeverityLevel.CRITICAL.value
-    
-    def test_red_wine_too_hot(self, anomaly_service: AnomalyDetectionService):
+
+    def test_red_wine_too_hot(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Red wine above 32.2°C should be critical."""
+        thresholds = threshold_config.get_thresholds("Pinot Noir")
         anomaly = anomaly_service.detect_temperature_critical(
             temperature_celsius=33.0,
-            variety="Pinot Noir"
+            variety="Pinot Noir",
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is not None
         assert anomaly.severity == SeverityLevel.CRITICAL.value
-    
-    def test_red_wine_in_range(self, anomaly_service: AnomalyDetectionService):
+
+    def test_red_wine_in_range(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Red wine 24-32°C should not be critical."""
+        thresholds = threshold_config.get_thresholds("Merlot")
         anomaly = anomaly_service.detect_temperature_critical(
             temperature_celsius=28.0,
-            variety="Merlot"
+            variety="Merlot",
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is None
-    
-    def test_white_wine_too_cold(self, anomaly_service: AnomalyDetectionService):
+
+    def test_white_wine_too_cold(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """White wine below 11.7°C should be critical."""
+        thresholds = threshold_config.get_thresholds("Sauvignon Blanc")
         anomaly = anomaly_service.detect_temperature_critical(
             temperature_celsius=10.0,
-            variety="Sauvignon Blanc"
+            variety="Sauvignon Blanc",
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is not None
         assert anomaly.severity == SeverityLevel.CRITICAL.value
-    
-    def test_white_wine_too_hot(self, anomaly_service: AnomalyDetectionService):
+
+    def test_white_wine_too_hot(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """White wine above 16.7°C should be critical."""
+        thresholds = threshold_config.get_thresholds("Chardonnay")
         anomaly = anomaly_service.detect_temperature_critical(
             temperature_celsius=18.0,
-            variety="Chardonnay"
+            variety="Chardonnay",
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is not None
         assert anomaly.severity == SeverityLevel.CRITICAL.value
-    
-    def test_white_wine_in_range(self, anomaly_service: AnomalyDetectionService):
+
+    def test_white_wine_in_range(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """White wine 11.7-16.7°C should not be critical."""
+        thresholds = threshold_config.get_thresholds("Chardonnay")
         anomaly = anomaly_service.detect_temperature_critical(
             temperature_celsius=14.0,
-            variety="Chardonnay"
+            variety="Chardonnay",
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is None
 
 
 class TestTemperatureSuboptimalDetection:
     """Tests for suboptimal temperature detection."""
-    
-    def test_red_wine_suboptimal_cold(self, anomaly_service: AnomalyDetectionService):
+
+    def test_red_wine_suboptimal_cold(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Red wine between critical and optimal should be warning."""
+        thresholds = threshold_config.get_thresholds("Cabernet Sauvignon")
         anomaly = anomaly_service.detect_temperature_suboptimal(
             temperature_celsius=23.5,
-            variety="Cabernet Sauvignon"
+            variety="Cabernet Sauvignon",
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is not None
         assert anomaly.anomaly_type == AnomalyType.TEMPERATURE_SUBOPTIMAL.value
         assert anomaly.severity == SeverityLevel.WARNING.value
-    
-    def test_red_wine_suboptimal_hot(self, anomaly_service: AnomalyDetectionService):
+
+    def test_red_wine_suboptimal_hot(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Red wine above optimal range should be warning."""
+        thresholds = threshold_config.get_thresholds("Cabernet Sauvignon")
         anomaly = anomaly_service.detect_temperature_suboptimal(
             temperature_celsius=31.0,
-            variety="Cabernet Sauvignon"
+            variety="Cabernet Sauvignon",
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is not None
         assert anomaly.severity == SeverityLevel.WARNING.value
-    
-    def test_red_wine_optimal(self, anomaly_service: AnomalyDetectionService):
+
+    def test_red_wine_optimal(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Red wine in 24-30°C should not be flagged."""
+        thresholds = threshold_config.get_thresholds("Cabernet Sauvignon")
         anomaly = anomaly_service.detect_temperature_suboptimal(
             temperature_celsius=27.0,
-            variety="Cabernet Sauvignon"
+            variety="Cabernet Sauvignon",
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is None
 
 
 class TestDensityDropTooFastDetection:
     """Tests for excessive fermentation vigor detection."""
-    
-    def test_normal_drop(self, anomaly_service: AnomalyDetectionService):
+
+    def test_normal_drop(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Normal density drop should not trigger alert."""
         now = datetime.now(timezone.utc)
         previous_densities = [
             (now - timedelta(hours=24), 1010.0),
             (now, 1005.0),  # 0.5% drop
         ]
-        
-        anomaly = anomaly_service.detect_density_drop_too_fast(previous_densities)
+        thresholds = threshold_config.get_thresholds("Chardonnay")
+        anomaly = anomaly_service.detect_density_drop_too_fast(previous_densities, thresholds)
         assert anomaly is None
-    
-    def test_excessive_drop(self, anomaly_service: AnomalyDetectionService):
+
+    def test_excessive_drop(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Density drop >15% in 24h should trigger alert."""
         now = datetime.now(timezone.utc)
         previous_densities = [
             (now - timedelta(hours=24), 1000.0),
             (now, 840.0),  # 16% drop
         ]
-        
-        anomaly = anomaly_service.detect_density_drop_too_fast(previous_densities)
-        
+        thresholds = threshold_config.get_thresholds("Chardonnay")
+        anomaly = anomaly_service.detect_density_drop_too_fast(previous_densities, thresholds)
+
         assert anomaly is not None
         assert anomaly.anomaly_type == AnomalyType.DENSITY_DROP_TOO_FAST.value
         assert anomaly.severity == SeverityLevel.WARNING.value
@@ -193,34 +213,40 @@ class TestDensityDropTooFastDetection:
 
 class TestHydrogenSulfideRiskDetection:
     """Tests for H2S risk detection."""
-    
-    def test_h2s_risk_cold_early(self, anomaly_service: AnomalyDetectionService):
+
+    def test_h2s_risk_cold_early(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Cold temperature in first 10 days = H2S risk."""
+        thresholds = threshold_config.get_thresholds("Chardonnay")
         anomaly = anomaly_service.detect_hydrogen_sulfide_risk(
             temperature_celsius=15.0,
-            days_fermenting=5.0
+            days_fermenting=5.0,
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is not None
         assert anomaly.anomaly_type == AnomalyType.HYDROGEN_SULFIDE_RISK.value
         assert anomaly.severity == SeverityLevel.WARNING.value
-    
-    def test_h2s_no_risk_warm(self, anomaly_service: AnomalyDetectionService):
+
+    def test_h2s_no_risk_warm(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Warm fermentation should not trigger H2S risk."""
+        thresholds = threshold_config.get_thresholds("Chardonnay")
         anomaly = anomaly_service.detect_hydrogen_sulfide_risk(
             temperature_celsius=25.0,
-            days_fermenting=5.0
+            days_fermenting=5.0,
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is None
-    
-    def test_h2s_no_risk_late(self, anomaly_service: AnomalyDetectionService):
+
+    def test_h2s_no_risk_late(self, anomaly_service: AnomalyDetectionService, threshold_config):
         """Cold fermentation late (>10 days) is not critical for H2S."""
+        thresholds = threshold_config.get_thresholds("Chardonnay")
         anomaly = anomaly_service.detect_hydrogen_sulfide_risk(
             temperature_celsius=15.0,
-            days_fermenting=15.0
+            days_fermenting=15.0,
+            thresholds=thresholds,
         )
-        
+
         assert anomaly is None
 
 

@@ -19,9 +19,9 @@ from src.modules.analysis_engine.src.domain.value_objects.confidence_level impor
 
 
 @pytest.fixture
-def orchestrator_service(session: AsyncSession):
+def orchestrator_service(session: AsyncSession, threshold_config):
     """Create an Analysis Orchestrator Service instance."""
-    return AnalysisOrchestratorService(session)
+    return AnalysisOrchestratorService(session, threshold_config)
 
 
 class TestConfidenceLevelCalculation:

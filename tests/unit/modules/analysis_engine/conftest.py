@@ -61,3 +61,11 @@ def session() -> AsyncMock:
     mock_session.execute = AsyncMock(return_value=execute_result)
 
     return mock_session
+
+
+@pytest.fixture
+def threshold_config():
+    """Provide a ThresholdConfigService backed by the test TOML fixture."""
+    from src.modules.analysis_engine.src.service_component.services.threshold_config_service import ThresholdConfigService
+    config_path = project_root / "src" / "modules" / "analysis_engine" / "config" / "thresholds_test.toml"
+    return ThresholdConfigService(config_path=config_path)
