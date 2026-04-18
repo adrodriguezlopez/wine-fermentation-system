@@ -1,10 +1,8 @@
 """
 FastAPI dependencies for Analysis Engine API Layer.
 
-Provides dependency injection for the AnalysisOrchestratorService and
-the database session. Following the same pattern as the fermentation module.
-
-Clean Architecture: API layer depends on service abstractions, not implementations.
+ThresholdConfigService is instantiated once as a module-level singleton — it
+loads thresholds.toml once at import time and is reused for every request.
 """
 
 from typing import Annotated
@@ -15,12 +13,18 @@ from src.shared.infra.database.fastapi_session import get_db_session
 from src.modules.analysis_engine.src.service_component.services.analysis_orchestrator_service import (
     AnalysisOrchestratorService,
 )
+from src.modules.analysis_engine.src.service_component.services.threshold_config_service import (
+    ThresholdConfigService,
+)
 from src.modules.analysis_engine.src.repository_component.repositories.recommendation_repository import (
     RecommendationRepository,
 )
 from src.modules.analysis_engine.src.repository_component.repositories.protocol_advisory_repository import (
     ProtocolAdvisoryRepository,
 )
+
+# Loaded once at startup — thresholds.toml read once, reused for every request.
+_threshold_config = ThresholdConfigService()
 
 
 async def get_analysis_orchestrator(
@@ -38,7 +42,7 @@ async def get_analysis_orchestrator(
     Returns:
         AnalysisOrchestratorService instance ready for use
     """
-    return AnalysisOrchestratorService(session)
+    return AnalysisOrchestratorService(session, _threshold_config)
 
 
 async def get_recommendation_repository(

@@ -24,6 +24,9 @@ from src.modules.analysis_engine.src.service_component.services.comparison_servi
 from src.modules.analysis_engine.src.service_component.services.anomaly_detection_service import AnomalyDetectionService
 from src.modules.analysis_engine.src.service_component.services.recommendation_service import RecommendationService
 from src.modules.analysis_engine.src.service_component.services.protocol_integration_service import ProtocolAnalysisIntegrationService
+from src.modules.analysis_engine.src.service_component.services.threshold_config_service import (
+    ThresholdConfigService,
+)
 
 
 class AnalysisOrchestratorService:
@@ -39,16 +42,17 @@ class AnalysisOrchestratorService:
     6. Persist all entities
     """
     
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, threshold_config: ThresholdConfigService) -> None:
         """
         Initialize the Analysis Orchestrator.
-        
+
         Args:
             session: AsyncSession for database operations
+            threshold_config: ThresholdConfigService for anomaly detection thresholds
         """
         self.session = session
         self.comparison = ComparisonService(session)
-        self.anomaly_detection = AnomalyDetectionService(session)
+        self.anomaly_detection = AnomalyDetectionService(session, threshold_config)
         self.recommendation = RecommendationService(session)
         self.protocol_integration = ProtocolAnalysisIntegrationService()
     
