@@ -56,15 +56,15 @@ class TestCalculateConfidence:
 
 class TestGetAnalysis:
     @pytest.mark.asyncio
-    async def test_returns_none_when_not_found(self, mock_async_session):
-        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=MagicMock())
+    async def test_returns_none_when_not_found(self, mock_async_session, threshold_config):
+        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=threshold_config)
         mock_async_session.execute.return_value.scalar_one_or_none.return_value = None
         result = await orchestrator.get_analysis(analysis_id=uuid4(), winery_id=uuid4())
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_returns_analysis_for_correct_winery(self, mock_async_session, winery_id):
-        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=MagicMock())
+    async def test_returns_analysis_for_correct_winery(self, mock_async_session, winery_id, threshold_config):
+        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=threshold_config)
         analysis = MagicMock()
         analysis.winery_id = winery_id
         mock_async_session.execute.return_value.scalar_one_or_none.return_value = analysis
@@ -72,8 +72,8 @@ class TestGetAnalysis:
         assert result is analysis
 
     @pytest.mark.asyncio
-    async def test_raises_for_wrong_winery(self, mock_async_session, winery_id):
-        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=MagicMock())
+    async def test_raises_for_wrong_winery(self, mock_async_session, winery_id, threshold_config):
+        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=threshold_config)
         analysis = MagicMock()
         analysis.winery_id = uuid4()  # Different winery
         mock_async_session.execute.return_value.scalar_one_or_none.return_value = analysis
@@ -83,8 +83,8 @@ class TestGetAnalysis:
 
 class TestGetFermentationAnalyses:
     @pytest.mark.asyncio
-    async def test_returns_empty_list_when_no_analyses(self, mock_async_session, winery_id, fermentation_id):
-        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=MagicMock())
+    async def test_returns_empty_list_when_no_analyses(self, mock_async_session, winery_id, fermentation_id, threshold_config):
+        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=threshold_config)
         mock_async_session.execute.return_value.scalars.return_value.all.return_value = []
         result = await orchestrator.get_fermentation_analyses(
             fermentation_id=fermentation_id,
@@ -93,8 +93,8 @@ class TestGetFermentationAnalyses:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_returns_list_of_analyses(self, mock_async_session, winery_id, fermentation_id):
-        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=MagicMock())
+    async def test_returns_list_of_analyses(self, mock_async_session, winery_id, fermentation_id, threshold_config):
+        orchestrator = AnalysisOrchestratorService(session=mock_async_session, threshold_config=threshold_config)
         analyses = [MagicMock(), MagicMock()]
         mock_async_session.execute.return_value.scalars.return_value.all.return_value = analyses
         result = await orchestrator.get_fermentation_analyses(

@@ -1,6 +1,7 @@
 """
 FastAPI dependencies for Analysis Engine API Layer.
 
+Clean Architecture: API layer depends on service abstractions, not implementations.
 ThresholdConfigService is instantiated once as a module-level singleton — it
 loads thresholds.toml once at import time and is reused for every request.
 """
