@@ -1,10 +1,8 @@
 import { z } from 'zod'
 
-const currentYear = new Date().getFullYear()
-
 export const CreateFermentationSchema = z.object({
-  vintage_year: z.number().int().min(1900).max(currentYear + 1),
-  yeast_strain: z.string().min(1, 'Yeast strain is required'),
+  vintage_year: z.number().int().min(1900).max(2100),
+  yeast_strain: z.string().min(1, 'Yeast strain is required').max(100),
   vessel_code: z.string().max(50).optional(),
   input_mass_kg: z.number().positive('Input mass must be positive'),
   initial_sugar_brix: z.number().min(0).max(50),
