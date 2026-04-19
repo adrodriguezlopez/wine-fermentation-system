@@ -5,23 +5,23 @@ const currentYear = new Date().getFullYear()
 export const CreateFermentationSchema = z.object({
   vintage_year: z.number().int().min(1900).max(currentYear + 1),
   yeast_strain: z.string().min(1, 'Yeast strain is required'),
-  vessel_code: z.string().min(1, 'Vessel code is required'),
+  vessel_code: z.string().max(50).optional(),
   input_mass_kg: z.number().positive('Input mass must be positive'),
   initial_sugar_brix: z.number().min(0).max(50),
-  initial_density: z.number().optional(),
+  initial_density: z.number().positive('Initial density must be positive'),
   start_date: z.string().datetime({ message: 'Must be ISO datetime string' }),
-  notes: z.string().max(1000).optional(),
 })
 
 export const BlendFermentationSchema = CreateFermentationSchema.extend({
   lot_sources: z
     .array(
       z.object({
-        harvest_lot_id: z.string().uuid(),
-        percentage: z.number().min(0).max(100),
+        harvest_lot_id: z.number().int().positive(),
+        mass_used_kg: z.number().positive(),
+        notes: z.string().max(200).optional(),
       })
     )
-    .min(2, 'Blend must have at least 2 sources'),
+    .min(1, 'Blend must have at least 1 source'),
 })
 
 export const UpdateFermentationSchema = CreateFermentationSchema.partial()

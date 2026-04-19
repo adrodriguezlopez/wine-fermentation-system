@@ -20,6 +20,7 @@ describe('CreateFermentationSchema', () => {
       vessel_code: 'V-01',
       input_mass_kg: 5000,
       initial_sugar_brix: 22,
+      initial_density: 1.095,
       start_date: '2026-04-01T00:00:00Z',
     })
     expect(result.success).toBe(true)
