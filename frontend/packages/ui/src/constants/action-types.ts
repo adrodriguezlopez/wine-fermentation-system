@@ -1,4 +1,4 @@
-import { ACTION_TYPES, ActionType } from '../schemas/action.schema'
+import { ActionType } from '../schemas/action.schema'
 
 export const ACTION_TYPE_LABEL: Record<ActionType, string> = {
   TEMPERATURE_ADJUSTMENT: 'Temperature Adjustment',
