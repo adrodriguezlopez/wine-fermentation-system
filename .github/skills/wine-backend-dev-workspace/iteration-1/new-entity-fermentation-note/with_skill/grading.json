@@ -1,0 +1,38 @@
+{
+  "eval_id": 1,
+  "eval_name": "new-entity-fermentation-note",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Reads /.ai-context and module-context.md before writing any code",
+      "passed": true,
+      "evidence": "## Context read-out (before any code) — **NIVEL 2 — `module-context.md`** tells me: `FermentationNoteRepository` is ✅ COMPLETE (19 unit + 20 integration tests)."
+    },
+    {
+      "text": "Writes test first (TDD) before implementing the entity",
+      "passed": true,
+      "evidence": "## Step 1 — Write the failing service tests first (TDD: Red) ... ## Step 2 — Implement `FermentationNoteService` (Green)"
+    },
+    {
+      "text": "Entity extends BaseEntity and includes winery_id",
+      "passed": false,
+      "evidence": "Entity columns listed as: `note_text` (Text), `action_taken` (String 255), `created_by_user_id`, `fermentation_id`, `is_deleted`. BaseEntity is confirmed, but `winery_id` is not a column on the entity — only used as a query-scoping parameter in service/repo calls."
+    },
+    {
+      "text": "Uses absolute imports (from src.modules.fermentation...)",
+      "passed": true,
+      "evidence": "from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote"
+    },
+    {
+      "text": "Creates Alembic migration",
+      "passed": false,
+      "evidence": "## Step 7 — No new Alembic migration needed. The `fermentation_notes` table was already created during the repository phase... Run `alembic current` to confirm. Migration creation is only mentioned as a fallback ('If for some reason the table doesn't exist')."
+    },
+    {
+      "text": "Tells user to update module-context.md test count and component list",
+      "passed": true,
+      "evidence": "## Step 8 — Update `.ai-context/module-context.md` — Update the Component Summary table and Completed Components... Also add `FermentationNoteService` to the Service Component bullet list and `fermentation_note_router.py` to the API Layer bullet list."
+    }
+  ],
+  "pass_rate": 0.6667
+}

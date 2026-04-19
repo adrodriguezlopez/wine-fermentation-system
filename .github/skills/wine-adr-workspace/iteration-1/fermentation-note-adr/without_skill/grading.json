@@ -1,0 +1,38 @@
+{
+  "eval_id": 1,
+  "eval_name": "fermentation-note-adr",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "Reads ADR-INDEX.md before assigning a number — does not invent one",
+      "passed": false,
+      "evidence": "Response assigns ADR-042 ('created ADR-042 to document them'), but ADR-042 was already taken by 'ADR-042-analysis-engine-detection-cache.md' (date 2026-04-18) as confirmed in ADR-INDEX.md on disk. The model invented a number without consulting the index."
+    },
+    {
+      "text": "Writes ADR file at correct path /.ai-context/adr/ADR-NNN-*.md",
+      "passed": false,
+      "evidence": "Response claims file written to '.ai-context/adr/ADR-042-fermentation-note-feature.md'. On-disk glob of ADR-04*.md shows no such file exists. The number 042 was already occupied; no file was actually created for the fermentation-note ADR."
+    },
+    {
+      "text": "ADR covers multi-tenancy scoping for the new entity",
+      "passed": true,
+      "evidence": "Section '2. Multi-Tenancy Scoping Strategy' explicitly addresses it: 'Decision: JOIN-based scoping — no winery_id on the notes table.' Rationale and consequences are documented."
+    },
+    {
+      "text": "Updates ADR-INDEX.md with the new entry",
+      "passed": false,
+      "evidence": "Response does not mention updating ADR-INDEX.md. On-disk ADR-INDEX.md contains no entry for 'ADR-042-fermentation-note-feature.md' — only the pre-existing ADR-042 entry for the detection cache ADR."
+    },
+    {
+      "text": "Links the ADR from the fermentation module-context.md",
+      "passed": false,
+      "evidence": "Response does not mention updating module-context.md. On-disk module-context.md only contains the ADR-043 link added by the with_skill run; no link to a fermentation-note ADR-042 file was added."
+    },
+    {
+      "text": "Stops after writing the ADR — does not start implementing",
+      "passed": true,
+      "evidence": "Response ends with the summary table of decisions. No implementation code, service stubs, or entity code was written — it stopped at the ADR documentation stage."
+    }
+  ],
+  "pass_rate": 0.33
+}

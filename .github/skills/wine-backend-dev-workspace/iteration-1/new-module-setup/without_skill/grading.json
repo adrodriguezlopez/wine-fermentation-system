@@ -1,0 +1,38 @@
+{
+  "eval_id": 2,
+  "eval_name": "new-module-setup",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "Creates .ai-context/module-context.md from Template 1 before any code",
+      "passed": false,
+      "evidence": "No mention of .ai-context/ directory or module-context.md anywhere in the response. Response creates a generic `app/notifications/` scaffold instead."
+    },
+    {
+      "text": "Creates .ai-context/domain-model-guide.md from Template 2",
+      "passed": false,
+      "evidence": "No mention of domain-model-guide.md or Template 2. The response has no reference to any .ai-context files or project-specific templates."
+    },
+    {
+      "text": "Updates /.ai-context/project-context.md with new module entry",
+      "passed": false,
+      "evidence": "No mention of project-context.md. The response contains only a generic FastAPI module setup checklist with no project-registry step."
+    },
+    {
+      "text": "Updates PROJECT_STRUCTURE_MAP.md",
+      "passed": false,
+      "evidence": "No mention of PROJECT_STRUCTURE_MAP.md. The summary checklist covers dependencies, migrations, and router registration but not structure map updates."
+    },
+    {
+      "text": "Lists docker-compose.yml changes needed",
+      "passed": false,
+      "evidence": "docker-compose.yml is never mentioned in the response. The infrastructure/deployment section is absent entirely."
+    },
+    {
+      "text": "Does not write entity/service code until context is set up",
+      "passed": true,
+      "evidence": "Before writing any code for a new `notifications` module, here is the recommended setup process — no entity or service code is written in the response."
+    }
+  ],
+  "pass_rate": 0.17
+}

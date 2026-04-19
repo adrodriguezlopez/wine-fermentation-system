@@ -1,0 +1,33 @@
+{
+  "eval_id": 1,
+  "eval_name": "fermentation-detail-screen",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "References only real endpoints from the skill's catalog",
+      "passed": true,
+      "evidence": "GET /api/v1/fermentations/{id}, GET /api/v1/fermentations/{id}/samples/latest, GET /api/v1/executions/{execution_id}/alerts, POST /api/v1/alerts/{id}/acknowledge, POST /api/v1/alerts/{id}/dismiss — all use the /api/v1/ versioned prefix consistent with the catalog"
+    },
+    {
+      "text": "Explains Bearer token auth requirement",
+      "passed": true,
+      "evidence": "Every endpoint block includes 'Authorization: Bearer <access_token>' in the request headers"
+    },
+    {
+      "text": "Notes that winery_id is automatic via JWT (not passed manually)",
+      "passed": false,
+      "evidence": "winery_id appears only as a field in the response body ('\"winery_id\": 1') with no mention that it is derived automatically from the JWT and should not be passed as a request parameter"
+    },
+    {
+      "text": "Suggests polling interval for live fermentation data",
+      "passed": true,
+      "evidence": "No WebSockets — poll every 30–60 seconds: GET /api/v1/fermentations/{id}, GET /api/v1/fermentations/{id}/samples/latest, GET /api/v1/executions/{executionId}/alerts"
+    },
+    {
+      "text": "Covers the alert acknowledge/dismiss flow",
+      "passed": true,
+      "evidence": "POST /api/v1/alerts/{id}/acknowledge — 'I've seen this' (stays in list, turns grey); POST /api/v1/alerts/{id}/dismiss — 'I've dealt with this' (removed from active list)"
+    }
+  ],
+  "pass_rate": 0.8
+}

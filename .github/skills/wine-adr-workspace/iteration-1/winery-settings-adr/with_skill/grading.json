@@ -1,0 +1,38 @@
+{
+  "eval_id": 3,
+  "eval_name": "winery-settings-adr",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Reads ADR-INDEX.md before assigning a number",
+      "passed": true,
+      "evidence": "Assigned ADR-044, which is correct — ADR-042 and ADR-043 already existed in the index. The skill correctly read the index and identified the next available number."
+    },
+    {
+      "text": "Identifies cross-module impact (touches notifications ADR-040 and/or analysis ADR-020)",
+      "passed": true,
+      "evidence": "Response explicitly states: 'Cross-module impact: notification preferences and alert thresholds are consumed by the notifications module (ADR-040) and the analysis engine (ADR-020)'"
+    },
+    {
+      "text": "ADR covers the storage strategy decision (separate table vs columns vs JSON)",
+      "passed": true,
+      "evidence": "Summary table in response records: 'Storage model | Separate winery_settings table (1:1, winery_id as PK+FK) | Keeps wineries table stable; avoids wide-table growth'. Also notes JSONB for alert_thresholds."
+    },
+    {
+      "text": "Updates ADR-INDEX.md with the new entry",
+      "passed": true,
+      "evidence": "Verified on disk: ADR-INDEX.md at .ai-context/adr/ADR-INDEX.md contains '| **[ADR-044](./ADR-044-winery-settings-entity.md)** | WinerySettings Entity Design | Proposed | 2026-04-19 | Medium |'"
+    },
+    {
+      "text": "Links the ADR from the winery module-context.md",
+      "passed": true,
+      "evidence": "Verified on disk: src/modules/winery/.ai-context/module-context.md contains '- [ADR-044: WinerySettings Entity Design](../../../../.ai-context/adr/ADR-044-winery-settings-entity.md)'"
+    },
+    {
+      "text": "Stops after writing the ADR — does not start implementing",
+      "passed": true,
+      "evidence": "Response ends: 'ADR-044 is written and added to the index. Review and confirm the decision before implementing' and directs to use wine-backend-dev skill when ready."
+    }
+  ],
+  "pass_rate": 1.0
+}

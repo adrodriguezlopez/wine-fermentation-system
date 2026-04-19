@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "wine-backend-dev", "runs": [{"id": "new-entity-fermentation-note-with_skill", "prompt": "I need to add a 'FermentationNote' entity to the fermentation module. It should let winemakers attach a free-text note to any fermentation, with a timestamp and the user who wrote it. Walk me through implementing it end-to-end.", "eval_id": 1, "outputs": [{"name": "response.md", "type": "text", "content": "# Adding `FermentationNote` End-to-End \u2014 Implementation Guide\n\n## Context read-out (before any code)\n\n**NIVEL 1 \u2014 `project-context.md`** tells me:\n- System is a modular monolith, Clean Architecture, strict TDD.\n- Fermentation module: \u2705 COMPLETE, ~728 tests passing.\n- All layers (Domain \u2192 Repository \u2192 Service \u2192 API) are implemented.\n\n**NIVEL 2 \u2014 `module-context.md`** tells me:\n- `FermentationNoteRepository` is \u2705 COMPLETE (19 unit + 20 integration tests).\n- The **service layer and API router for FermentationNote do not exist yet** \u2014 no `note_service.py`, no `note_router.py`, no `note_schemas.py`.\n- The module uses `api/`, `repository_component/`, `service_component/` naming.\n- `main.py` registers routers explicitly.\n\n**NIVEL 3 \u2014 `domain-model-guide.md`** tells me:\n- `FermentationNote` is a documented first-class entity: free-text note (`note_text`), `action_taken`, `created_by_user_id`, belongs to a `Fermentation`.\n- `BaseEntity` provides `id`, `created_at`, `updated_at`.\n- `FermentationNote` already exists in `src/domain/entities/fermentation_note.py`.\n- DTOs (`FermentationNoteCreate`, `FermentationNoteUpdate`) already exist.\n- Repository interface (`IFermentationNoteRepository`) already exists.\n- Repository implementation (`FermentationNoteRepository`) already exists.\n\n**NIVEL 4 \u2014 Actual code** confirms:\n- Entity has `note_text` (Text), `action_taken` (String 255), `created_by_user_id`, `fermentation_id`, `is_deleted`.\n- `created_at` comes from `BaseEntity` \u2014 this IS the timestamp field.\n- Existing `action_router.py` and `action_service.py` are the best reference patterns (both were added recently using the same architecture).\n\n---\n\n## What already exists vs. what you need to build\n\n| Layer | Status |\n|-------|--------|\n| Domain entity (`FermentationNote`) | \u2705 Exists |\n| DTOs (`FermentationNoteCreate/Update`) | \u2705 Exists |\n| Repository interface (`IFermentationNoteRepository`) | \u2705 Exists |\n| Repository implementation (`FermentationNoteRepository`) | \u2705 Exists \u2014 19 unit + 20 integration tests |\n| **Service layer** | \u274c Missing \u2014 build this |\n| **API schemas** | \u274c Missing \u2014 build this |\n| **API router** | \u274c Missing \u2014 build this |\n| **Tests (service + API)** | \u274c Missing \u2014 write before implementing |\n| **`main.py` registration** | \u274c Missing |\n| **Alembic migration** | \u2705 Not needed \u2014 table already exists (created during repository phase) |\n\n> **One important design note before we start**: The existing `FermentationNoteCreate` DTO requires `action_taken` as a mandatory field. This is a domain-layer contract that was established when the repository was built. For the API, we'll expose that field in the request schema. If you want to make `action_taken` optional (i.e., allow \"pure observation\" notes), that's a legitimate business rule change \u2014 but it requires changing the DTO and existing tests. Don't sneak that in silently; make it an explicit decision.\n\n---\n\n## Step 1 \u2014 Write the failing service tests first (TDD: Red)\n\nCreate `src/modules/fermentation/tests/unit/service_component/test_fermentation_note_service.py`:\n\n```python\n\"\"\"\nUnit tests for FermentationNoteService.\nTDD: written BEFORE the service implementation.\n\"\"\"\nimport pytest\nfrom unittest.mock import AsyncMock, MagicMock\nfrom datetime import datetime, timezone\n\nfrom src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote\nfrom src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (\n    FermentationNoteCreate,\n    FermentationNoteUpdate,\n)\nfrom src.modules.fermentation.src.domain.repositories.fermentation_note_repository_interface import (\n    IFermentationNoteRepository,\n)\n\n\n# ---------------------------------------------------------------------------\n# Helpers\n# ---------------------------------------------------------------------------\n\ndef _make_note(\n    note_id: int = 1,\n    fermentation_id: int = 10,\n    note_text: str = \"Brix dropped 2 points overnight\",\n    action_taken: str = \"Added yeast nutrients\",\n    created_by_user_id: int = 42,\n) -> FermentationNote:\n    note = MagicMock(spec=FermentationNote)\n    note.id = note_id\n    note.fermentation_id = fermentation_id\n    note.note_text = note_text\n    note.action_taken = action_taken\n    note.created_by_user_id = created_by_user_id\n    note.created_at = datetime(2026, 4, 18, 10, 0, 0, tzinfo=timezone.utc)\n    note.is_deleted = False\n    return note\n\n\n# ---------------------------------------------------------------------------\n# Fixtures\n# ---------------------------------------------------------------------------\n\n@pytest.fixture\ndef mock_repo() -> AsyncMock:\n    return AsyncMock(spec=IFermentationNoteRepository)\n\n\n@pytest.fixture\ndef service(mock_repo: AsyncMock):\n    # Import here so the test file fails cleanly until the service exists\n    from src.modules.fermentation.src.service_component.services.fermentation_note_service import (\n        FermentationNoteService,\n    )\n    return FermentationNoteService(repository=mock_repo)\n\n\n# ---------------------------------------------------------------------------\n# create_note\n# ---------------------------------------------------------------------------\n\n@pytest.mark.asyncio\nasync def test_create_note_delegates_to_repository(service, mock_repo):\n    \"\"\"Service.create_note calls repo.create with correct args and returns result.\"\"\"\n    expected = _make_note()\n    mock_repo.create.return_value = expected\n\n    result = await service.create_note(\n        fermentation_id=10,\n        winery_id=5,\n        note_text=\"Brix dropped 2 points overnight\",\n        action_taken=\"Added yeast nutrients\",\n        created_by_user_id=42,\n    )\n\n    mock_repo.create.assert_called_once()\n    call_kwargs = mock_repo.create.call_args\n    assert call_kwargs.kwargs[\"fermentation_id\"] == 10\n    assert call_kwargs.kwargs[\"winery_id\"] == 5\n    assert result is expected\n\n\n@pytest.mark.asyncio\nasync def test_create_note_raises_on_empty_text(service, mock_repo):\n    \"\"\"Service validates note_text before hitting the repository.\"\"\"\n    with pytest.raises(ValueError, match=\"note_text\"):\n        await service.create_note(\n            fermentation_id=10,\n            winery_id=5,\n            note_text=\"   \",          # blank\n            action_taken=\"Something\",\n            created_by_user_id=42,\n        )\n    mock_repo.create.assert_not_called()\n\n\n# ---------------------------------------------------------------------------\n# get_note\n# ---------------------------------------------------------------------------\n\n@pytest.mark.asyncio\nasync def test_get_note_returns_entity_when_found(service, mock_repo):\n    expected = _make_note()\n    mock_repo.get_by_id.return_value = expected\n\n    result = await service.get_note(note_id=1, winery_id=5)\n\n    mock_repo.get_by_id.assert_called_once_with(note_id=1, winery_id=5)\n    assert result is expected\n\n\n@pytest.mark.asyncio\nasync def test_get_note_raises_not_found_when_missing(service, mock_repo):\n    from src.modules.fermentation.src.service_component.services.fermentation_note_service import (\n        FermentationNoteNotFoundError,\n    )\n    mock_repo.get_by_id.return_value = None\n\n    with pytest.raises(FermentationNoteNotFoundError):\n        await service.get_note(note_id=999, winery_id=5)\n\n\n# ---------------------------------------------------------------------------\n# list_notes_for_fermentation\n# ---------------------------------------------------------------------------\n\n@pytest.mark.asyncio\nasync def test_list_notes_returns_all_for_fermentation(service, mock_repo):\n    notes = [_make_note(i) for i in range(3)]\n    mock_repo.get_by_fermentation.return_value = notes\n\n    result = await service.list_notes_for_fermentation(\n        fermentation_id=10, winery_id=5\n    )\n\n    mock_repo.get_by_fermentation.assert_called_once_with(\n        fermentation_id=10, winery_id=5\n    )\n    assert result == notes\n\n\n@pytest.mark.asyncio\nasync def test_list_notes_returns_empty_list_when_none(service, mock_repo):\n    mock_repo.get_by_fermentation.return_value = []\n\n    result = await service.list_notes_for_fermentation(\n        fermentation_id=10, winery_id=5\n    )\n\n    assert result == []\n\n\n# ---------------------------------------------------------------------------\n# update_note\n# ---------------------------------------------------------------------------\n\n@pytest.mark.asyncio\nasync def test_update_note_delegates_to_repository(service, mock_repo):\n    updated = _make_note(note_text=\"Revised observation\")\n    mock_repo.update.return_value = updated\n\n    result = await service.update_note(\n        note_id=1,\n        winery_id=5,\n        note_text=\"Revised observation\",\n        action_taken=None,\n    )\n\n    mock_repo.update.assert_called_once()\n    assert result is updated\n\n\n@pytest.mark.asyncio\nasync def test_update_note_raises_not_found_when_missing(service, mock_repo):\n    from src.modules.fermentation.src.service_component.services.fermentation_note_service import (\n        FermentationNoteNotFoundError,\n    )\n    mock_repo.update.return_value = None\n\n    with pytest.raises(FermentationNoteNotFoundError):\n        await service.update_note(\n            note_id=999, winery_id=5, note_text=\"new text\", action_taken=None\n        )\n\n\n# ---------------------------------------------------------------------------\n# delete_note\n# ---------------------------------------------------------------------------\n\n@pytest.mark.asyncio\nasync def test_delete_note_returns_true_when_found(service, mock_repo):\n    mock_repo.delete.return_value = True\n\n    result = await service.delete_note(note_id=1, winery_id=5)\n\n    mock_repo.delete.assert_called_once_with(note_id=1, winery_id=5)\n    assert result is True\n\n\n@pytest.mark.asyncio\nasync def test_delete_note_raises_not_found_when_missing(service, mock_repo):\n    from src.modules.fermentation.src.service_component.services.fermentation_note_service import (\n        FermentationNoteNotFoundError,\n    )\n    mock_repo.delete.return_value = False\n\n    with pytest.raises(FermentationNoteNotFoundError):\n        await service.delete_note(note_id=999, winery_id=5)\n```\n\nRun it \u2014 confirm red:\n```powershell\ncd src/modules/fermentation\npoetry run pytest tests/unit/service_component/test_fermentation_note_service.py -v\n# Expected: ImportError / 10 failures \u2014 service does not exist yet\n```\n\n---\n\n## Step 2 \u2014 Implement `FermentationNoteService` (Green)\n\nCreate `src/modules/fermentation/src/service_component/services/fermentation_note_service.py`:\n\n```python\n\"\"\"\nFermentationNoteService \u2014 business logic for fermentation notes.\n\nWinemakers attach free-text notes to any fermentation during the process.\nEach note captures the observation text, the action taken, the author, and\na timestamp (created_at, provided automatically by BaseEntity).\n\nDesign decisions:\n  - Service depends on IFermentationNoteRepository (interface), never on the\n    concrete SQLAlchemy implementation (DIP).\n  - Validation of note_text happens here, not in the repository, to keep the\n    repo a thin persistence adapter.\n  - FermentationNoteNotFoundError is a domain-level signal; the API layer maps\n    it to HTTP 404.\n\"\"\"\n\nfrom typing import List, Optional\n\nfrom src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote\nfrom src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (\n    FermentationNoteCreate,\n    FermentationNoteUpdate,\n)\nfrom src.modules.fermentation.src.domain.repositories.fermentation_note_repository_interface import (\n    IFermentationNoteRepository,\n)\nfrom src.shared.wine_fermentator_logging import get_logger\n\nlogger = get_logger(__name__)\n\n\nclass FermentationNoteNotFoundError(Exception):\n    \"\"\"Raised when a note cannot be found or does not belong to the winery.\"\"\"\n\n\nclass FermentationNoteService:\n    \"\"\"\n    Orchestrates note creation, retrieval, update, and deletion.\n\n    Accepts IFermentationNoteRepository via constructor injection so that\n    unit tests can pass in a mock without touching the database.\n    \"\"\"\n\n    def __init__(self, repository: IFermentationNoteRepository) -> None:\n        self._repo = repository\n\n    # ------------------------------------------------------------------\n    # Command: create a note\n    # ------------------------------------------------------------------\n\n    async def create_note(\n        self,\n        fermentation_id: int,\n        winery_id: int,\n        note_text: str,\n        action_taken: str,\n        created_by_user_id: int,\n    ) -> FermentationNote:\n        \"\"\"\n        Attach a new note to a fermentation.\n\n        Raises:\n            ValueError: If note_text or action_taken are blank.\n            EntityNotFoundError (from repo): If fermentation doesn't belong to winery.\n        \"\"\"\n        if not note_text or not note_text.strip():\n            raise ValueError(\"note_text cannot be empty\")\n        if not action_taken or not action_taken.strip():\n            raise ValueError(\"action_taken cannot be empty\")\n\n        dto = FermentationNoteCreate(\n            note_text=note_text,\n            action_taken=action_taken,\n            created_by_user_id=created_by_user_id,\n        )\n\n        note = await self._repo.create(\n            fermentation_id=fermentation_id,\n            winery_id=winery_id,\n            data=dto,\n        )\n\n        logger.info(\n            \"fermentation_note_created\",\n            note_id=note.id,\n            fermentation_id=fermentation_id,\n            winery_id=winery_id,\n            user_id=created_by_user_id,\n        )\n        return note\n\n    # ------------------------------------------------------------------\n    # Query: single note\n    # ------------------------------------------------------------------\n\n    async def get_note(\n        self,\n        note_id: int,\n        winery_id: int,\n    ) -> FermentationNote:\n        \"\"\"\n        Retrieve a single note by ID, scoped to the winery.\n\n        Raises:\n            FermentationNoteNotFoundError: If the note does not exist or\n                belongs to a different winery.\n        \"\"\"\n        note = await self._repo.get_by_id(note_id=note_id, winery_id=winery_id)\n        if note is None:\n            raise FermentationNoteNotFoundError(\n                f\"Note {note_id} not found in winery {winery_id}\"\n            )\n        return note\n\n    # ------------------------------------------------------------------\n    # Query: all notes for a fermentation\n    # ------------------------------------------------------------------\n\n    async def list_notes_for_fermentation(\n        self,\n        fermentation_id: int,\n        winery_id: int,\n    ) -> List[FermentationNote]:\n        \"\"\"\n        Return all active notes for a fermentation, ordered by created_at DESC.\n        Returns an empty list if the fermentation has no notes.\n        \"\"\"\n        return await self._repo.get_by_fermentation(\n            fermentation_id=fermentation_id,\n            winery_id=winery_id,\n        )\n\n    # ------------------------------------------------------------------\n    # Command: update a note\n    # ------------------------------------------------------------------\n\n    async def update_note(\n        self,\n        note_id: int,\n        winery_id: int,\n        note_text: Optional[str] = None,\n        action_taken: Optional[str] = None,\n    ) -> FermentationNote:\n        \"\"\"\n        Partial update of a note's text and/or action_taken.\n\n        Raises:\n            FermentationNoteNotFoundError: If the note does not exist or\n                belongs to a different winery.\n        \"\"\"\n        dto = FermentationNoteUpdate(note_text=note_text, action_taken=action_taken)\n        note = await self._repo.update(\n            note_id=note_id,\n            winery_id=winery_id,\n            data=dto,\n        )\n        if note is None:\n            raise FermentationNoteNotFoundError(\n                f\"Note {note_id} not found in winery {winery_id}\"\n            )\n\n        logger.info(\n            \"fermentation_note_updated\",\n            note_id=note_id,\n            winery_id=winery_id,\n        )\n        return note\n\n    # ------------------------------------------------------------------\n    # Command: delete a note\n    # ------------------------------------------------------------------\n\n    async def delete_note(\n        self,\n        note_id: int,\n        winery_id: int,\n    ) -> bool:\n        \"\"\"\n        Soft-delete a note.\n\n        Raises:\n            FermentationNoteNotFoundError: If the note does not exist or\n                belongs to a different winery.\n        \"\"\"\n        deleted = await self._repo.delete(note_id=note_id, winery_id=winery_id)\n        if not deleted:\n            raise FermentationNoteNotFoundError(\n                f\"Note {note_id} not found in winery {winery_id}\"\n            )\n\n        logger.info(\n            \"fermentation_note_deleted\",\n            note_id=note_id,\n            winery_id=winery_id,\n        )\n        return True\n```\n\nConfirm green:\n```powershell\npoetry run pytest tests/unit/service_component/test_fermentation_note_service.py -v\n# Expected: 10 passed\n```\n\n---\n\n## Step 3 \u2014 Write failing API tests (TDD: Red)\n\nCreate `src/modules/fermentation/tests/api/test_fermentation_note_router.py`:\n\n```python\n\"\"\"\nAPI tests for FermentationNote endpoints.\nTDD: written BEFORE the router implementation.\n\nUses FastAPI TestClient with mocked FermentationNoteService.\n\"\"\"\nimport pytest\nfrom unittest.mock import AsyncMock, patch, MagicMock\nfrom datetime import datetime, timezone\nfrom fastapi.testclient import TestClient\n\nfrom src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote\n\n\n# ---------------------------------------------------------------------------\n# Helpers\n# ---------------------------------------------------------------------------\n\ndef _make_note_entity(note_id=1, fermentation_id=10, note_text=\"Test note\",\n                       action_taken=\"Add nutrients\", created_by_user_id=42):\n    note = MagicMock(spec=FermentationNote)\n    note.id = note_id\n    note.fermentation_id = fermentation_id\n    note.note_text = note_text\n    note.action_taken = action_taken\n    note.created_by_user_id = created_by_user_id\n    note.created_at = datetime(2026, 4, 18, 10, 0, 0, tzinfo=timezone.utc)\n    note.updated_at = datetime(2026, 4, 18, 10, 0, 0, tzinfo=timezone.utc)\n    note.is_deleted = False\n    note.winery_id = 5\n    return note\n\n\nAUTH_HEADERS = {\"Authorization\": \"Bearer test-token\"}\nWINERY_ID = 5\nUSER_ID = 42\n\nMOCK_USER = MagicMock()\nMOCK_USER.winery_id = WINERY_ID\nMOCK_USER.user_id = USER_ID\n\n\n@pytest.fixture\ndef client():\n    from src.modules.fermentation.src.main import app\n    from src.shared.auth.infra.api.dependencies import require_winemaker, require_admin\n    app.dependency_overrides[require_winemaker] = lambda: MOCK_USER\n    app.dependency_overrides[require_admin] = lambda: MOCK_USER\n    with TestClient(app, raise_server_exceptions=True) as c:\n        yield c\n    app.dependency_overrides.clear()\n\n\n# ---------------------------------------------------------------------------\n# POST /api/v1/fermentations/{fermentation_id}/notes\n# ---------------------------------------------------------------------------\n\ndef test_create_note_returns_201(client):\n    note = _make_note_entity()\n    svc_path = (\n        \"src.modules.fermentation.src.api.routers.fermentation_note_router\"\n        \".FermentationNoteService\"\n    )\n    with patch(svc_path) as MockService:\n        instance = MockService.return_value\n        instance.create_note = AsyncMock(return_value=note)\n\n        resp = client.post(\n            \"/api/v1/fermentations/10/notes\",\n            json={\n                \"note_text\": \"Brix dropped fast\",\n                \"action_taken\": \"Added nutrients\",\n            },\n            headers=AUTH_HEADERS,\n        )\n\n    assert resp.status_code == 201\n    data = resp.json()\n    assert data[\"note_text\"] == \"Test note\"\n    assert data[\"fermentation_id\"] == 10\n\n\ndef test_create_note_returns_422_when_text_blank(client):\n    resp = client.post(\n        \"/api/v1/fermentations/10/notes\",\n        json={\"note_text\": \"\", \"action_taken\": \"Something\"},\n        headers=AUTH_HEADERS,\n    )\n    assert resp.status_code == 422\n\n\n# ---------------------------------------------------------------------------\n# GET /api/v1/fermentations/{fermentation_id}/notes\n# ---------------------------------------------------------------------------\n\ndef test_list_notes_returns_200(client):\n    notes = [_make_note_entity(i) for i in range(3)]\n    svc_path = (\n        \"src.modules.fermentation.src.api.routers.fermentation_note_router\"\n        \".FermentationNoteService\"\n    )\n    with patch(svc_path) as MockService:\n        instance = MockService.return_value\n        instance.list_notes_for_fermentation = AsyncMock(return_value=notes)\n\n        resp = client.get(\n            \"/api/v1/fermentations/10/notes\",\n            headers=AUTH_HEADERS,\n        )\n\n    assert resp.status_code == 200\n    body = resp.json()\n    assert isinstance(body, list)\n    assert len(body) == 3\n\n\n# ---------------------------------------------------------------------------\n# GET /api/v1/notes/{note_id}\n# ---------------------------------------------------------------------------\n\ndef test_get_note_returns_200_when_found(client):\n    note = _make_note_entity()\n    svc_path = (\n        \"src.modules.fermentation.src.api.routers.fermentation_note_router\"\n        \".FermentationNoteService\"\n    )\n    with patch(svc_path) as MockService:\n        instance = MockService.return_value\n        instance.get_note = AsyncMock(return_value=note)\n\n        resp = client.get(\"/api/v1/notes/1\", headers=AUTH_HEADERS)\n\n    assert resp.status_code == 200\n\n\ndef test_get_note_returns_404_when_missing(client):\n    from src.modules.fermentation.src.service_component.services.fermentation_note_service import (\n        FermentationNoteNotFoundError,\n    )\n    svc_path = (\n        \"src.modules.fermentation.src.api.routers.fermentation_note_router\"\n        \".FermentationNoteService\"\n    )\n    with patch(svc_path) as MockService:\n        instance = MockService.return_value\n        instance.get_note = AsyncMock(side_effect=FermentationNoteNotFoundError(\"not found\"))\n\n        resp = client.get(\"/api/v1/notes/999\", headers=AUTH_HEADERS)\n\n    assert resp.status_code == 404\n\n\n# ---------------------------------------------------------------------------\n# PATCH /api/v1/notes/{note_id}\n# ---------------------------------------------------------------------------\n\ndef test_update_note_returns_200(client):\n    note = _make_note_entity(note_text=\"Updated text\")\n    svc_path = (\n        \"src.modules.fermentation.src.api.routers.fermentation_note_router\"\n        \".FermentationNoteService\"\n    )\n    with patch(svc_path) as MockService:\n        instance = MockService.return_value\n        instance.update_note = AsyncMock(return_value=note)\n\n        resp = client.patch(\n            \"/api/v1/notes/1\",\n            json={\"note_text\": \"Updated text\"},\n            headers=AUTH_HEADERS,\n        )\n\n    assert resp.status_code == 200\n\n\n# ---------------------------------------------------------------------------\n# DELETE /api/v1/notes/{note_id}\n# ---------------------------------------------------------------------------\n\ndef test_delete_note_returns_204(client):\n    svc_path = (\n        \"src.modules.fermentation.src.api.routers.fermentation_note_router\"\n        \".FermentationNoteService\"\n    )\n    with patch(svc_path) as MockService:\n        instance = MockService.return_value\n        instance.delete_note = AsyncMock(return_value=True)\n\n        resp = client.delete(\"/api/v1/notes/1\", headers=AUTH_HEADERS)\n\n    assert resp.status_code == 204\n```\n\nRun to confirm red:\n```powershell\npoetry run pytest tests/api/test_fermentation_note_router.py -v\n# Expected: ImportError / failures \u2014 router does not exist yet\n```\n\n---\n\n## Step 4 \u2014 Implement the API schemas and router (Green)\n\n### 4a. API schemas\n\nCreate `src/modules/fermentation/src/api/schemas/fermentation_note_schemas.py`:\n\n```python\n\"\"\"\nRequest / Response schemas for FermentationNote.\n\"\"\"\n\nfrom datetime import datetime\nfrom typing import List, Optional\n\nfrom pydantic import BaseModel, Field, ConfigDict\n\n\n# =============================================================================\n# Request schemas\n# =============================================================================\n\nclass FermentationNoteCreateRequest(BaseModel):\n    \"\"\"Payload for POST /fermentations/{fermentation_id}/notes.\"\"\"\n\n    note_text: str = Field(\n        ..., min_length=1, max_length=10_000,\n        description=\"Free-text observation or note written by the winemaker\"\n    )\n    action_taken: str = Field(\n        ..., min_length=1, max_length=255,\n        description=\"Brief description of the action taken (required)\"\n    )\n\n\nclass FermentationNoteUpdateRequest(BaseModel):\n    \"\"\"Payload for PATCH /notes/{note_id} \u2014 all fields optional.\"\"\"\n\n    note_text: Optional[str] = Field(\n        None, min_length=1, max_length=10_000,\n        description=\"Updated note text\"\n    )\n    action_taken: Optional[str] = Field(\n        None, min_length=1, max_length=255,\n        description=\"Updated action taken\"\n    )\n\n\n# =============================================================================\n# Response schema\n# =============================================================================\n\nclass FermentationNoteResponse(BaseModel):\n    \"\"\"Serialized FermentationNote returned from all endpoints.\"\"\"\n\n    model_config = ConfigDict(from_attributes=True)\n\n    id: int\n    fermentation_id: int\n    note_text: str\n    action_taken: str\n    created_by_user_id: int\n    created_at: datetime   # timestamp \u2014 provided by BaseEntity\n    updated_at: datetime\n```\n\n### 4b. API router\n\nCreate `src/modules/fermentation/src/api/routers/fermentation_note_router.py`:\n\n```python\n\"\"\"\nFermentationNote Router \u2014 REST API for winemaker notes on fermentations.\n\nEndpoints:\n    POST   /api/v1/fermentations/{fermentation_id}/notes   \u2192 add a note\n    GET    /api/v1/fermentations/{fermentation_id}/notes   \u2192 list notes\n    GET    /api/v1/notes/{note_id}                         \u2192 get single note\n    PATCH  /api/v1/notes/{note_id}                         \u2192 update note\n    DELETE /api/v1/notes/{note_id}                         \u2192 soft-delete (admin)\n\"\"\"\n\nfrom typing import Annotated, List\n\nfrom fastapi import APIRouter, Depends, HTTPException, Path, status\nfrom sqlalchemy.ext.asyncio import AsyncSession\n\nfrom src.shared.auth.domain.dtos import UserContext\nfrom src.shared.auth.infra.api.dependencies import require_winemaker, require_admin\nfrom src.modules.fermentation.src.api.dependencies import get_db_session\nfrom src.modules.fermentation.src.api.schemas.fermentation_note_schemas import (\n    FermentationNoteCreateRequest,\n    FermentationNoteUpdateRequest,\n    FermentationNoteResponse,\n)\nfrom src.modules.fermentation.src.service_component.services.fermentation_note_service import (\n    FermentationNoteService,\n    FermentationNoteNotFoundError,\n)\nfrom src.modules.fermentation.src.repository_component.repositories.fermentation_note_repository import (\n    FermentationNoteRepository,\n)\n\nrouter = APIRouter(tags=[\"fermentation-notes\"])\n\n\ndef _get_service(\n    session: Annotated[AsyncSession, Depends(get_db_session)],\n) -> FermentationNoteService:\n    return FermentationNoteService(repository=FermentationNoteRepository(session))\n\n\n# =============================================================================\n# POST /fermentations/{fermentation_id}/notes\n# =============================================================================\n\n@router.post(\n    \"/fermentations/{fermentation_id}/notes\",\n    response_model=FermentationNoteResponse,\n    status_code=status.HTTP_201_CREATED,\n    summary=\"Add a note to a fermentation\",\n    description=(\n        \"Attaches a free-text note to a fermentation. \"\n        \"The timestamp is recorded automatically (created_at). \"\n        \"The author is taken from the authenticated user's context.\"\n    ),\n)\nasync def create_note(\n    fermentation_id: Annotated[int, Path(gt=0)],\n    body: FermentationNoteCreateRequest,\n    current_user: Annotated[UserContext, Depends(require_winemaker)],\n    service: Annotated[FermentationNoteService, Depends(_get_service)],\n) -> FermentationNoteResponse:\n    note = await service.create_note(\n        fermentation_id=fermentation_id,\n        winery_id=current_user.winery_id,\n        note_text=body.note_text,\n        action_taken=body.action_taken,\n        created_by_user_id=current_user.user_id,\n    )\n    return FermentationNoteResponse.model_validate(note)\n\n\n# =============================================================================\n# GET /fermentations/{fermentation_id}/notes\n# =============================================================================\n\n@router.get(\n    \"/fermentations/{fermentation_id}/notes\",\n    response_model=List[FermentationNoteResponse],\n    status_code=status.HTTP_200_OK,\n    summary=\"List notes for a fermentation\",\n    description=\"Returns all notes for the fermentation, ordered newest first.\",\n)\nasync def list_notes(\n    fermentation_id: Annotated[int, Path(gt=0)],\n    current_user: Annotated[UserContext, Depends(require_winemaker)],\n    service: Annotated[FermentationNoteService, Depends(_get_service)],\n) -> List[FermentationNoteResponse]:\n    notes = await service.list_notes_for_fermentation(\n        fermentation_id=fermentation_id,\n        winery_id=current_user.winery_id,\n    )\n    return [FermentationNoteResponse.model_validate(n) for n in notes]\n\n\n# =============================================================================\n# GET /notes/{note_id}\n# =============================================================================\n\n@router.get(\n    \"/notes/{note_id}\",\n    response_model=FermentationNoteResponse,\n    status_code=status.HTTP_200_OK,\n    summary=\"Get a single note\",\n)\nasync def get_note(\n    note_id: Annotated[int, Path(gt=0)],\n    current_user: Annotated[UserContext, Depends(require_winemaker)],\n    service: Annotated[FermentationNoteService, Depends(_get_service)],\n) -> FermentationNoteResponse:\n    try:\n        note = await service.get_note(note_id=note_id, winery_id=current_user.winery_id)\n    except FermentationNoteNotFoundError:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Note {note_id} not found\",\n        )\n    return FermentationNoteResponse.model_validate(note)\n\n\n# =============================================================================\n# PATCH /notes/{note_id}\n# =============================================================================\n\n@router.patch(\n    \"/notes/{note_id}\",\n    response_model=FermentationNoteResponse,\n    status_code=status.HTTP_200_OK,\n    summary=\"Update a note\",\n    description=\"Partial update \u2014 only supplied fields are changed.\",\n)\nasync def update_note(\n    note_id: Annotated[int, Path(gt=0)],\n    body: FermentationNoteUpdateRequest,\n    current_user: Annotated[UserContext, Depends(require_winemaker)],\n    service: Annotated[FermentationNoteService, Depends(_get_service)],\n) -> FermentationNoteResponse:\n    try:\n        note = await service.update_note(\n            note_id=note_id,\n            winery_id=current_user.winery_id,\n            note_text=body.note_text,\n            action_taken=body.action_taken,\n        )\n    except FermentationNoteNotFoundError:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Note {note_id} not found\",\n        )\n    return FermentationNoteResponse.model_validate(note)\n\n\n# =============================================================================\n# DELETE /notes/{note_id}\n# =============================================================================\n\n@router.delete(\n    \"/notes/{note_id}\",\n    status_code=status.HTTP_204_NO_CONTENT,\n    summary=\"Delete a note (admin only)\",\n    description=\"Soft-deletes the note. The record remains in the database with is_deleted=True.\",\n)\nasync def delete_note(\n    note_id: Annotated[int, Path(gt=0)],\n    current_user: Annotated[UserContext, Depends(require_admin)],\n    service: Annotated[FermentationNoteService, Depends(_get_service)],\n) -> None:\n    try:\n        await service.delete_note(note_id=note_id, winery_id=current_user.winery_id)\n    except FermentationNoteNotFoundError:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Note {note_id} not found\",\n        )\n```\n\nConfirm green:\n```powershell\npoetry run pytest tests/api/test_fermentation_note_router.py -v\n# Expected: 7 passed\n```\n\n---\n\n## Step 5 \u2014 Register the router in `main.py`\n\nEdit `src/modules/fermentation/src/main.py`. Add the import alongside the other routers:\n\n```python\n# Add this import with the other router imports\nfrom src.modules.fermentation.src.api.routers.fermentation_note_router import router as fermentation_note_router\n```\n\nThen register it in `_setup_routes()` (after `action_router`):\n\n```python\napp.include_router(fermentation_note_router, prefix=API_V1_PREFIX, tags=[\"fermentation-notes\"])\n```\n\n---\n\n## Step 6 \u2014 Run the full suite to confirm no regressions\n\n```powershell\ncd src/modules/fermentation\npoetry run pytest tests/ -v --tb=short\n# Expected: all existing ~728 + 17 new tests passing\n```\n\n---\n\n## Step 7 \u2014 No new Alembic migration needed\n\nThe `fermentation_notes` table was already created during the repository phase (the repository and integration tests are all \u2705). Run `alembic current` to confirm:\n\n```powershell\nalembic current\n# Should show head \u2014 no pending migrations\n```\n\nIf for some reason the table doesn't exist in your environment (fresh DB), generate the migration:\n\n```powershell\nalembic revision --autogenerate -m \"008_fermentation_note_table\"\nalembic upgrade head\n```\n\n---\n\n## Step 8 \u2014 Update `.ai-context/module-context.md`\n\nUpdate the Component Summary table and Completed Components:\n\n```markdown\n| Service Layer | \u2705 Complete | FermentationService, SampleService, ValidationOrchestrator, ETLService, PatternAnalysisService, **FermentationNoteService** |\n| API Layer     | \u2705 Complete | 17 endpoints + **5 FermentationNote endpoints** |\n| Total tests   | \u2705          | **~745 passing** (728 + 17 new) |\n```\n\nAlso add `FermentationNoteService` to the Service Component bullet list and `fermentation_note_router.py` to the API Layer bullet list.\n\n---\n\n## Architecture summary \u2014 how all pieces fit together\n\n```\nHTTP Request\n     \u2502\n     \u25bc\nfermentation_note_router.py       \u2190 FastAPI router (api/)\n  Uses: FermentationNoteCreateRequest / FermentationNoteResponse (Pydantic)\n  Calls: FermentationNoteService (injected via Depends)\n     \u2502\n     \u25bc\nfermentation_note_service.py      \u2190 Business logic (service_component/)\n  Depends on: IFermentationNoteRepository (interface \u2014 domain/)\n  Raises: FermentationNoteNotFoundError (domain signal)\n     \u2502\n     \u25bc\nfermentation_note_repository.py   \u2190 SQLAlchemy impl (repository_component/)\n  Implements: IFermentationNoteRepository\n  Uses: FermentationNote entity, FermentationNoteCreate/Update DTOs\n     \u2502\n     \u25bc\nPostgreSQL  fermentation_notes table\n  Columns: id, fermentation_id, created_by_user_id, note_text,\n           action_taken, is_deleted, created_at, updated_at\n```\n\n**Dependency direction**: Router \u2192 Service \u2192 Interface \u2190 Repository.  \nThe service never imports `FermentationNoteRepository` directly \u2014 only the DI function in the router does.  \nThis means you can unit-test the service with a mock, and the router tests can mock the service class.\n\n---\n\n## File checklist \u2014 complete picture\n\n| File | Action |\n|------|--------|\n| `src/domain/entities/fermentation_note.py` | \u2705 Already exists \u2014 no changes |\n| `src/domain/dtos/fermentation_note_dtos.py` | \u2705 Already exists \u2014 no changes |\n| `src/domain/repositories/fermentation_note_repository_interface.py` | \u2705 Already exists \u2014 no changes |\n| `src/repository_component/repositories/fermentation_note_repository.py` | \u2705 Already exists \u2014 no changes |\n| `src/service_component/services/fermentation_note_service.py` | \ud83c\udd95 **Create (Step 2)** |\n| `src/api/schemas/fermentation_note_schemas.py` | \ud83c\udd95 **Create (Step 4a)** |\n| `src/api/routers/fermentation_note_router.py` | \ud83c\udd95 **Create (Step 4b)** |\n| `src/main.py` | \u270f\ufe0f **Edit \u2014 add import + include_router (Step 5)** |\n| `tests/unit/service_component/test_fermentation_note_service.py` | \ud83c\udd95 **Create (Step 1)** |\n| `tests/api/test_fermentation_note_router.py` | \ud83c\udd95 **Create (Step 3)** |\n| `alembic/versions/` | \u2705 No new migration needed (table exists) |\n| `.ai-context/module-context.md` | \u270f\ufe0f **Update test counts + component list (Step 8)** |\n"}], "grading": {"eval_id": 1, "eval_name": "new-entity-fermentation-note", "configuration": "with_skill", "expectations": [{"text": "Reads /.ai-context and module-context.md before writing any code", "passed": true, "evidence": "## Context read-out (before any code) \u2014 **NIVEL 2 \u2014 `module-context.md`** tells me: `FermentationNoteRepository` is \u2705 COMPLETE (19 unit + 20 integration tests)."}, {"text": "Writes test first (TDD) before implementing the entity", "passed": true, "evidence": "## Step 1 \u2014 Write the failing service tests first (TDD: Red) ... ## Step 2 \u2014 Implement `FermentationNoteService` (Green)"}, {"text": "Entity extends BaseEntity and includes winery_id", "passed": false, "evidence": "Entity columns listed as: `note_text` (Text), `action_taken` (String 255), `created_by_user_id`, `fermentation_id`, `is_deleted`. BaseEntity is confirmed, but `winery_id` is not a column on the entity \u2014 only used as a query-scoping parameter in service/repo calls."}, {"text": "Uses absolute imports (from src.modules.fermentation...)", "passed": true, "evidence": "from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote"}, {"text": "Creates Alembic migration", "passed": false, "evidence": "## Step 7 \u2014 No new Alembic migration needed. The `fermentation_notes` table was already created during the repository phase... Run `alembic current` to confirm. Migration creation is only mentioned as a fallback ('If for some reason the table doesn't exist')."}, {"text": "Tells user to update module-context.md test count and component list", "passed": true, "evidence": "## Step 8 \u2014 Update `.ai-context/module-context.md` \u2014 Update the Component Summary table and Completed Components... Also add `FermentationNoteService` to the Service Component bullet list and `fermentation_note_router.py` to the API Layer bullet list."}], "pass_rate": 0.6667}}, {"id": "new-entity-fermentation-note-without_skill", "prompt": "I need to add a 'FermentationNote' entity to the fermentation module. It should let winemakers attach a free-text note to any fermentation, with a timestamp and the user who wrote it. Walk me through implementing it end-to-end.", "eval_id": 1, "outputs": [{"name": "response.md", "type": "text", "content": "# Implementing the `FermentationNote` Entity \u2014 End-to-End Guide\n\nThis guide walks through adding a `FermentationNote` entity to the fermentation module of a FastAPI + SQLAlchemy (async) backend. The entity lets winemakers attach a free-text note to any fermentation, capturing a timestamp and the user who wrote it.\n\n---\n\n## Overview of the layers we will touch\n\n| Layer | File(s) to create / edit |\n|---|---|\n| ORM Entity | `domain/entities/fermentation_note.py` |\n| Parent entity | `domain/entities/fermentation.py` \u2014 add `notes` relationship |\n| Domain DTOs | `domain/dtos/fermentation_note_dtos.py` |\n| Repository interface | `domain/repositories/fermentation_note_repository_interface.py` |\n| Repository implementation | `repository_component/repositories/fermentation_note_repository.py` |\n| API request schemas | `api/schemas/requests/fermentation_note_requests.py` |\n| API response schemas | `api/schemas/responses/fermentation_note_responses.py` |\n| API router | `api/routers/fermentation_note_router.py` |\n| App registration | `src/main.py` \u2014 include the new router |\n| Database migration | `alembic/versions/XXX_create_fermentation_notes.py` |\n| Tests | unit + integration tests |\n\n---\n\n## Step 1 \u2014 ORM Entity\n\nCreate `src/modules/fermentation/src/domain/entities/fermentation_note.py`:\n\n```python\nfrom typing import TYPE_CHECKING\nfrom sqlalchemy import Boolean, Column, Integer, String, ForeignKey, Text\nfrom sqlalchemy.orm import relationship, Mapped\n\nfrom src.shared.infra.orm.base_entity import BaseEntity\n\nif TYPE_CHECKING:\n    from src.modules.fermentation.src.domain.entities.fermentation import Fermentation\n\n\nclass FermentationNote(BaseEntity):\n    \"\"\"\n    A free-text note attached to a fermentation by a winemaker.\n\n    Fields:\n        fermentation_id  \u2014 FK to fermentations.id\n        created_by_user_id \u2014 FK to users.id (the author)\n        note_text        \u2014 free-text content (unlimited length via TEXT)\n        is_deleted       \u2014 soft-delete flag\n\n    Timestamps (inherited from BaseEntity):\n        created_at  \u2014 when the note was written\n        updated_at  \u2014 last edit timestamp\n    \"\"\"\n    __tablename__ = \"fermentation_notes\"\n\n    # Foreign Keys\n    fermentation_id = Column(\n        Integer, ForeignKey(\"fermentations.id\"), nullable=False, index=True\n    )\n    created_by_user_id = Column(\n        Integer, ForeignKey(\"users.id\"), nullable=False\n    )\n\n    # Note content\n    note_text = Column(Text, nullable=False)\n\n    # Soft delete\n    is_deleted = Column(Boolean, nullable=False, default=False, server_default=\"false\")\n\n    # Relationships\n    fermentation: Mapped[\"Fermentation\"] = relationship(\n        \"src.modules.fermentation.src.domain.entities.fermentation.Fermentation\",\n        back_populates=\"notes\",\n    )\n```\n\nKey design decisions:\n- **`TEXT` column** \u2014 no arbitrary length cap on notes.\n- **`created_at` from `BaseEntity`** \u2014 this is the \"timestamp\" that records when the note was written. No extra column needed.\n- **`created_by_user_id`** \u2014 stores the author; read from the JWT context at the API layer, never accepted from the request body.\n- **Soft delete** \u2014 notes are never physically removed; `is_deleted=True` hides them.\n\n---\n\n## Step 2 \u2014 Update the `Fermentation` entity\n\nAdd the `notes` back-reference so SQLAlchemy knows about the one-to-many:\n\n```python\n# domain/entities/fermentation.py  (additions only)\n\nfrom typing import List, TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote\n\nclass Fermentation(BaseEntity):\n    # ... existing columns ...\n\n    notes: Mapped[List[\"FermentationNote\"]] = relationship(\n        \"src.modules.fermentation.src.domain.entities.fermentation_note.FermentationNote\",\n        back_populates=\"fermentation\",\n        cascade=\"all, delete-orphan\",\n        lazy=\"select\",\n    )\n```\n\n---\n\n## Step 3 \u2014 Domain DTOs\n\nCreate `src/modules/fermentation/src/domain/dtos/fermentation_note_dtos.py`:\n\n```python\nfrom dataclasses import dataclass\nfrom typing import Optional\n\n\n@dataclass\nclass FermentationNoteCreate:\n    \"\"\"\n    Internal DTO for creating a note.\n\n    `created_by_user_id` is injected by the service layer from the auth\n    context \u2014 never supplied by the client.\n    \"\"\"\n    note_text: str\n    created_by_user_id: int\n\n    def __post_init__(self) -> None:\n        if not self.note_text or not self.note_text.strip():\n            raise ValueError(\"note_text is required and cannot be blank\")\n        if not isinstance(self.created_by_user_id, int) or self.created_by_user_id <= 0:\n            raise ValueError(\"created_by_user_id must be a positive integer\")\n        self.note_text = self.note_text.strip()\n\n\n@dataclass\nclass FermentationNoteUpdate:\n    \"\"\"Partial update DTO \u2014 only `note_text` is editable after creation.\"\"\"\n    note_text: Optional[str] = None\n\n    def __post_init__(self) -> None:\n        if self.note_text is not None:\n            if not self.note_text.strip():\n                raise ValueError(\"note_text cannot be blank\")\n            self.note_text = self.note_text.strip()\n\n    def has_updates(self) -> bool:\n        return self.note_text is not None\n```\n\n---\n\n## Step 4 \u2014 Repository Interface\n\nCreate `src/modules/fermentation/src/domain/repositories/fermentation_note_repository_interface.py`:\n\n```python\nfrom abc import ABC, abstractmethod\nfrom typing import List, Optional, TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote\n    from src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (\n        FermentationNoteCreate,\n        FermentationNoteUpdate,\n    )\n\n\nclass IFermentationNoteRepository(ABC):\n    \"\"\"\n    Contract for fermentation note persistence.\n\n    All mutating operations take `winery_id` and enforce multi-tenant\n    isolation by joining through the parent fermentation table.\n    \"\"\"\n\n    @abstractmethod\n    async def create(\n        self,\n        fermentation_id: int,\n        winery_id: int,\n        data: \"FermentationNoteCreate\",\n    ) -> \"FermentationNote\":\n        \"\"\"\n        Persist a new note.\n\n        Raises:\n            EntityNotFoundError: fermentation does not exist or belongs to a\n                                  different winery.\n        \"\"\"\n        ...\n\n    @abstractmethod\n    async def get_by_id(\n        self,\n        note_id: int,\n        winery_id: int,\n    ) -> Optional[\"FermentationNote\"]:\n        \"\"\"Return the note, or None if not found / wrong winery.\"\"\"\n        ...\n\n    @abstractmethod\n    async def list_by_fermentation(\n        self,\n        fermentation_id: int,\n        winery_id: int,\n    ) -> List[\"FermentationNote\"]:\n        \"\"\"Return all non-deleted notes for a fermentation, newest first.\"\"\"\n        ...\n\n    @abstractmethod\n    async def update(\n        self,\n        note_id: int,\n        winery_id: int,\n        data: \"FermentationNoteUpdate\",\n    ) -> Optional[\"FermentationNote\"]:\n        \"\"\"Apply a partial update. Returns None if note not found.\"\"\"\n        ...\n\n    @abstractmethod\n    async def delete(\n        self,\n        note_id: int,\n        winery_id: int,\n    ) -> bool:\n        \"\"\"Soft-delete a note. Returns False if the note was not found.\"\"\"\n        ...\n```\n\n---\n\n## Step 5 \u2014 Repository Implementation\n\nCreate `src/modules/fermentation/src/repository_component/repositories/fermentation_note_repository.py`:\n\n```python\nfrom typing import List, Optional\n\nfrom sqlalchemy import and_, select\nfrom sqlalchemy.ext.asyncio import AsyncSession\n\nfrom src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (\n    FermentationNoteCreate,\n    FermentationNoteUpdate,\n)\nfrom src.modules.fermentation.src.domain.entities.fermentation import Fermentation\nfrom src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote\nfrom src.modules.fermentation.src.domain.repositories.fermentation_note_repository_interface import (\n    IFermentationNoteRepository,\n)\nfrom src.modules.fermentation.src.repository_component.errors import EntityNotFoundError\nfrom src.shared.infra.repository.base_repository import BaseRepository\n\n\nclass FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):\n    \"\"\"SQLAlchemy async implementation of IFermentationNoteRepository.\"\"\"\n\n    # ------------------------------------------------------------------\n    # Helpers\n    # ------------------------------------------------------------------\n\n    def _active_note_query(self, note_id: int, winery_id: int):\n        \"\"\"Base query: note exists, not deleted, fermentation belongs to winery.\"\"\"\n        return (\n            select(FermentationNote)\n            .join(Fermentation, FermentationNote.fermentation_id == Fermentation.id)\n            .where(\n                and_(\n                    FermentationNote.id == note_id,\n                    FermentationNote.is_deleted == False,\n                    Fermentation.winery_id == winery_id,\n                    Fermentation.is_deleted == False,\n                )\n            )\n        )\n\n    # ------------------------------------------------------------------\n    # Write operations\n    # ------------------------------------------------------------------\n\n    async def create(\n        self,\n        fermentation_id: int,\n        winery_id: int,\n        data: FermentationNoteCreate,\n    ) -> FermentationNote:\n        session_cm = await self.get_session()\n        async with session_cm as session:\n            # Verify the fermentation exists and belongs to this winery\n            fermentation = await session.scalar(\n                select(Fermentation).where(\n                    and_(\n                        Fermentation.id == fermentation_id,\n                        Fermentation.winery_id == winery_id,\n                        Fermentation.is_deleted == False,\n                    )\n                )\n            )\n            if fermentation is None:\n                raise EntityNotFoundError(\n                    f\"Fermentation {fermentation_id} not found for winery {winery_id}\"\n                )\n\n            note = FermentationNote(\n                fermentation_id=fermentation_id,\n                created_by_user_id=data.created_by_user_id,\n                note_text=data.note_text,\n                is_deleted=False,\n            )\n            session.add(note)\n            await session.flush()\n            await session.refresh(note)\n            return note\n\n    async def update(\n        self,\n        note_id: int,\n        winery_id: int,\n        data: FermentationNoteUpdate,\n    ) -> Optional[FermentationNote]:\n        session_cm = await self.get_session()\n        async with session_cm as session:\n            note = await session.scalar(self._active_note_query(note_id, winery_id))\n            if note is None:\n                return None\n            if data.note_text is not None:\n                note.note_text = data.note_text\n            await session.flush()\n            await session.refresh(note)\n            return note\n\n    async def delete(self, note_id: int, winery_id: int) -> bool:\n        session_cm = await self.get_session()\n        async with session_cm as session:\n            note = await session.scalar(self._active_note_query(note_id, winery_id))\n            if note is None:\n                return False\n            note.is_deleted = True\n            await session.flush()\n            return True\n\n    # ------------------------------------------------------------------\n    # Read operations\n    # ------------------------------------------------------------------\n\n    async def get_by_id(\n        self, note_id: int, winery_id: int\n    ) -> Optional[FermentationNote]:\n        session_cm = await self.get_session()\n        async with session_cm as session:\n            return await session.scalar(self._active_note_query(note_id, winery_id))\n\n    async def list_by_fermentation(\n        self, fermentation_id: int, winery_id: int\n    ) -> List[FermentationNote]:\n        session_cm = await self.get_session()\n        async with session_cm as session:\n            result = await session.execute(\n                select(FermentationNote)\n                .join(Fermentation, FermentationNote.fermentation_id == Fermentation.id)\n                .where(\n                    and_(\n                        FermentationNote.fermentation_id == fermentation_id,\n                        FermentationNote.is_deleted == False,\n                        Fermentation.winery_id == winery_id,\n                        Fermentation.is_deleted == False,\n                    )\n                )\n                .order_by(FermentationNote.created_at.desc())\n            )\n            return list(result.scalars().all())\n```\n\n---\n\n## Step 6 \u2014 API Request Schemas\n\nCreate `src/modules/fermentation/src/api/schemas/requests/fermentation_note_requests.py`:\n\n```python\nfrom pydantic import BaseModel, Field\n\n\nclass FermentationNoteCreateRequest(BaseModel):\n    \"\"\"\n    Body for POST /fermentations/{id}/notes\n\n    The author (`created_by_user_id`) and timestamp (`created_at`) are\n    derived from the JWT token and server clock respectively \u2014 not accepted\n    from the client.\n    \"\"\"\n    note_text: str = Field(\n        ...,\n        min_length=1,\n        max_length=10_000,\n        description=\"Free-text note from the winemaker\",\n    )\n\n\nclass FermentationNoteUpdateRequest(BaseModel):\n    \"\"\"Body for PATCH /fermentations/{fermentation_id}/notes/{note_id}\"\"\"\n    note_text: str = Field(\n        ...,\n        min_length=1,\n        max_length=10_000,\n        description=\"Updated note text\",\n    )\n```\n\n---\n\n## Step 7 \u2014 API Response Schemas\n\nCreate `src/modules/fermentation/src/api/schemas/responses/fermentation_note_responses.py`:\n\n```python\nfrom datetime import datetime\nfrom pydantic import BaseModel, ConfigDict, Field\n\n\nclass FermentationNoteResponse(BaseModel):\n    \"\"\"\n    Serialized representation of a FermentationNote returned by the API.\n    \"\"\"\n    model_config = ConfigDict(from_attributes=True)\n\n    id: int = Field(..., description=\"Note unique identifier\")\n    fermentation_id: int = Field(..., description=\"Parent fermentation\")\n    created_by_user_id: int = Field(..., description=\"Author user ID\")\n    note_text: str = Field(..., description=\"Note content\")\n    created_at: datetime = Field(..., description=\"When the note was written\")\n    updated_at: datetime = Field(..., description=\"Last modification timestamp\")\n\n    @classmethod\n    def from_entity(cls, note) -> \"FermentationNoteResponse\":\n        return cls(\n            id=note.id,\n            fermentation_id=note.fermentation_id,\n            created_by_user_id=note.created_by_user_id,\n            note_text=note.note_text,\n            created_at=note.created_at,\n            updated_at=note.updated_at,\n        )\n```\n\n---\n\n## Step 8 \u2014 API Router\n\nCreate `src/modules/fermentation/src/api/routers/fermentation_note_router.py`:\n\n```python\n\"\"\"\nFermentationNote endpoints.\n\nAll routes are nested under /fermentations/{fermentation_id}/notes.\nAuthentication: JWT required (require_winemaker for writes, get_current_user for reads).\nMulti-tenancy: enforced at the repository layer via winery_id.\n\"\"\"\n\nfrom typing import Annotated, List\n\nfrom fastapi import APIRouter, Depends, HTTPException, Path, status\n\nfrom src.shared.auth.domain.dtos import UserContext\nfrom src.shared.auth.infra.api.dependencies import get_current_user, require_winemaker\n\nfrom src.modules.fermentation.src.api.dependencies import get_fermentation_note_repository\nfrom src.modules.fermentation.src.api.error_handlers import handle_service_errors\nfrom src.modules.fermentation.src.api.schemas.requests.fermentation_note_requests import (\n    FermentationNoteCreateRequest,\n    FermentationNoteUpdateRequest,\n)\nfrom src.modules.fermentation.src.api.schemas.responses.fermentation_note_responses import (\n    FermentationNoteResponse,\n)\nfrom src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (\n    FermentationNoteCreate,\n    FermentationNoteUpdate,\n)\nfrom src.modules.fermentation.src.domain.repositories.fermentation_note_repository_interface import (\n    IFermentationNoteRepository,\n)\nfrom src.modules.fermentation.src.repository_component.errors import EntityNotFoundError\n\nrouter = APIRouter(\n    prefix=\"/fermentations/{fermentation_id}/notes\",\n    tags=[\"fermentation-notes\"],\n)\n\n\n# ---------------------------------------------------------------------------\n# POST  /fermentations/{fermentation_id}/notes\n# ---------------------------------------------------------------------------\n\n@router.post(\n    \"\",\n    response_model=FermentationNoteResponse,\n    status_code=status.HTTP_201_CREATED,\n    summary=\"Add a note to a fermentation\",\n)\n@handle_service_errors\nasync def create_note(\n    fermentation_id: int = Path(..., gt=0),\n    request: FermentationNoteCreateRequest = ...,\n    current_user: Annotated[UserContext, Depends(require_winemaker)] = None,\n    repo: Annotated[IFermentationNoteRepository, Depends(get_fermentation_note_repository)] = None,\n) -> FermentationNoteResponse:\n    dto = FermentationNoteCreate(\n        note_text=request.note_text,\n        created_by_user_id=current_user.user_id,\n    )\n    try:\n        note = await repo.create(\n            fermentation_id=fermentation_id,\n            winery_id=current_user.winery_id,\n            data=dto,\n        )\n    except EntityNotFoundError:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Fermentation {fermentation_id} not found\",\n        )\n    return FermentationNoteResponse.from_entity(note)\n\n\n# ---------------------------------------------------------------------------\n# GET  /fermentations/{fermentation_id}/notes\n# ---------------------------------------------------------------------------\n\n@router.get(\n    \"\",\n    response_model=List[FermentationNoteResponse],\n    status_code=status.HTTP_200_OK,\n    summary=\"List all notes for a fermentation\",\n)\n@handle_service_errors\nasync def list_notes(\n    fermentation_id: int = Path(..., gt=0),\n    current_user: Annotated[UserContext, Depends(get_current_user)] = None,\n    repo: Annotated[IFermentationNoteRepository, Depends(get_fermentation_note_repository)] = None,\n) -> List[FermentationNoteResponse]:\n    notes = await repo.list_by_fermentation(\n        fermentation_id=fermentation_id,\n        winery_id=current_user.winery_id,\n    )\n    return [FermentationNoteResponse.from_entity(n) for n in notes]\n\n\n# ---------------------------------------------------------------------------\n# GET  /fermentations/{fermentation_id}/notes/{note_id}\n# ---------------------------------------------------------------------------\n\n@router.get(\n    \"/{note_id}\",\n    response_model=FermentationNoteResponse,\n    status_code=status.HTTP_200_OK,\n    summary=\"Get a single fermentation note\",\n)\n@handle_service_errors\nasync def get_note(\n    fermentation_id: int = Path(..., gt=0),\n    note_id: int = Path(..., gt=0),\n    current_user: Annotated[UserContext, Depends(get_current_user)] = None,\n    repo: Annotated[IFermentationNoteRepository, Depends(get_fermentation_note_repository)] = None,\n) -> FermentationNoteResponse:\n    note = await repo.get_by_id(note_id=note_id, winery_id=current_user.winery_id)\n    if note is None or note.fermentation_id != fermentation_id:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Note {note_id} not found\",\n        )\n    return FermentationNoteResponse.from_entity(note)\n\n\n# ---------------------------------------------------------------------------\n# PATCH  /fermentations/{fermentation_id}/notes/{note_id}\n# ---------------------------------------------------------------------------\n\n@router.patch(\n    \"/{note_id}\",\n    response_model=FermentationNoteResponse,\n    status_code=status.HTTP_200_OK,\n    summary=\"Update a fermentation note\",\n)\n@handle_service_errors\nasync def update_note(\n    fermentation_id: int = Path(..., gt=0),\n    note_id: int = Path(..., gt=0),\n    request: FermentationNoteUpdateRequest = ...,\n    current_user: Annotated[UserContext, Depends(require_winemaker)] = None,\n    repo: Annotated[IFermentationNoteRepository, Depends(get_fermentation_note_repository)] = None,\n) -> FermentationNoteResponse:\n    dto = FermentationNoteUpdate(note_text=request.note_text)\n    note = await repo.update(\n        note_id=note_id,\n        winery_id=current_user.winery_id,\n        data=dto,\n    )\n    if note is None:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Note {note_id} not found\",\n        )\n    return FermentationNoteResponse.from_entity(note)\n\n\n# ---------------------------------------------------------------------------\n# DELETE  /fermentations/{fermentation_id}/notes/{note_id}\n# ---------------------------------------------------------------------------\n\n@router.delete(\n    \"/{note_id}\",\n    status_code=status.HTTP_204_NO_CONTENT,\n    summary=\"Delete a fermentation note (soft delete)\",\n)\n@handle_service_errors\nasync def delete_note(\n    fermentation_id: int = Path(..., gt=0),\n    note_id: int = Path(..., gt=0),\n    current_user: Annotated[UserContext, Depends(require_winemaker)] = None,\n    repo: Annotated[IFermentationNoteRepository, Depends(get_fermentation_note_repository)] = None,\n) -> None:\n    deleted = await repo.delete(note_id=note_id, winery_id=current_user.winery_id)\n    if not deleted:\n        raise HTTPException(\n            status_code=status.HTTP_404_NOT_FOUND,\n            detail=f\"Note {note_id} not found\",\n        )\n```\n\n---\n\n## Step 9 \u2014 Dependency injection\n\nIn `src/modules/fermentation/src/api/dependencies.py`, add a factory for the repository:\n\n```python\nfrom fastapi import Depends\nfrom sqlalchemy.ext.asyncio import AsyncSession\n\nfrom src.shared.infra.db.session import get_async_session          # adjust import to your project\nfrom src.modules.fermentation.src.repository_component.repositories.fermentation_note_repository import (\n    FermentationNoteRepository,\n)\n\n\nasync def get_fermentation_note_repository(\n    session: AsyncSession = Depends(get_async_session),\n) -> FermentationNoteRepository:\n    return FermentationNoteRepository(session=session)\n```\n\n> Adapt `get_async_session` to however your project exposes a per-request `AsyncSession`.\n\n---\n\n## Step 10 \u2014 Register the router in `main.py`\n\n```python\n# src/modules/fermentation/src/main.py  (additions)\n\nfrom src.modules.fermentation.src.api.routers.fermentation_note_router import (\n    router as fermentation_note_router,\n)\n\napp.include_router(fermentation_note_router, prefix=\"/api/v1\")\n```\n\n---\n\n## Step 11 \u2014 Alembic migration\n\nCreate `alembic/versions/008_create_fermentation_notes.py`:\n\n```python\n\"\"\"Create fermentation_notes table\n\nRevision ID: 008_create_fermentation_notes\nRevises: 007_create_winemaker_actions\nCreate Date: 2026-04-18\n\"\"\"\n\nfrom typing import Sequence, Union\n\nimport sqlalchemy as sa\nfrom alembic import op\n\nrevision: str = \"008_create_fermentation_notes\"\ndown_revision: Union[str, None] = \"007_create_winemaker_actions\"\nbranch_labels: Sequence[str] | None = None\ndepends_on: Sequence[str] | None = None\n\n\ndef upgrade() -> None:\n    op.create_table(\n        \"fermentation_notes\",\n        sa.Column(\"id\", sa.Integer(), nullable=False),\n        sa.Column(\"fermentation_id\", sa.Integer(), nullable=False),\n        sa.Column(\"created_by_user_id\", sa.Integer(), nullable=False),\n        sa.Column(\"note_text\", sa.Text(), nullable=False),\n        sa.Column(\"is_deleted\", sa.Boolean(), nullable=False, server_default=\"false\"),\n        sa.Column(\"created_at\", sa.DateTime(), nullable=False),\n        sa.Column(\"updated_at\", sa.DateTime(), nullable=False),\n        sa.ForeignKeyConstraint([\"fermentation_id\"], [\"fermentations.id\"]),\n        sa.ForeignKeyConstraint([\"created_by_user_id\"], [\"users.id\"]),\n        sa.PrimaryKeyConstraint(\"id\"),\n    )\n    op.create_index(\"ix_fermentation_notes_fermentation_id\", \"fermentation_notes\", [\"fermentation_id\"])\n    op.create_index(\"ix_fermentation_notes_created_by_user_id\", \"fermentation_notes\", [\"created_by_user_id\"])\n\n\ndef downgrade() -> None:\n    op.drop_index(\"ix_fermentation_notes_created_by_user_id\", table_name=\"fermentation_notes\")\n    op.drop_index(\"ix_fermentation_notes_fermentation_id\", table_name=\"fermentation_notes\")\n    op.drop_table(\"fermentation_notes\")\n```\n\nApply it:\n\n```bash\nalembic upgrade head\n```\n\n---\n\n## Step 12 \u2014 Tests\n\n### Unit test \u2014 DTO validation\n`tests/unit/domain/test_fermentation_note_dtos.py`:\n\n```python\nimport pytest\nfrom src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (\n    FermentationNoteCreate,\n    FermentationNoteUpdate,\n)\n\n\ndef test_create_dto_strips_whitespace():\n    dto = FermentationNoteCreate(note_text=\"  hello  \", created_by_user_id=1)\n    assert dto.note_text == \"hello\"\n\n\ndef test_create_dto_rejects_blank_text():\n    with pytest.raises(ValueError, match=\"note_text\"):\n        FermentationNoteCreate(note_text=\"   \", created_by_user_id=1)\n\n\ndef test_create_dto_rejects_invalid_user_id():\n    with pytest.raises(ValueError):\n        FermentationNoteCreate(note_text=\"ok\", created_by_user_id=0)\n\n\ndef test_update_dto_has_updates():\n    assert FermentationNoteUpdate(note_text=\"new\").has_updates() is True\n    assert FermentationNoteUpdate().has_updates() is False\n```\n\n### Unit test \u2014 repository (mock session)\n`tests/unit/repository_component/test_fermentation_note_repository.py`:\n\n```python\nimport pytest\nfrom unittest.mock import AsyncMock, MagicMock, patch\n\nfrom src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import FermentationNoteCreate\nfrom src.modules.fermentation.src.domain.entities.fermentation import Fermentation\nfrom src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote\nfrom src.modules.fermentation.src.repository_component.errors import EntityNotFoundError\nfrom src.modules.fermentation.src.repository_component.repositories.fermentation_note_repository import (\n    FermentationNoteRepository,\n)\n\n\n@pytest.fixture\ndef mock_session():\n    session = AsyncMock()\n    session.__aenter__ = AsyncMock(return_value=session)\n    session.__aexit__ = AsyncMock(return_value=False)\n    return session\n\n\n@pytest.fixture\ndef repo(mock_session):\n    r = FermentationNoteRepository.__new__(FermentationNoteRepository)\n    r.get_session = AsyncMock(return_value=mock_session)\n    return r\n\n\n@pytest.mark.asyncio\nasync def test_create_raises_when_fermentation_not_found(repo, mock_session):\n    mock_session.scalar = AsyncMock(return_value=None)  # no fermentation found\n    with pytest.raises(EntityNotFoundError):\n        await repo.create(\n            fermentation_id=99,\n            winery_id=1,\n            data=FermentationNoteCreate(note_text=\"test\", created_by_user_id=1),\n        )\n\n\n@pytest.mark.asyncio\nasync def test_delete_returns_false_when_not_found(repo, mock_session):\n    mock_session.scalar = AsyncMock(return_value=None)\n    result = await repo.delete(note_id=99, winery_id=1)\n    assert result is False\n```\n\n### Integration test sketch\n\n```python\n# tests/integration/repository_component/test_fermentation_note_repository_integration.py\n\nimport pytest\nfrom src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import FermentationNoteCreate\nfrom src.modules.fermentation.src.repository_component.repositories.fermentation_note_repository import (\n    FermentationNoteRepository,\n)\n\n\n@pytest.mark.asyncio\n@pytest.mark.integration\nasync def test_create_and_list(db_session, seed_fermentation):\n    \"\"\"\n    seed_fermentation: pytest fixture that inserts a Fermentation row\n    and returns (fermentation_id, winery_id).\n    \"\"\"\n    fermentation_id, winery_id = seed_fermentation\n    repo = FermentationNoteRepository(session=db_session)\n\n    dto = FermentationNoteCreate(note_text=\"Brix dropped nicely\", created_by_user_id=1)\n    note = await repo.create(fermentation_id, winery_id, dto)\n\n    assert note.id is not None\n    assert note.note_text == \"Brix dropped nicely\"\n    assert note.created_at is not None\n\n    notes = await repo.list_by_fermentation(fermentation_id, winery_id)\n    assert len(notes) == 1\n    assert notes[0].id == note.id\n```\n\n---\n\n## Step 13 \u2014 API contract summary\n\n| Method | URL | Auth role | Description |\n|---|---|---|---|\n| `POST` | `/api/v1/fermentations/{id}/notes` | WINEMAKER | Create a note |\n| `GET` | `/api/v1/fermentations/{id}/notes` | any authenticated | List notes (newest first) |\n| `GET` | `/api/v1/fermentations/{id}/notes/{note_id}` | any authenticated | Get one note |\n| `PATCH` | `/api/v1/fermentations/{id}/notes/{note_id}` | WINEMAKER | Edit note text |\n| `DELETE` | `/api/v1/fermentations/{id}/notes/{note_id}` | WINEMAKER | Soft-delete a note |\n\n**Example `POST` request body:**\n```json\n{ \"note_text\": \"Reducing temperature \u2014 fermentation running hot.\" }\n```\n\n**Example response:**\n```json\n{\n  \"id\": 42,\n  \"fermentation_id\": 7,\n  \"created_by_user_id\": 3,\n  \"note_text\": \"Reducing temperature \u2014 fermentation running hot.\",\n  \"created_at\": \"2026-04-18T09:15:00\",\n  \"updated_at\": \"2026-04-18T09:15:00\"\n}\n```\n\n---\n\n## Security & design notes\n\n| Concern | Approach |\n|---|---|\n| **Multi-tenancy** | Every query JOINs through `Fermentation.winery_id`. A winemaker from Winery A can never read or modify notes belonging to Winery B. |\n| **Author spoofing** | `created_by_user_id` is taken from the validated JWT (`current_user.user_id`), not from the request body. |\n| **Timestamp** | `created_at` is set by the database/ORM (`default=datetime.utcnow`), not by the client. |\n| **Soft delete** | Physical deletes are never issued; `is_deleted=True` hides the record without losing audit history. |\n| **Authorisation** | Only WINEMAKER (or ADMIN) roles can create, update, or delete notes; read is available to any authenticated user in the same winery. |\n"}], "grading": {"eval_id": 1, "eval_name": "new-entity-fermentation-note", "configuration": "without_skill", "expectations": [{"text": "Reads /.ai-context and module-context.md before writing any code", "passed": false, "evidence": "Response begins immediately with '## Overview of the layers we will touch' and 'Step 1 \u2014 ORM Entity'. No mention of reading .ai-context, module-context.md, or any project context files before writing code."}, {"text": "Writes test first (TDD) before implementing the entity", "passed": false, "evidence": "Step 1 creates the ORM Entity, Step 3 creates DTOs, Steps 4-5 create the repository, Steps 6-8 create API schemas and router. Tests don't appear until Step 12 \u2014 well after all implementation."}, {"text": "Entity extends BaseEntity and includes winery_id", "passed": false, "evidence": "class FermentationNote(BaseEntity): \u2014 extends BaseEntity \u2705. However, columns defined are only `fermentation_id`, `created_by_user_id`, `note_text`, `is_deleted`. No `winery_id` column on the entity."}, {"text": "Uses absolute imports (from src.modules.fermentation...)", "passed": true, "evidence": "from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote (used consistently throughout all files)"}, {"text": "Creates Alembic migration", "passed": true, "evidence": "## Step 11 \u2014 Alembic migration: Create `alembic/versions/008_create_fermentation_notes.py` with full upgrade()/downgrade() creating the fermentation_notes table."}, {"text": "Tells user to update module-context.md test count and component list", "passed": false, "evidence": "No mention of module-context.md anywhere in the response. The guide ends at Step 13 (API contract summary) with no instruction to update any context or documentation files."}], "pass_rate": 0.3333}}, {"id": "new-module-setup-with_skill", "prompt": "We want a completely new module called 'notifications' that sends alerts when fermentation anomalies are detected. What's the setup process before I write any code?", "eval_id": 2, "outputs": [{"name": "response.md", "type": "text", "content": "# New Module Setup: `notifications` \u2014 With Skill\n\n> **Context read from project files:**\n> - `project-context.md`: 4 active modules (fermentation:8000, winery:8001, fruit_origin:8002, analysis_engine:8003). 1,390 tests passing. ADR-040 (\"Protocol Notifications & Alerts Strategy\") already exists. Next port: **8004**.\n> - Templates confirmed in `references/context-templates.md`.\n\n---\n\nBefore writing any implementation code, complete all **10 setup steps**:\n\n### Step 1 \u2014 Create `src/modules/notifications/.ai-context/module-context.md`\nUse Template 1. Key specifics: port 8004, receives anomaly events from Analysis Engine (8003), provides alerts to winemakers. Status: \ud83d\udccb Planned. Reference: ADR-040.\n\n### Step 2 \u2014 Create `src/modules/notifications/.ai-context/domain-model-guide.md`\nUse Template 2. Document: `Alert` entity, `AlertRule` entity, `AlertStatus` enum (`PENDING/SENT/FAILED/SUPPRESSED`), `AlertChannel` enum (`IN_APP/EMAIL/PUSH`), `AlertSeverity` enum.\n\n### Step 3 \u2014 Add module entry to `/.ai-context/project-context.md`\nUse Template 4 under `## System modules`:\n```\n### Notifications Module\n**Status:** \ud83d\udccb Planned\n**Last Updated:** 2026-04-18\n**Total Tests:** 0 (not yet implemented)\n```\n\n### Step 4 \u2014 Add module entry to `/.ai-context/PROJECT_STRUCTURE_MAP.md`\nUse Template 6 under `modules/` \u2014 all layers marked \ud83d\udccb, 0 tests, port 8004.\n\n### Step 5 \u2014 Update `/.ai-context/adr/ADR-INDEX.md`\nADR-040 already exists. Update its row to link it to `src/modules/notifications/`. If scope is broader, write a new ADR before proceeding.\n\n### Step 6 \u2014 Create `src/modules/notifications/pyproject.toml`\nCopy from `src/modules/analysis_engine/pyproject.toml`. Change: `name = \"notifications\"`, port references to `8004`.\n\n### Step 7 \u2014 Create `src/modules/notifications/Dockerfile`\nCopy from `src/modules/analysis_engine/Dockerfile`. Change: module name, port `8003` \u2192 `8004`.\n\n### Step 8 \u2014 Create `src/modules/notifications/README.md`\nOne paragraph describing the module.\n\n### Step 9 \u2014 Create `src/modules/notifications/tests/conftest.py`\nUse the same conftest pattern as other modules.\n\n### Step 10 \u2014 Add service block to `docker-compose.yml`\nCopy the `analysis_engine` block, adjust name, port 8004, Dockerfile path, healthcheck URL.\n\n---\n\n## Critical design question \u2014 resolve before starting\n\nADR-040 was written for in-protocol notifications inside the fermentation module. You need to decide:\n\n**Is `notifications` a system-wide alert module (consumes all anomaly types from analysis_engine) or a protocol-scoped one (belongs inside fermentation as a new component)?**\n\nGetting this wrong means building in the wrong place. Clarify it first.\n\n---\n\nWhen all 10 files exist, context and config are ready. Ready to start on domain entities when you give the go-ahead.\n"}], "grading": {"eval_id": 2, "eval_name": "new-module-setup", "configuration": "with_skill", "expectations": [{"text": "Creates .ai-context/module-context.md from Template 1 before any code", "passed": true, "evidence": "Step 1 \u2014 Create `src/modules/notifications/.ai-context/module-context.md` / Use Template 1. Key specifics: port 8004... (preceded by 'Before writing any implementation code, complete all 10 setup steps')"}, {"text": "Creates .ai-context/domain-model-guide.md from Template 2", "passed": true, "evidence": "Step 2 \u2014 Create `src/modules/notifications/.ai-context/domain-model-guide.md` / Use Template 2. Document: `Alert` entity, `AlertRule` entity, `AlertStatus` enum..."}, {"text": "Updates /.ai-context/project-context.md with new module entry", "passed": true, "evidence": "Step 3 \u2014 Add module entry to `/.ai-context/project-context.md` / Use Template 4 under `## System modules`: ### Notifications Module / **Status:** \ud83d\udccb Planned"}, {"text": "Updates PROJECT_STRUCTURE_MAP.md", "passed": true, "evidence": "Step 4 \u2014 Add module entry to `/.ai-context/PROJECT_STRUCTURE_MAP.md` / Use Template 6 under `modules/` \u2014 all layers marked \ud83d\udccb, 0 tests, port 8004."}, {"text": "Lists docker-compose.yml changes needed", "passed": true, "evidence": "Step 10 \u2014 Add service block to `docker-compose.yml` / Copy the `analysis_engine` block, adjust name, port 8004, Dockerfile path, healthcheck URL."}, {"text": "Does not write entity/service code until context is set up", "passed": true, "evidence": "Before writing any implementation code, complete all 10 setup steps ... Ready to start on domain entities when you give the go-ahead."}], "pass_rate": 1.0}}, {"id": "new-module-setup-without_skill", "prompt": "We want a completely new module called 'notifications' that sends alerts when fermentation anomalies are detected. What's the setup process before I write any code?", "eval_id": 2, "outputs": [{"name": "response.md", "type": "text", "content": "# Setting Up a New `notifications` Module in a FastAPI Project\n\nBefore writing any code for a new `notifications` module, here is the recommended setup process:\n\n## 1. Understand the Project Structure\n\nFamiliarize yourself with how the existing project is organized and identify which pattern it uses so your `notifications` module fits in consistently.\n\n## 2. Define the Module's Scope and Responsibilities\n\nBefore creating files, clarify:\n- What triggers a notification?\n- What channels will be used? (email, SMS, webhook, push, in-app)\n- Who receives notifications?\n- Is it synchronous or asynchronous?\n- Does it store notification history?\n\n## 3. Identify and Install Dependencies\n\n| Channel | Common Library |\n|---|---|\n| Email (SMTP) | `smtplib` (stdlib) or `fastapi-mail` |\n| SMS | `twilio` |\n| Async | `celery`, `redis`, `arq` |\n\n## 4. Create the Module Directory Structure\n\n```\napp/\n\u2514\u2500\u2500 notifications/\n    \u251c\u2500\u2500 __init__.py\n    \u251c\u2500\u2500 router.py\n    \u251c\u2500\u2500 service.py\n    \u251c\u2500\u2500 schemas.py\n    \u251c\u2500\u2500 models.py\n    \u2514\u2500\u2500 dependencies.py\n```\n\n## 5. Set Up Configuration\n\nAdd keys to your settings and store secrets in `.env`.\n\n## 6. Plan Database Migrations\n\nIf persisting notification history, create a SQLAlchemy model and run Alembic:\n```bash\nalembic revision --autogenerate -m \"add notifications table\"\nalembic upgrade head\n```\n\n## 7. Decide on Background Task Strategy\n\n| Option | Best For |\n|---|---|\n| FastAPI `BackgroundTasks` | Simple, low-volume |\n| Celery + Redis | Reliable, high-volume |\n\n## 8. Plan Router Registration\n\n```python\nfrom app.notifications.router import router as notifications_router\napp.include_router(notifications_router, prefix=\"/notifications\", tags=[\"notifications\"])\n```\n\n## 9. Create a Test File First\n\nConfirm `pytest`, `httpx`, and `pytest-asyncio` are installed.\n\n## 10. Review Existing Modules for Patterns\n\nLook at an existing module (e.g., `fermentation`) before coding.\n\n## Summary Checklist\n\n- [ ] Reviewed project structure and existing patterns\n- [ ] Defined scope: triggers, channels, recipients, sync vs async\n- [ ] Installed required libraries\n- [ ] Created module scaffolding\n- [ ] Added config keys to settings\n- [ ] Planned Alembic migration (if history needed)\n- [ ] Planned router registration\n- [ ] Created empty test file\n"}], "grading": {"eval_id": 2, "eval_name": "new-module-setup", "configuration": "without_skill", "expectations": [{"text": "Creates .ai-context/module-context.md from Template 1 before any code", "passed": false, "evidence": "No mention of .ai-context/ directory or module-context.md anywhere in the response. Response creates a generic `app/notifications/` scaffold instead."}, {"text": "Creates .ai-context/domain-model-guide.md from Template 2", "passed": false, "evidence": "No mention of domain-model-guide.md or Template 2. The response has no reference to any .ai-context files or project-specific templates."}, {"text": "Updates /.ai-context/project-context.md with new module entry", "passed": false, "evidence": "No mention of project-context.md. The response contains only a generic FastAPI module setup checklist with no project-registry step."}, {"text": "Updates PROJECT_STRUCTURE_MAP.md", "passed": false, "evidence": "No mention of PROJECT_STRUCTURE_MAP.md. The summary checklist covers dependencies, migrations, and router registration but not structure map updates."}, {"text": "Lists docker-compose.yml changes needed", "passed": false, "evidence": "docker-compose.yml is never mentioned in the response. The infrastructure/deployment section is absent entirely."}, {"text": "Does not write entity/service code until context is set up", "passed": true, "evidence": "Before writing any code for a new `notifications` module, here is the recommended setup process \u2014 no entity or service code is written in the response."}], "pass_rate": 0.17}}, {"id": "refactor-analysis-service-with_skill", "prompt": "The analysis engine's AnomalyDetectionService is getting too large. It's doing anomaly detection AND recommendation generation AND protocol integration all in one class. What should we do?", "eval_id": 3, "outputs": [{"name": "response.md", "type": "text", "content": "# Refactoring AnomalyDetectionService \u2014 With Skill\n\n## What the context tells me\n\n**project-context.md**: Analysis Engine is \u2705 COMPLETE with 185\u2013201 tests passing, full Clean Architecture stack.\n\n**module-context.md**: The service layer already has **5 distinct services**: `AnalysisOrchestratorService`, `ComparisonService`, `AnomalyDetectionService`, `RecommendationService`, and `ProtocolAnalysisIntegrationService`.\n\n---\n\n## Direct answer: stop \u2014 the premise is wrong\n\nYou said `AnomalyDetectionService` is \"doing anomaly detection AND recommendation generation AND protocol integration all in one class.\" I read the actual file. **That is not what's happening.**\n\nThe current `AnomalyDetectionService`:\n- Has **one responsibility**: apply threshold rules to raw sensor data and return `Anomaly` objects\n- Does **zero recommendation generation** \u2014 that lives in `RecommendationService`\n- Does **zero protocol integration** \u2014 that lives in `ProtocolAnalysisIntegrationService`\n- Has **zero imports** of recommendation or protocol concerns\n\nThe file is 444 lines but it's doing exactly one thing: 8 anomaly detection algorithms, each as its own method. That's not a SRP violation \u2014 that's 8 specialised variants of the same responsibility.\n\n---\n\n## What IS actually worth fixing\n\n### OCP concern (not SRP)\n\nAdding a new anomaly type requires editing the class. If you're actively adding types, extract each detector into a Strategy:\n\n```python\n# domain/interfaces/anomaly_detector_interface.py\nclass IAnomalyDetector(Protocol):\n    async def detect(self, thresholds: VarietalThresholds, **context) -> Optional[Anomaly]:\n        ...\n```\n\n`AnomalyDetectionService` becomes a thin orchestrator injected with the detector list. New anomaly type = new file, no edit to the coordinator.\n\n**My recommendation: don't split unless you have a concrete upcoming requirement.** 444 cohesive lines is not a maintenance problem.\n\n### Two real issues to fix now\n\n1. **3 skipped tests on `detect_volatile_acidity`** \u2014 the method exists and looks complete. Either unskip the tests or remove the method. Skipped tests covering implemented code are a lie in your test suite.\n\n2. **`session: AsyncSession` injected but never used** \u2014 remove it from the constructor or document why it's there. It inflates test setup complexity for no reason.\n\n---\n\n## Summary\n\n| Concern | Verdict |\n|---------|---------|\n| SRP violation? | \u274c No \u2014 recommendations and protocol are already separate classes |\n| Class too large? | \u26a0\ufe0f Wide but cohesive. Not a problem. |\n| OCP violation? | \u26a0\ufe0f Yes \u2014 only matters if actively growing the type list |\n| Recommended refactor | Strategy pattern if adding types. No change if stable. |\n| Actual things to fix | Unskip 3 `detect_volatile_acidity` tests. Remove unused `session` injection. |\n"}], "grading": {"eval_id": 3, "eval_name": "refactor-analysis-service", "configuration": "with_skill", "expectations": [{"text": "Does not just agree \u2014 identifies SRP violation explicitly", "passed": true, "evidence": "SRP violation? \u274c No \u2014 recommendations and protocol are already separate classes"}, {"text": "Reads analysis_engine module-context.md to understand current state", "passed": true, "evidence": "module-context.md: The service layer already has 5 distinct services: AnalysisOrchestratorService, ComparisonService, AnomalyDetectionService, RecommendationService, and ProtocolAnalysisIntegrationService."}, {"text": "Proposes concrete alternative (3 services with interfaces)", "passed": false, "evidence": "Proposes a Strategy pattern (IAnomalyDetector Protocol interface) rather than splitting into 3 services; explicitly argues the 3-service split is unnecessary"}, {"text": "Explains safe refactoring path (interface first, then extract)", "passed": false, "evidence": "Mentions OCP-based Strategy extraction but does not describe an 'interface first, then extract' incremental safe refactoring path"}, {"text": "References SOLID principles from ARCHITECTURAL_GUIDELINES.md", "passed": false, "evidence": "Mentions OCP and SRP in the summary table but does not cite or reference ARCHITECTURAL_GUIDELINES.md"}], "pass_rate": 0.4}}, {"id": "refactor-analysis-service-without_skill", "prompt": "The analysis engine's AnomalyDetectionService is getting too large. It's doing anomaly detection AND recommendation generation AND protocol integration all in one class. What should we do?", "eval_id": 3, "outputs": [{"name": "response.md", "type": "text", "content": "# Refactoring AnomalyDetectionService: Separating Concerns\n\n## Problem\n\nThe `AnomalyDetectionService` is violating the **Single Responsibility Principle (SRP)**. It currently handles three distinct responsibilities:\n\n1. **Anomaly Detection** \u2013 identifying abnormal readings/events\n2. **Recommendation Generation** \u2013 producing actionable suggestions based on anomalies\n3. **Protocol Integration** \u2013 communicating with external protocols/systems\n\n---\n\n## Recommended Approach: Split into Focused Services\n\n### 1. `AnomalyDetectionService` (keep, but slimmed down)\n\n```python\nclass AnomalyDetectionService:\n    def __init__(self, thresholds: dict):\n        self.thresholds = thresholds\n\n    def detect(self, sensor_data: dict) -> list[Anomaly]:\n        anomalies = []\n        # detection logic here...\n        return anomalies\n```\n\n### 2. `RecommendationService` (new)\n\n```python\nclass RecommendationService:\n    def generate(self, anomalies: list[Anomaly]) -> list[Recommendation]:\n        recommendations = []\n        # recommendation logic here...\n        return recommendations\n```\n\n### 3. `ProtocolIntegrationService` (extracted)\n\n```python\nclass ProtocolIntegrationService:\n    def __init__(self, client):\n        self.client = client\n\n    async def publish_anomaly(self, anomaly: Anomaly) -> None:\n        await self.client.send(anomaly.to_payload())\n```\n\n### 4. Orchestrate with a Pipeline\n\n```python\nclass AnalysisPipeline:\n    def __init__(self, anomaly_service, recommendation_service, protocol_service):\n        self.anomaly_service = anomaly_service\n        self.recommendation_service = recommendation_service\n        self.protocol_service = protocol_service\n\n    async def run(self, sensor_data: dict) -> None:\n        anomalies = self.anomaly_service.detect(sensor_data)\n        if not anomalies:\n            return\n        recommendations = self.recommendation_service.generate(anomalies)\n        for anomaly in anomalies:\n            await self.protocol_service.publish_anomaly(anomaly)\n```\n\n---\n\n## Benefits\n\n| Concern | Before | After |\n|---|---|---|\n| **Testability** | Must mock everything together | Each service tested in isolation |\n| **Maintainability** | One large class | Small, focused classes |\n| **Extensibility** | Risky to add features | Swap or add one service safely |\n"}], "grading": {"eval_id": 3, "eval_name": "refactor-analysis-service", "configuration": "without_skill", "expectations": [{"text": "Does not just agree \u2014 identifies SRP violation explicitly", "passed": false, "evidence": "Fully accepts the premise without question: 'The AnomalyDetectionService is violating the Single Responsibility Principle (SRP). It currently handles three distinct responsibilities' \u2014 no pushback or verification"}, {"text": "Reads analysis_engine module-context.md to understand current state", "passed": false, "evidence": "No mention of reading module-context.md or any project context file; response proceeds from the premise alone"}, {"text": "Proposes concrete alternative (3 services with interfaces)", "passed": true, "evidence": "Proposes AnomalyDetectionService (slimmed), RecommendationService (new), and ProtocolIntegrationService (extracted) each with concrete code stubs"}, {"text": "Explains safe refactoring path (interface first, then extract)", "passed": false, "evidence": "Jumps straight to the final split design with no incremental refactoring steps; no mention of defining interfaces first before extracting implementations"}, {"text": "References SOLID principles from ARCHITECTURAL_GUIDELINES.md", "passed": false, "evidence": "Mentions 'Single Responsibility Principle (SRP)' generically but does not reference ARCHITECTURAL_GUIDELINES.md as a source"}], "pass_rate": 0.2}}], "previous_feedback": {}, "previous_outputs": {}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

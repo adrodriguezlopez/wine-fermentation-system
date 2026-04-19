@@ -1,0 +1,33 @@
+{
+  "eval_id": 3,
+  "eval_name": "refactor-analysis-service",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "Does not just agree — identifies SRP violation explicitly",
+      "passed": false,
+      "evidence": "Fully accepts the premise without question: 'The AnomalyDetectionService is violating the Single Responsibility Principle (SRP). It currently handles three distinct responsibilities' — no pushback or verification"
+    },
+    {
+      "text": "Reads analysis_engine module-context.md to understand current state",
+      "passed": false,
+      "evidence": "No mention of reading module-context.md or any project context file; response proceeds from the premise alone"
+    },
+    {
+      "text": "Proposes concrete alternative (3 services with interfaces)",
+      "passed": true,
+      "evidence": "Proposes AnomalyDetectionService (slimmed), RecommendationService (new), and ProtocolIntegrationService (extracted) each with concrete code stubs"
+    },
+    {
+      "text": "Explains safe refactoring path (interface first, then extract)",
+      "passed": false,
+      "evidence": "Jumps straight to the final split design with no incremental refactoring steps; no mention of defining interfaces first before extracting implementations"
+    },
+    {
+      "text": "References SOLID principles from ARCHITECTURAL_GUIDELINES.md",
+      "passed": false,
+      "evidence": "Mentions 'Single Responsibility Principle (SRP)' generically but does not reference ARCHITECTURAL_GUIDELINES.md as a source"
+    }
+  ],
+  "pass_rate": 0.2
+}

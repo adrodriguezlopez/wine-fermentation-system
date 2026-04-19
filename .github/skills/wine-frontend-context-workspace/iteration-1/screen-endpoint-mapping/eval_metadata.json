@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "screen-endpoint-mapping",
+  "prompt": "What screens does the frontend need and what API endpoints back each one?",
+  "assertions": [
+    "Covers all major screen areas (dashboard, detail, protocol, admin)",
+    "Maps each screen to specific endpoint(s)",
+    "Flags the X-Winery-ID header on historical endpoints",
+    "Notes mobile-first constraint",
+    "Mentions analysis engine endpoints for the anomaly/recommendation flow"
+  ]
+}

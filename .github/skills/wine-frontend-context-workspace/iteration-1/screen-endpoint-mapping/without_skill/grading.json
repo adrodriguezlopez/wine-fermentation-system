@@ -1,0 +1,33 @@
+{
+  "eval_id": 3,
+  "eval_name": "screen-endpoint-mapping",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "Covers all major screen areas (dashboard, detail, protocol, admin)",
+      "passed": false,
+      "evidence": "Has a Dashboard (§1), Batch Detail (§3), and User/Settings (§9), but no protocol screen and no admin screen are present anywhere in the document"
+    },
+    {
+      "text": "Maps each screen to specific endpoint(s)",
+      "passed": true,
+      "evidence": "Each of the 10 listed screens has at least one endpoint, e.g. Batch Detail maps `GET /api/batches/:id`, `GET /api/batches/:id/readings`, `GET /api/batches/:id/notes`"
+    },
+    {
+      "text": "Flags the X-Winery-ID header on historical endpoints",
+      "passed": false,
+      "evidence": "The document contains no mention of X-Winery-ID, winery headers, or any header requirements for historical data access"
+    },
+    {
+      "text": "Notes mobile-first constraint",
+      "passed": false,
+      "evidence": "The document contains no mention of mobile-first design, small viewports, phone usage, or any mobile-related constraints"
+    },
+    {
+      "text": "Mentions analysis engine endpoints for the anomaly/recommendation flow",
+      "passed": false,
+      "evidence": "No analysis engine, anomaly detection, or recommendation endpoints appear anywhere; the closest is `GET /api/alerts` on the dashboard, which is unrelated to post-sample analysis"
+    }
+  ],
+  "pass_rate": 0.2
+}

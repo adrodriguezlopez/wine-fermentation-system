@@ -1,0 +1,44 @@
+{
+  "skill_name": "wine-frontend-context",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I want to build a fermentation detail screen in React. It should show the current status, the latest sample values, and any active protocol alerts. What API calls do I need and what will the responses look like?",
+      "expected_output": "Maps the UI requirements to specific endpoints: GET /fermentations/{id}, GET /fermentations/{id}/samples/latest, GET /executions/{execution_id}/alerts. Explains response shapes, auth requirements (Bearer token), multi-tenancy (automatic via JWT), and suggests polling strategy for live data. Does not invent endpoints that don't exist.",
+      "files": [],
+      "expectations": [
+        "References only real endpoints from the skill's catalog",
+        "Explains Bearer token auth requirement",
+        "Notes that winery_id is automatic via JWT (not passed manually)",
+        "Specifies a concrete polling interval (30-60 seconds) for keeping live fermentation data current",
+        "Covers the alert acknowledge vs dismiss distinction (two separate endpoints with different semantics)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "How do I implement login and token refresh in a React frontend for this system?",
+      "expected_output": "Full auth flow: POST /api/v1/auth/login → store access_token in memory + refresh_token in httpOnly cookie, axios interceptor for 401 → POST /api/v1/auth/refresh → retry, GET /api/v1/auth/me to load user role, redirect to /login on refresh failure. Explains WINEMAKER vs ADMIN role difference and which endpoints each can access.",
+      "files": [],
+      "expectations": [
+        "Uses correct login endpoint POST /api/v1/auth/login",
+        "Recommends access_token in memory (not localStorage) for security",
+        "Describes 401 → refresh → retry interceptor pattern",
+        "Explains role-based UI (WINEMAKER vs ADMIN)",
+        "References GET /api/v1/auth/me for loading user context"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "What screens does the frontend need and what API endpoints back each one?",
+      "expected_output": "Maps the suggested screen list from the skill to their backing endpoints: dashboard (list fermentations + statistics), detail screen (fermentation + samples + alerts + advisories), protocol tracker (execution + completions + alerts), admin screens (wineries). Flags that historical data uses X-Winery-ID header, not Bearer token.",
+      "files": [],
+      "expectations": [
+        "Covers all major screen areas (dashboard, detail, protocol, admin)",
+        "Maps each screen to specific endpoint(s)",
+        "Flags the X-Winery-ID header on historical endpoints",
+        "Notes mobile-first constraint",
+        "Mentions analysis engine endpoints for the anomaly/recommendation flow"
+      ]
+    }
+  ]
+}

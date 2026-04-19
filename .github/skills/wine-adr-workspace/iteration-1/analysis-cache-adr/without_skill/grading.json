@@ -1,0 +1,33 @@
+{
+  "eval_id": 2,
+  "eval_name": "analysis-caching-adr",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "Reads ADR-INDEX.md before creating anything",
+      "passed": false,
+      "evidence": "No mention of reading ADR-INDEX.md anywhere in the response. The model proceeds directly to drafting a new ADR document without checking the index."
+    },
+    {
+      "text": "Detects that a related ADR already exists and avoids duplication",
+      "passed": false,
+      "evidence": "ADR-042 is never detected. The response creates an entirely new ADR document for anomaly detection caching, which duplicates the content already recorded in ADR-042."
+    },
+    {
+      "text": "References the existing ADR by number and explains why no new one is needed",
+      "passed": false,
+      "evidence": "ADR-042 is never referenced. ADR-020 and ADR-034 are cited only as background context, not to flag a pre-existing decision covering the same caching requirement."
+    },
+    {
+      "text": "Does not create a duplicate ADR file",
+      "passed": false,
+      "evidence": "The entire response is a fully-formed new ADR document covering the same anomaly detection caching decision already captured in ADR-042. This constitutes duplicate ADR content. Only one ADR-042 file exists on disk, suggesting the model would have created a second one if it had file-write capability."
+    },
+    {
+      "text": "Tells the developer what the next step is",
+      "passed": true,
+      "evidence": "The response includes a detailed TDD plan, implementation notes with file paths, acceptance criteria, and code examples — giving developers clear next steps for implementing the caching layer."
+    }
+  ],
+  "pass_rate": 0.2
+}

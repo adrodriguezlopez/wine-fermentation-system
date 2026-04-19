@@ -1,0 +1,33 @@
+{
+  "eval_id": 3,
+  "eval_name": "screen-endpoint-mapping",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Covers all major screen areas (dashboard, detail, protocol, admin)",
+      "passed": true,
+      "evidence": "§2 `/dashboard`, §4 `/fermentations/:id`, §6 `/fermentations/:id/protocol`, §8-9 `/protocols`, §13 `/admin/wineries` all present with dedicated sections"
+    },
+    {
+      "text": "Maps each screen to specific endpoint(s)",
+      "passed": true,
+      "evidence": "Every section contains a dedicated table, e.g. dashboard maps `GET /api/v1/fermentations`, `GET /api/v1/fermentations/{id}/samples/latest`, `POST /api/v1/fermentations`, etc."
+    },
+    {
+      "text": "Flags the X-Winery-ID header on historical endpoints",
+      "passed": true,
+      "evidence": "⚠️ `X-Winery-ID` header required. Historical endpoints do not extract the winery from the JWT. You must explicitly set `X-Winery-ID: <winery_id>` on every request — listed in §3, §4c, and the cross-cutting summary"
+    },
+    {
+      "text": "Notes mobile-first constraint",
+      "passed": true,
+      "evidence": "Mobile-first constraint applies to every screen listed below. Winemakers use these screens in the field on phones. Design for small viewports first — stated in the document header and expanded in the cross-cutting 'Mobile-first constraint' section"
+    },
+    {
+      "text": "Mentions analysis engine endpoints for the anomaly/recommendation flow",
+      "passed": true,
+      "evidence": "§4b 'Anomaly / recommendation flow (Analysis Engine — port 8003)' lists POST /api/v1/analyses, GET /api/v1/analyses/{id}, GET /api/v1/recommendations/{id}, PUT /api/v1/recommendations/{id}/apply, etc., with a step-by-step UI flow and a cross-cutting summary table"
+    }
+  ],
+  "pass_rate": 1.0
+}

@@ -1,0 +1,46 @@
+{
+  "skill_name": "wine-backend-dev",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to add a 'FermentationNote' entity to the fermentation module. It should let winemakers attach a free-text note to any fermentation, with a timestamp and the user who wrote it. Walk me through implementing it end-to-end.",
+      "expected_output": "Full TDD implementation: reads context hierarchy first (module-context.md, domain-model-guide.md), writes failing tests first, then implements domain entity (extends BaseEntity with winery_id), DTO, repository interface, repository implementation, service interface, service, API router, and Alembic migration. Absolute imports throughout. context-maintenance checklist applied at the end.",
+      "files": [],
+      "expectations": [
+        "Reads context hierarchy (project-context.md, module-context.md) before writing any code and reports what already exists",
+        "Writes failing tests first (TDD Red) and runs them before implementing",
+        "Uses absolute imports (from src.modules.fermentation...) throughout all generated code",
+        "Actually runs the test suite and reports results (pass/fail counts)",
+        "Updates .ai-context/module-context.md and project-context.md with new component and test counts",
+        "Runs the full suite (run_all_tests.ps1 or equivalent) to confirm no regressions"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "We want a completely new module called 'notifications' that sends alerts when fermentation anomalies are detected. What's the setup process before I write any code?",
+      "expected_output": "Creates all context files first using the templates: module-context.md (Template 1), domain-model-guide.md (Template 2), adds entry to project-context.md (Template 4), PROJECT_STRUCTURE_MAP.md (Template 6), ADR-INDEX.md. Then identifies pyproject.toml, Dockerfile, conftest.py, and docker-compose.yml changes needed. Does NOT write implementation code yet.",
+      "files": [],
+      "expectations": [
+        "Creates .ai-context/module-context.md from Template 1 before any code",
+        "Creates .ai-context/domain-model-guide.md from Template 2",
+        "Updates /.ai-context/project-context.md with new module entry",
+        "Updates PROJECT_STRUCTURE_MAP.md",
+        "Lists docker-compose.yml changes needed",
+        "Does not write entity/service code until context is set up"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The analysis engine's AnomalyDetectionService is getting too large. It's doing anomaly detection AND recommendation generation AND protocol integration all in one class. What should we do?",
+      "expected_output": "Pushes back critically (per collaboration-principles.md), identifies SRP violation, proposes splitting into 3 focused services each with its own interface, explains how to introduce the change safely (new interface first, extract via TDD, keep existing tests green). References NIVEL 3 context (analysis engine module-context.md) to understand current implementation status before proposing changes.",
+      "files": [],
+      "expectations": [
+        "Reads analysis_engine module-context.md before proposing any changes and reports what it found",
+        "Does not blindly accept the premise — verifies if the stated violation actually exists in the real code",
+        "If the premise is wrong, says so clearly with evidence from the context files",
+        "If a real design problem exists, proposes a concrete alternative with interfaces",
+        "References SOLID principles (SRP, OCP) by name when explaining the diagnosis"
+      ]
+    }
+  ]
+}

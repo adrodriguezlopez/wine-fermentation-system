@@ -1,0 +1,38 @@
+{
+  "eval_id": 1,
+  "eval_name": "new-entity-fermentation-note",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "Reads /.ai-context and module-context.md before writing any code",
+      "passed": false,
+      "evidence": "Response begins immediately with '## Overview of the layers we will touch' and 'Step 1 — ORM Entity'. No mention of reading .ai-context, module-context.md, or any project context files before writing code."
+    },
+    {
+      "text": "Writes test first (TDD) before implementing the entity",
+      "passed": false,
+      "evidence": "Step 1 creates the ORM Entity, Step 3 creates DTOs, Steps 4-5 create the repository, Steps 6-8 create API schemas and router. Tests don't appear until Step 12 — well after all implementation."
+    },
+    {
+      "text": "Entity extends BaseEntity and includes winery_id",
+      "passed": false,
+      "evidence": "class FermentationNote(BaseEntity): — extends BaseEntity ✅. However, columns defined are only `fermentation_id`, `created_by_user_id`, `note_text`, `is_deleted`. No `winery_id` column on the entity."
+    },
+    {
+      "text": "Uses absolute imports (from src.modules.fermentation...)",
+      "passed": true,
+      "evidence": "from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote (used consistently throughout all files)"
+    },
+    {
+      "text": "Creates Alembic migration",
+      "passed": true,
+      "evidence": "## Step 11 — Alembic migration: Create `alembic/versions/008_create_fermentation_notes.py` with full upgrade()/downgrade() creating the fermentation_notes table."
+    },
+    {
+      "text": "Tells user to update module-context.md test count and component list",
+      "passed": false,
+      "evidence": "No mention of module-context.md anywhere in the response. The guide ends at Step 13 (API contract summary) with no instruction to update any context or documentation files."
+    }
+  ],
+  "pass_rate": 0.3333
+}

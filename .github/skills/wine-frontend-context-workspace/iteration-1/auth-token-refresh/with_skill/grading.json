@@ -1,0 +1,33 @@
+{
+  "eval_id": 2,
+  "eval_name": "auth-token-refresh",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Uses correct login endpoint POST /api/v1/auth/login",
+      "passed": true,
+      "evidence": "POST /api/v1/auth/login\nContent-Type: application/json\n{ \"email\": \"winemaker@bodega.com\", \"password\": \"...\" }"
+    },
+    {
+      "text": "Recommends access_token in memory (not localStorage) for security",
+      "passed": true,
+      "evidence": "`access_token` → **memory only** (Zustand store), NOT localStorage — prevents XSS theft"
+    },
+    {
+      "text": "Describes 401 -> refresh -> retry interceptor pattern",
+      "passed": true,
+      "evidence": "if (error.response?.status === 401 && !original._retry) { ... const { data } = await axios.post('/api/v1/auth/refresh', { refresh_token: refreshToken }); ... return api(original);"
+    },
+    {
+      "text": "Explains role-based UI (WINEMAKER vs ADMIN)",
+      "passed": true,
+      "evidence": "The `user.role` field is either `WINEMAKER` or `ADMIN`. Use it to conditionally render admin sections: {user?.role === 'ADMIN' && <AdminPanel />}"
+    },
+    {
+      "text": "References GET /api/v1/auth/me for loading user context",
+      "passed": true,
+      "evidence": "GET /api/v1/auth/me\nAuthorization: Bearer <access_token> ... const user = await api.get('/auth/me');"
+    }
+  ],
+  "pass_rate": 1.0
+}

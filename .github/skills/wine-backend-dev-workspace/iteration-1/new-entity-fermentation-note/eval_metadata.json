@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "eval_name": "new-entity-fermentation-note",
+  "prompt": "I need to add a 'FermentationNote' entity to the fermentation module. It should let winemakers attach a free-text note to any fermentation, with a timestamp and the user who wrote it. Walk me through implementing it end-to-end.",
+  "assertions": [
+    "Reads /.ai-context and module-context.md before writing any code",
+    "Writes test first (TDD) before implementing the entity",
+    "Entity extends BaseEntity and includes winery_id",
+    "Uses absolute imports (from src.modules.fermentation...)",
+    "Creates Alembic migration",
+    "Tells user to update module-context.md test count and component list"
+  ]
+}

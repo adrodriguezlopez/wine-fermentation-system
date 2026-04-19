@@ -37,6 +37,11 @@
 | **[ADR-039](./ADR-039-protocol-template-management.md)** | Protocol Template Management & Customization | ✅ Implemented | 2026-02-09 | High |
 | **[ADR-040](./ADR-040-notifications-alerts.md)** | Protocol Notifications & Alerts Strategy | ✅ Implemented | 2026-02-13 | Medium |
 | **[ADR-041](./ADR-041-action-tracking-module.md)** | Action Tracking Module Architecture | ✅ Accepted | 2026-03-21 | High |
+| **[ADR-042](./ADR-042-analysis-engine-detection-cache.md)** | Analysis Engine — Anomaly Detection Result Cache | Proposed | 2026-04-18 | Medium |
+| **[ADR-043](./ADR-043-fermentation-note-entity.md)** | FermentationNote Entity Design | Proposed | 2026-04-19 | Medium |
+| **[ADR-044](./ADR-044-winery-settings-entity.md)** | WinerySettings Entity Design | Proposed | 2026-04-19 | Medium |
+| **[ADR-045](./ADR-045-frontend-architecture.md)** | Frontend Architecture — Turborepo + Next.js 14 | Proposed | 2026-04-19 | Critical |
+| **[ADR-046](./ADR-046-frontend-module-context-file.md)** | Frontend Module Context File | Proposed | 2026-04-19 | Low |
 
 ### ADR-033: Code Coverage Improvement Strategy
 **Decision:** Phased coverage improvement: API (85%), Repository (80%), Service (80%), ETL (80%)  
