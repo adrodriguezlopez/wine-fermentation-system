@@ -96,18 +96,22 @@
 **Last Updated:** April 2026
 **Reference:** ADR-002 through ADR-040 (see ADR index)
 
+### Governing ADRs
+- [ADR-043: FermentationNote Entity Design](../../../../.ai-context/adr/ADR-043-fermentation-note-entity.md)
+
 ### Component Summary
 
 | Component | Status | Tests |
 |-----------|--------|-------|
 | Domain Layer | ✅ Complete | Entities, DTOs, enums, interfaces |
 | Repository Layer | ✅ Complete | FermentationRepo, SampleRepo, NoteRepo, LotSourceRepo |
-| Service Layer | ✅ Complete | FermentationService, SampleService, ValidationOrchestrator, ETLService, PatternAnalysisService |
-| API Layer | ✅ Complete | 17 endpoints — Fermentation, Sample, Historical, Protocol, Actions, Alerts |
+| Service Layer | ✅ Complete | FermentationService, SampleService, ValidationOrchestrator, ETLService, PatternAnalysisService, **FermentationNoteService** |
+| API Layer | ✅ Complete | 22 endpoints — Fermentation, Sample, Historical, Protocol, Actions, Alerts, **Notes** |
 | Protocol Engine | ✅ Complete | 4 entities, 4 repos, 3 services, 6 API routers |
 | ETL Pipeline | ✅ Complete | CSV import with 3-layer validation, partial success, cancellation |
 | Historical Data API | ✅ Complete | 8 endpoints, pattern extraction |
-| **Total tests** | ✅ | **~700 passing** |
+| **FermentationNote** | ✅ Complete | Entity, DTOs, RepoInterface, Repo, Service, Router — 23 new tests |
+| **Total tests** | ✅ | **~754 passing** |
 
 **✅ Completed Features (ADR-032):**
 - **Historical Data API Layer**: REST API for querying imported historical fermentations
