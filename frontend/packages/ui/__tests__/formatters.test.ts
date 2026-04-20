@@ -4,6 +4,7 @@ import { formatBrix } from '../src/formatters/brix'
 import { formatCelsius } from '../src/formatters/temperature'
 import { formatKg, formatDays, formatPercent } from '../src/formatters/units'
 import { formatDeviationScore } from '../src/formatters/deviation'
+import { formatDurationHours, formatDateTimeWithYear } from '../src/formatters/date'
 
 describe('formatDensity', () => {
   it('formats to 4 decimal places with unit', () => {
@@ -24,8 +25,8 @@ describe('formatBrix', () => {
 })
 
 describe('formatCelsius', () => {
-  it('formats with °C unit', () => {
-    expect(formatCelsius(18.5)).toBe('18.5 °C')
+  it('formats with °C unit (no space before degree symbol)', () => {
+    expect(formatCelsius(18.5)).toBe('18.5°C')
   })
 })
 
@@ -56,3 +57,23 @@ describe('formatDeviationScore', () => {
     expect(formatDeviationScore(-1.1)).toBe('−1.1σ')
   })
 })
+
+describe('formatDurationHours', () => {
+  it('handles fractional hours correctly', () => {
+    expect(formatDurationHours(25.5)).toBe('1 day 1h')
+  })
+  it('handles whole days', () => {
+    expect(formatDurationHours(48)).toBe('2 days')
+  })
+  it('handles hours only', () => {
+    expect(formatDurationHours(6)).toBe('6h')
+  })
+})
+
+describe('formatDateTimeWithYear', () => {
+  it('includes year in output', () => {
+    const result = formatDateTimeWithYear('2025-10-14T09:00:00Z')
+    expect(result).toContain('2025')
+  })
+})
+

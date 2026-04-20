@@ -1,4 +1,10 @@
-export type FermentationStatus = 'ACTIVE' | 'SLOW' | 'STUCK' | 'COMPLETED'
+import { z } from 'zod'
+
+export const FERMENTATION_STATUSES = ['ACTIVE', 'SLOW', 'STUCK', 'COMPLETED'] as const
+
+export const FermentationStatusSchema = z.enum(FERMENTATION_STATUSES)
+
+export type FermentationStatus = z.infer<typeof FermentationStatusSchema>
 
 export const FERMENTATION_STATUS_LABEL: Record<FermentationStatus, string> = {
   ACTIVE: 'Active',
