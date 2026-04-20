@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 /**
  * Generic paginated list response — all backend list endpoints return this shape:
- * { items: [...], total: number, page: number, size: number, pages: number }
+ * { items: [...], total: number, page: number, size: number }
+ * Note: total_pages is a @property on the Python model and is NOT serialized.
  */
 export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
   z.object({
@@ -10,7 +11,6 @@ export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =
     total: z.number().int().nonnegative(),
     page: z.number().int().positive(),
     size: z.number().int().positive(),
-    pages: z.number().int().nonnegative(),
   })
 
 export type PaginatedResponse<T> = {
@@ -18,7 +18,6 @@ export type PaginatedResponse<T> = {
   total: number
   page: number
   size: number
-  pages: number
 }
 
 /**

@@ -31,7 +31,7 @@ describe('CreateFermentationSchema', () => {
 
 describe('SampleSchema', () => {
   const validSample = {
-    sample_type: 'TEMPERATURE_CELSIUS' as const,
+    sample_type: 'temperature' as const,
     value: 18.5,
     units: '°C',
     recorded_at: '2026-04-01T10:00:00Z',
@@ -46,7 +46,7 @@ describe('SampleSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('rejects old TEMPERATURE key (must use TEMPERATURE_CELSIUS)', () => {
+  it('rejects uppercase sample_type (must use lowercase)', () => {
     const result = SampleSchema.safeParse({ ...validSample, sample_type: 'TEMPERATURE' })
     expect(result.success).toBe(false)
   })
@@ -63,11 +63,7 @@ describe('SampleSchema', () => {
   })
 
   it('accepts all backend sample types', () => {
-    const types = [
-      'DENSITY', 'TEMPERATURE_CELSIUS', 'GLUCOSE', 'ETHANOL',
-      'ACETIC_ACID', 'MALIC_ACID', 'PH', 'SO2',
-      'TURBIDITY', 'COLOR_INTENSITY', 'VOLATILE_ACIDITY',
-    ]
+    const types = ['sugar', 'temperature', 'density', 'acetic_acid']
     for (const sample_type of types) {
       const result = SampleSchema.safeParse({ ...validSample, sample_type })
       expect(result.success, `Expected ${sample_type} to be valid`).toBe(true)
