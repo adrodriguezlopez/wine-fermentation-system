@@ -44,14 +44,13 @@ from src.modules.fermentation.src.repository_component.protocol_execution_reposi
 from src.modules.fermentation.src.api.dependencies import get_db_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 # Router instance
-router = APIRouter(
-    tags=["protocol-executions"]
-)
+router = APIRouter(tags=["protocol-executions"])
 
 
-def get_execution_repository(session: Annotated[AsyncSession, Depends(get_db_session)]) -> IProtocolExecutionRepository:
+def get_execution_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> IProtocolExecutionRepository:
     """Dependency: Get protocol execution repository instance"""
     return ProtocolExecutionRepository(session=session)
 
@@ -61,29 +60,31 @@ def get_execution_repository(session: Annotated[AsyncSession, Depends(get_db_ses
     response_model=ExecutionResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Start protocol execution for a fermentation",
-    description="Creates a ProtocolExecution to start tracking protocol adherence for a specific fermentation."
+    description="Creates a ProtocolExecution to start tracking protocol adherence for a specific fermentation.",
 )
 async def start_protocol_execution(
     fermentation_id: Annotated[int, Path(gt=0, description="Fermentation ID")],
     request: ExecutionStartRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    execution_repository: Annotated[IProtocolExecutionRepository, Depends(get_execution_repository)]
+    execution_repository: Annotated[
+        IProtocolExecutionRepository, Depends(get_execution_repository)
+    ],
 ) -> ExecutionResponse:
     """
     Start protocol execution for a fermentation.
-    
+
     Creates a ProtocolExecution that links a fermentation to a protocol template,
     initializing step tracking and compliance scoring.
-    
+
     Args:
         fermentation_id: ID of the fermentation to track
         request: Execution start data (ExecutionStart DTO)
         current_user: Authenticated user context
         execution_repository: Execution repository (injected)
-    
+
     Returns:
         ExecutionResponse: Created execution with ID and initial status (NOT_STARTED)
-    
+
     Raises:
         HTTP 404: Fermentation or protocol not found
         HTTP 403: Fermentation belongs to different winery
@@ -96,12 +97,12 @@ async def start_protocol_execution(
         execution_dto = ExecutionStart(
             protocol_id=request.protocol_id,
             fermentation_id=fermentation_id,
-            start_date=request.start_date
+            start_date=request.start_date,
         )
-        
+
         # Create execution
         created_execution = await execution_repository.create(execution_dto)
-        
+
         return ExecutionResponse(
             id=created_execution.id,
             fermentation_id=created_execution.fermentation_id,
@@ -113,23 +114,22 @@ async def start_protocol_execution(
             compliance_score=created_execution.compliance_score,
             notes=created_execution.notes,
             created_at=created_execution.created_at,
-            updated_at=created_execution.updated_at
+            updated_at=created_execution.updated_at,
         )
-    
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
     except Exception as e:
         if "unique" in str(e).lower() or "already" in str(e).lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Fermentation already has an active execution"
+                detail="Fermentation already has an active execution",
             )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to start protocol execution"
+            detail="Failed to start protocol execution",
         )
 
 
@@ -137,26 +137,28 @@ async def start_protocol_execution(
     "/executions/{execution_id}",
     response_model=ExecutionResponse,
     summary="Update protocol execution status",
-    description="Updates execution status (ACTIVE, PAUSED, COMPLETED, ABANDONED) or compliance score."
+    description="Updates execution status (ACTIVE, PAUSED, COMPLETED, ABANDONED) or compliance score.",
 )
 async def update_protocol_execution(
     execution_id: Annotated[int, Path(gt=0, description="Execution ID")],
     request: ExecutionUpdateRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    execution_repository: Annotated[IProtocolExecutionRepository, Depends(get_execution_repository)]
+    execution_repository: Annotated[
+        IProtocolExecutionRepository, Depends(get_execution_repository)
+    ],
 ) -> ExecutionResponse:
     """
     Update a protocol execution.
-    
+
     Args:
         execution_id: ID of the execution to update
         request: Update data (ExecutionUpdate DTO)
         current_user: Authenticated user context
         execution_repository: Execution repository (injected)
-    
+
     Returns:
         ExecutionResponse: Updated execution
-    
+
     Raises:
         HTTP 404: Execution not found
         HTTP 403: Execution belongs to different winery
@@ -164,30 +166,30 @@ async def update_protocol_execution(
         HTTP 401: Not authenticated
     """
     execution = await execution_repository.get_by_id(execution_id)
-    
+
     if not execution:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Execution {execution_id} not found"
+            detail=f"Execution {execution_id} not found",
         )
-    
+
     # Enforce multi-tenancy
     if execution.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - execution belongs to different winery"
+            detail="Access denied - execution belongs to different winery",
         )
-    
+
     try:
         update_data = {k: v for k, v in request.model_dump(exclude_unset=True).items()}
         updated_execution = await execution_repository.update(execution_id, update_data)
-        
+
         if not updated_execution:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Failed to update execution {execution_id}"
+                detail=f"Failed to update execution {execution_id}",
             )
-        
+
         return ExecutionResponse(
             id=updated_execution.id,
             fermentation_id=updated_execution.fermentation_id,
@@ -199,13 +201,12 @@ async def update_protocol_execution(
             compliance_score=updated_execution.compliance_score,
             notes=updated_execution.notes,
             created_at=updated_execution.created_at,
-            updated_at=updated_execution.updated_at
+            updated_at=updated_execution.updated_at,
         )
-    
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
 
 
@@ -213,44 +214,46 @@ async def update_protocol_execution(
     "/executions/{execution_id}",
     response_model=ExecutionResponse,
     summary="Get protocol execution details",
-    description="Retrieves detailed execution information including all associated step completions."
+    description="Retrieves detailed execution information including all associated step completions.",
 )
 async def get_protocol_execution(
     execution_id: Annotated[int, Path(gt=0, description="Execution ID")],
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    execution_repository: Annotated[IProtocolExecutionRepository, Depends(get_execution_repository)]
+    execution_repository: Annotated[
+        IProtocolExecutionRepository, Depends(get_execution_repository)
+    ],
 ) -> ExecutionResponse:
     """
     Get protocol execution details.
-    
+
     Args:
         execution_id: ID of the execution to retrieve
         current_user: Authenticated user context
         execution_repository: Execution repository (injected)
-    
+
     Returns:
         ExecutionResponse: Detailed execution information
-    
+
     Raises:
         HTTP 404: Execution not found
         HTTP 403: Execution belongs to different winery
         HTTP 401: Not authenticated
     """
     execution = await execution_repository.get_by_id(execution_id)
-    
+
     if not execution:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Execution {execution_id} not found"
+            detail=f"Execution {execution_id} not found",
         )
-    
+
     # Enforce multi-tenancy
     if execution.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - execution belongs to different winery"
+            detail="Access denied - execution belongs to different winery",
         )
-    
+
     # Return response
     return ExecutionResponse(
         id=execution.id,
@@ -263,7 +266,7 @@ async def get_protocol_execution(
         compliance_score=execution.compliance_score,
         notes=execution.notes,
         created_at=execution.created_at,
-        updated_at=execution.updated_at
+        updated_at=execution.updated_at,
     )
 
 
@@ -271,37 +274,37 @@ async def get_protocol_execution(
     "/executions",
     response_model=ExecutionListResponse,
     summary="List protocol executions with pagination",
-    description="Lists all executions for the user's winery with pagination support."
+    description="Lists all executions for the user's winery with pagination support.",
 )
 async def list_protocol_executions(
     page: Annotated[int, Query(ge=1, description="Page number (1-indexed)")] = 1,
     page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
     current_user: Annotated[UserContext, Depends(require_winemaker)] = None,
-    execution_repository: Annotated[IProtocolExecutionRepository, Depends(get_execution_repository)] = None
+    execution_repository: Annotated[
+        IProtocolExecutionRepository, Depends(get_execution_repository)
+    ] = None,
 ) -> ExecutionListResponse:
     """
     List all protocol executions for the authenticated user's winery.
-    
+
     Args:
         page: Page number (1-indexed, default 1)
         page_size: Items per page (default 20, max 100)
         current_user: Authenticated user context
         execution_repository: Execution repository (injected)
-    
+
     Returns:
         ExecutionListResponse: List of executions with pagination metadata
-    
+
     Raises:
         HTTP 422: Invalid pagination parameters
         HTTP 401: Not authenticated
     """
     try:
         executions, total_count = await execution_repository.list_by_winery_paginated(
-            winery_id=current_user.winery_id,
-            page=page,
-            page_size=page_size
+            winery_id=current_user.winery_id, page=page, page_size=page_size
         )
-        
+
         items = [
             ExecutionResponse(
                 id=e.id,
@@ -314,21 +317,20 @@ async def list_protocol_executions(
                 compliance_score=e.compliance_score,
                 notes=e.notes,
                 created_at=e.created_at,
-                updated_at=e.updated_at
+                updated_at=e.updated_at,
             )
             for e in executions
         ]
-        
+
         return ExecutionListResponse(
             items=items,
             total_count=total_count,
             page=page,
             page_size=page_size,
-            total_pages=(total_count + page_size - 1) // page_size
+            total_pages=(total_count + page_size - 1) // page_size,
         )
-    
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )

@@ -3,6 +3,7 @@ Interface definition for the Sample Repository.
 Defines the contract that any sample repository implementation must follow.
 ARCHITECTURE: Repository returns BaseSample entities consistently across all methods.
 """
+
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 from datetime import datetime
@@ -14,7 +15,7 @@ class ISampleRepository(ABC):
     """
     Interface for sample data persistence.
     Defines core operations for storing and retrieving fermentation samples.
-    
+
     DESIGN PRINCIPLES:
     - Consistent return type: Always returns BaseSample entities
     - Upsert pattern: Single method for create/update operations
@@ -26,7 +27,7 @@ class ISampleRepository(ABC):
     async def upsert_sample(self, sample: BaseSample) -> BaseSample:
         """
         Creates or updates a sample record using upsert pattern.
-        
+
         UPSERT LOGIC:
         - If sample.id is None: INSERT new sample
         - If sample.id exists: UPDATE existing sample
@@ -48,10 +49,7 @@ class ISampleRepository(ABC):
 
     @abstractmethod
     async def get_sample_by_id(
-        self, 
-        sample_id: int, 
-        fermentation_id: int,
-        winery_id: int
+        self, sample_id: int, fermentation_id: int, winery_id: int
     ) -> Optional[BaseSample]:
         """
         Retrieves a sample by its ID with winery access control (ADR-025).
@@ -65,17 +63,19 @@ class ISampleRepository(ABC):
             Optional[BaseSample]: Sample entity or None if not found or access denied
 
         Security:
-            ADR-025 LIGHT: Validates that sample belongs to fermentation 
+            ADR-025 LIGHT: Validates that sample belongs to fermentation
             AND fermentation belongs to winery. Returns None for cross-winery attempts.
         """
         pass
 
     @abstractmethod
-    async def get_samples_by_fermentation_id(self, fermentation_id: int) -> List[BaseSample]:
+    async def get_samples_by_fermentation_id(
+        self, fermentation_id: int
+    ) -> List[BaseSample]:
         """
         Retrieves all samples for a specific fermentation as BaseSample entities.
         Used by ValidationService for chronological and trend validation.
-        
+
         ORDERING: Returns samples in chronological order (recorded_at ASC)
         NO PAGINATION: Returns all samples for MVP simplicity
 
@@ -92,10 +92,7 @@ class ISampleRepository(ABC):
 
     @abstractmethod
     async def get_samples_in_timerange(
-        self, 
-        fermentation_id: int, 
-        start_time: datetime, 
-        end_time: datetime
+        self, fermentation_id: int, start_time: datetime, end_time: datetime
     ) -> List[BaseSample]:
         """
         Retrieves samples within a specific time range as BaseSample entities.
@@ -149,9 +146,7 @@ class ISampleRepository(ABC):
 
     @abstractmethod
     async def get_latest_sample_by_type(
-        self, 
-        fermentation_id: int, 
-        sample_type: SampleType
+        self, fermentation_id: int, sample_type: SampleType
     ) -> Optional[BaseSample]:
         """
         Retrieves the most recent sample of a specific type for a fermentation.
@@ -168,13 +163,13 @@ class ISampleRepository(ABC):
             NotFoundError: If fermentation_id doesn't exist
         """
         pass
-    
+
     @abstractmethod
     async def check_duplicate_timestamp(
-        self, 
-        fermentation_id: int, 
-        sample: BaseSample, 
-        exclude_sample_id: Optional[int] = None
+        self,
+        fermentation_id: int,
+        sample: BaseSample,
+        exclude_sample_id: Optional[int] = None,
     ) -> bool:
         """
         Checks if a sample with the same recorded_at timestamp and the same sample_type already exists for the fermentation.
@@ -193,7 +188,6 @@ class ISampleRepository(ABC):
             ValidationError: If recorded_at is invalid
         """
         pass
-
 
     @abstractmethod
     async def soft_delete_sample(self, sample_id: int) -> None:

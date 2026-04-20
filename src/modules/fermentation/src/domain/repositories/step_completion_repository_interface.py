@@ -10,49 +10,49 @@ from src.modules.fermentation.src.domain.entities.step_completion import StepCom
 
 class IStepCompletionRepository(ABC):
     """Repository interface for StepCompletion entity"""
-    
+
     @abstractmethod
     async def create(self, completion: StepCompletion) -> StepCompletion:
         """Create and persist a new step completion record"""
         pass
-    
+
     @abstractmethod
     async def get_by_id(self, completion_id: int) -> Optional[StepCompletion]:
         """Get completion by ID"""
         pass
-    
+
     @abstractmethod
     async def get_all(self) -> List[StepCompletion]:
         """Get all completions"""
         pass
-    
+
     @abstractmethod
     async def update(self, completion: StepCompletion) -> StepCompletion:
         """Update an existing completion"""
         pass
-    
+
     @abstractmethod
     async def delete(self, completion_id: int) -> bool:
         """Delete a completion"""
         pass
-    
+
     @abstractmethod
     async def get_by_execution(self, execution_id: int) -> List[StepCompletion]:
         """Get all step completions for an execution (ordered by created_at)"""
         pass
-    
+
     @abstractmethod
     async def get_by_step(self, step_id: int) -> List[StepCompletion]:
         """Get all completions for a specific step across all executions"""
         pass
-    
+
     @abstractmethod
     async def get_by_execution_and_step(
         self, execution_id: int, step_id: int
     ) -> List[StepCompletion]:
         """Get all completions for a step in a specific execution"""
         pass
-    
+
     @abstractmethod
     async def record_completion(
         self,
@@ -60,11 +60,11 @@ class IStepCompletionRepository(ABC):
         step_id: int,
         completed_at: datetime,
         notes: Optional[str] = None,
-        verified_by_user_id: Optional[int] = None
+        verified_by_user_id: Optional[int] = None,
     ) -> StepCompletion:
         """Record a step completion"""
         pass
-    
+
     @abstractmethod
     async def record_skip(
         self,
@@ -72,17 +72,18 @@ class IStepCompletionRepository(ABC):
         step_id: int,
         skip_reason: str,
         skip_notes: Optional[str] = None,
-        verified_by_user_id: Optional[int] = None
+        verified_by_user_id: Optional[int] = None,
     ) -> StepCompletion:
         """Record a skipped step"""
-        pass    
+        pass
+
     @abstractmethod
     async def list_by_execution_paginated(
         self, execution_id: int, page: int = 1, page_size: int = 20
     ) -> Tuple[List[StepCompletion], int]:
         """
         Get completions for an execution with pagination.
-        
+
         Returns:
             Tuple of (completions list, total count)
         """

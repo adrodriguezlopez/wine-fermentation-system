@@ -29,7 +29,9 @@ from sqlalchemy.orm import sessionmaker
 
 from src.shared.wine_fermentator_logging import get_logger
 from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert
-from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
+from src.modules.fermentation.src.domain.entities.protocol_execution import (
+    ProtocolExecution,
+)
 from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
 from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion
 from src.modules.fermentation.src.domain.enums.step_type import ProtocolExecutionStatus
@@ -71,7 +73,7 @@ class AlertSchedulerService:
             minutes=self._interval,
             id="alert_scan",
             replace_existing=True,
-            coalesce=True,          # skip missed runs; don't pile up
+            coalesce=True,  # skip missed runs; don't pile up
             max_instances=1,
         )
         self._scheduler.start()
@@ -93,7 +95,9 @@ class AlertSchedulerService:
         executions, and generate alerts for each one.
         """
         engine = create_async_engine(self._db_url, pool_pre_ping=True)
-        async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async_session = sessionmaker(
+            engine, class_=AsyncSession, expire_on_commit=False
+        )
 
         try:
             async with async_session() as session:
@@ -139,8 +143,9 @@ class AlertSchedulerService:
 
         # Set of step IDs that are already completed or skipped
         completions_result = await session.execute(
-            select(StepCompletion.step_id)
-            .where(StepCompletion.execution_id == execution.id)
+            select(StepCompletion.step_id).where(
+                StepCompletion.execution_id == execution.id
+            )
         )
         completed_step_ids = set(completions_result.scalars().all())
 
@@ -212,7 +217,8 @@ class AlertSchedulerService:
         dedup_since = datetime.utcnow() - timedelta(hours=_DEDUP_HOURS)
 
         existing = await session.execute(
-            select(ProtocolAlert.id).where(
+            select(ProtocolAlert.id)
+            .where(
                 and_(
                     ProtocolAlert.execution_id == execution.id,
                     ProtocolAlert.step_id == step.id,
@@ -220,7 +226,8 @@ class AlertSchedulerService:
                     ProtocolAlert.status != "DISMISSED",
                     ProtocolAlert.created_at >= dedup_since,
                 )
-            ).limit(1)
+            )
+            .limit(1)
         )
         if existing.scalar_one_or_none() is not None:
             return 0  # already alerted recently

@@ -11,15 +11,17 @@ from unittest.mock import AsyncMock, MagicMock
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.domain.enums.user_role import UserRole
-from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
+from src.modules.fermentation.src.domain.entities.fermentation_note import (
+    FermentationNote,
+)
 from src.modules.fermentation.src.service_component.services.fermentation_note_service import (
     FermentationNoteNotFoundError,
 )
 
-
 # =============================================================================
 # Helpers
 # =============================================================================
+
 
 def _make_user(winery_id: int = 100, user_id: int = 5) -> UserContext:
     return UserContext(
@@ -53,12 +55,14 @@ def _make_note(**kwargs) -> FermentationNote:
 # POST /fermentations/{fermentation_id}/notes
 # =============================================================================
 
-class TestAddNote:
 
+class TestAddNote:
     @pytest.mark.asyncio
     async def test_create_note_returns_201_with_note_data(self):
         from src.modules.fermentation.src.api.routers.note_router import add_note
-        from src.modules.fermentation.src.api.schemas.note_schemas import NoteCreateRequest
+        from src.modules.fermentation.src.api.schemas.note_schemas import (
+            NoteCreateRequest,
+        )
 
         service = AsyncMock()
         service.add_note.return_value = _make_note()
@@ -90,8 +94,12 @@ class TestAddNote:
     async def test_create_note_raises_404_when_fermentation_not_found(self):
         from fastapi import HTTPException
         from src.modules.fermentation.src.api.routers.note_router import add_note
-        from src.modules.fermentation.src.api.schemas.note_schemas import NoteCreateRequest
-        from src.modules.fermentation.src.repository_component.errors import EntityNotFoundError
+        from src.modules.fermentation.src.api.schemas.note_schemas import (
+            NoteCreateRequest,
+        )
+        from src.modules.fermentation.src.repository_component.errors import (
+            EntityNotFoundError,
+        )
 
         service = AsyncMock()
         service.add_note.side_effect = EntityNotFoundError("Fermentation not found")
@@ -117,8 +125,8 @@ class TestAddNote:
 # GET /fermentations/{fermentation_id}/notes
 # =============================================================================
 
-class TestListNotes:
 
+class TestListNotes:
     @pytest.mark.asyncio
     async def test_list_notes_returns_list(self):
         from src.modules.fermentation.src.api.routers.note_router import list_notes
@@ -161,8 +169,8 @@ class TestListNotes:
 # GET /notes/{note_id}
 # =============================================================================
 
-class TestGetNote:
 
+class TestGetNote:
     @pytest.mark.asyncio
     async def test_get_note_returns_note(self):
         from src.modules.fermentation.src.api.routers.note_router import get_note
@@ -185,7 +193,9 @@ class TestGetNote:
         from src.modules.fermentation.src.api.routers.note_router import get_note
 
         service = AsyncMock()
-        service.get_note.side_effect = FermentationNoteNotFoundError("Note 999 not found")
+        service.get_note.side_effect = FermentationNoteNotFoundError(
+            "Note 999 not found"
+        )
 
         user = _make_user()
         with pytest.raises(HTTPException) as exc_info:
@@ -202,12 +212,14 @@ class TestGetNote:
 # PATCH /notes/{note_id}
 # =============================================================================
 
-class TestUpdateNote:
 
+class TestUpdateNote:
     @pytest.mark.asyncio
     async def test_update_note_returns_updated_data(self):
         from src.modules.fermentation.src.api.routers.note_router import update_note
-        from src.modules.fermentation.src.api.schemas.note_schemas import NoteUpdateRequest
+        from src.modules.fermentation.src.api.schemas.note_schemas import (
+            NoteUpdateRequest,
+        )
 
         service = AsyncMock()
         service.update_note.return_value = _make_note(note_text="Updated text")
@@ -227,7 +239,9 @@ class TestUpdateNote:
     async def test_update_note_raises_404_when_not_found(self):
         from fastapi import HTTPException
         from src.modules.fermentation.src.api.routers.note_router import update_note
-        from src.modules.fermentation.src.api.schemas.note_schemas import NoteUpdateRequest
+        from src.modules.fermentation.src.api.schemas.note_schemas import (
+            NoteUpdateRequest,
+        )
 
         service = AsyncMock()
         service.update_note.side_effect = FermentationNoteNotFoundError("Not found")
@@ -250,8 +264,8 @@ class TestUpdateNote:
 # DELETE /notes/{note_id}
 # =============================================================================
 
-class TestDeleteNote:
 
+class TestDeleteNote:
     @pytest.mark.asyncio
     async def test_delete_note_succeeds(self):
         from src.modules.fermentation.src.api.routers.note_router import delete_note

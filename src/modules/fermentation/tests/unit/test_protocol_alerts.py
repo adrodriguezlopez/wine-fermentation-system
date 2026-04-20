@@ -22,10 +22,10 @@ from src.modules.fermentation.src.service_component.services.protocol_alert_serv
     ProtocolAlertService,
 )
 
-
 # =============================================================================
 # Helpers
 # =============================================================================
+
 
 def make_alert(
     *,
@@ -60,17 +60,18 @@ def make_alert(
     )
     # Write DB-managed / auto-generated fields directly into __dict__ so they
     # are visible to attribute reads without going through the descriptor set path.
-    alert.__dict__['id'] = id
-    alert.__dict__.setdefault('created_at', datetime(2026, 3, 1, 10, 0, 0))
-    alert.__dict__.setdefault('sent_at', None)
-    alert.__dict__.setdefault('acknowledged_at', None)
-    alert.__dict__.setdefault('dismissed_at', None)
+    alert.__dict__["id"] = id
+    alert.__dict__.setdefault("created_at", datetime(2026, 3, 1, 10, 0, 0))
+    alert.__dict__.setdefault("sent_at", None)
+    alert.__dict__.setdefault("acknowledged_at", None)
+    alert.__dict__.setdefault("dismissed_at", None)
     return alert
 
 
 # =============================================================================
 # ProtocolAlert entity tests
 # =============================================================================
+
 
 class TestProtocolAlertEntity:
     """Unit tests for the ProtocolAlert ORM entity."""
@@ -119,9 +120,22 @@ class TestProtocolAlertEntity:
     def test_to_dict_contains_expected_keys(self):
         alert = make_alert()
         d = alert.to_dict()
-        for key in ("id", "execution_id", "protocol_id", "winery_id", "step_id",
-                    "step_name", "alert_type", "severity", "status", "message",
-                    "created_at", "sent_at", "acknowledged_at", "dismissed_at"):
+        for key in (
+            "id",
+            "execution_id",
+            "protocol_id",
+            "winery_id",
+            "step_id",
+            "step_name",
+            "alert_type",
+            "severity",
+            "status",
+            "message",
+            "created_at",
+            "sent_at",
+            "acknowledged_at",
+            "dismissed_at",
+        ):
             assert key in d
 
     def test_to_dict_timestamps_are_isoformat(self):
@@ -132,7 +146,13 @@ class TestProtocolAlertEntity:
         assert d["sent_at"] is None
 
     def test_repr(self):
-        alert = make_alert(id=7, execution_id=3, alert_type="CRITICAL_DEVIATION", severity="CRITICAL", status="PENDING")
+        alert = make_alert(
+            id=7,
+            execution_id=3,
+            alert_type="CRITICAL_DEVIATION",
+            severity="CRITICAL",
+            status="PENDING",
+        )
         r = repr(alert)
         assert "7" in r
         assert "CRITICAL_DEVIATION" in r
@@ -142,11 +162,13 @@ class TestProtocolAlertEntity:
 # IProtocolAlertRepository interface contract
 # =============================================================================
 
+
 class TestIProtocolAlertRepositoryContract:
     """Verify the interface declares all required abstract methods."""
 
     def test_interface_is_abstract(self):
         import inspect
+
         assert inspect.isabstract(IProtocolAlertRepository)
 
     def test_required_methods_exist(self):
@@ -168,6 +190,7 @@ class TestIProtocolAlertRepositoryContract:
 # ProtocolAlertRepository unit tests (mocked session)
 # =============================================================================
 
+
 class TestProtocolAlertRepository:
     """Unit tests for the concrete ProtocolAlertRepository."""
 
@@ -175,6 +198,7 @@ class TestProtocolAlertRepository:
         from src.modules.fermentation.src.repository_component.protocol_alert_repository import (
             ProtocolAlertRepository,
         )
+
         session = MagicMock()
         session.add = MagicMock()
         session.flush = AsyncMock()
@@ -315,6 +339,7 @@ class TestProtocolAlertRepository:
 # ProtocolAlertService — repository integration tests
 # =============================================================================
 
+
 class TestProtocolAlertServiceWithRepo:
     """
     Test that ProtocolAlertService correctly persists alerts via
@@ -323,9 +348,15 @@ class TestProtocolAlertServiceWithRepo:
 
     def _make_service(self, alert_repo=None):
         """Build a ProtocolAlertService with mocked dependencies."""
-        from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
-        from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol
-        from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
+        from src.modules.fermentation.src.domain.entities.protocol_execution import (
+            ProtocolExecution,
+        )
+        from src.modules.fermentation.src.domain.entities.protocol_protocol import (
+            FermentationProtocol,
+        )
+        from src.modules.fermentation.src.domain.entities.protocol_step import (
+            ProtocolStep,
+        )
 
         # Minimal mock execution
         execution = MagicMock(spec=ProtocolExecution)
@@ -428,9 +459,7 @@ class TestProtocolAlertServiceWithRepo:
     async def test_acknowledge_alert_raises_without_repo(self):
         svc, _ = self._make_service(alert_repo=None)
         with pytest.raises(ValueError, match="repository not configured"):
-            await svc.acknowledge_alert(
-                execution_id=10, alert_id=1, winery_id=5
-            )
+            await svc.acknowledge_alert(execution_id=10, alert_id=1, winery_id=5)
 
     @pytest.mark.asyncio
     async def test_acknowledge_alert_raises_when_not_found(self):
@@ -439,9 +468,7 @@ class TestProtocolAlertServiceWithRepo:
         svc, _ = self._make_service(alert_repo=alert_repo)
 
         with pytest.raises(ValueError, match="not found"):
-            await svc.acknowledge_alert(
-                execution_id=10, alert_id=999, winery_id=5
-            )
+            await svc.acknowledge_alert(execution_id=10, alert_id=999, winery_id=5)
 
     @pytest.mark.asyncio
     async def test_acknowledge_alert_returns_alert_detail(self):
@@ -451,9 +478,7 @@ class TestProtocolAlertServiceWithRepo:
         alert_repo.acknowledge = AsyncMock(return_value=orm_alert)
         svc, _ = self._make_service(alert_repo=alert_repo)
 
-        result = await svc.acknowledge_alert(
-            execution_id=10, alert_id=42, winery_id=5
-        )
+        result = await svc.acknowledge_alert(execution_id=10, alert_id=42, winery_id=5)
         assert isinstance(result, AlertDetail)
         assert result.alert_id == 42
         assert result.status == AlertStatus.ACKNOWLEDGED

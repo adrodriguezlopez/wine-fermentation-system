@@ -6,7 +6,9 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
-from service_component.models.schemas.validations.validation_error import ValidationError
+from service_component.models.schemas.validations.validation_error import (
+    ValidationError,
+)
 from service_component.services.validation_service import ValidationService
 
 
@@ -55,7 +57,9 @@ def test_validation_service_validate_sample_type_not_supported(validation_servic
 
 def test_validate_sugar_chronology_decreasing_trend(validation_service):
     # Act
-    result = validation_service.validate_sugar_trend(previous=10.0, current=9.5, tolerance=0.2)
+    result = validation_service.validate_sugar_trend(
+        previous=10.0, current=9.5, tolerance=0.2
+    )
 
     # Assert
     assert result.is_valid is True
@@ -64,7 +68,9 @@ def test_validate_sugar_chronology_decreasing_trend(validation_service):
 
 def test_validate_sugar_chronology_increasing_trend(validation_service):
     # Act
-    result = validation_service.validate_sugar_trend(previous=9.0, current=9.5, tolerance=0.2)
+    result = validation_service.validate_sugar_trend(
+        previous=9.0, current=9.5, tolerance=0.2
+    )
 
     # Assert
     assert result.is_valid is False
@@ -86,7 +92,9 @@ def test_validation_service_result_failure_with_multiple_errors(validation_servi
     # Arrange
     errors = [
         ValidationError(field="sugar", message="Value too low", current_value=5.0),
-        ValidationError(field="temperature", message="Value out of range", current_value=105.0),
+        ValidationError(
+            field="temperature", message="Value out of range", current_value=105.0
+        ),
     ]
     # Act
     result = validation_service.failure(errors)
@@ -102,7 +110,7 @@ def test_validation_service_result_failure_with_multiple_errors(validation_servi
 def test_validation_service_add_warning_does_not_invalidate_result(validation_service):
     # Arrange
     result = validation_service.success()
-    
+
     # Act
     result.add_warning("temperature", "Temperature slightly high", current_value=35.0)
 
@@ -115,7 +123,9 @@ def test_validation_service_add_warning_does_not_invalidate_result(validation_se
     assert result.warnings[0].current_value == 35.0
 
 
-def test_validation_service_with_none_values_should_fail(validation_service):  # Removed 'self'
+def test_validation_service_with_none_values_should_fail(
+    validation_service,
+):  # Removed 'self'
     # Act
     result = validation_service.validate_sample_value("sugar", None)
 
@@ -125,7 +135,9 @@ def test_validation_service_with_none_values_should_fail(validation_service):  #
     assert len(result.errors) == 1
 
 
-def test_validation_service_with_empty_string_should_fail(validation_service):  # Removed 'self'
+def test_validation_service_with_empty_string_should_fail(
+    validation_service,
+):  # Removed 'self'
     # Act
     result = validation_service.validate_sample_value("sugar", "")
 

@@ -47,21 +47,19 @@ from src.modules.fermentation.src.repository_component.fermentation_protocol_rep
 from src.modules.fermentation.src.api.dependencies import get_db_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 # Router instance
-router = APIRouter(
-    prefix="/protocols",
-    tags=["protocols"]
-)
+router = APIRouter(prefix="/protocols", tags=["protocols"])
 
 
-def get_protocol_repository(session: Annotated[AsyncSession, Depends(get_db_session)]) -> IFermentationProtocolRepository:
+def get_protocol_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> IFermentationProtocolRepository:
     """
     Dependency: Get protocol repository instance
-    
+
     Args:
         session: Database session (injected)
-    
+
     Returns:
         IFermentationProtocolRepository: Repository instance
     """
@@ -73,27 +71,29 @@ def get_protocol_repository(session: Annotated[AsyncSession, Depends(get_db_sess
     response_model=ProtocolResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new fermentation protocol",
-    description="Creates a new protocol template for a winery/varietal. Requires WINEMAKER or ADMIN role."
+    description="Creates a new protocol template for a winery/varietal. Requires WINEMAKER or ADMIN role.",
 )
 async def create_protocol(
     request: ProtocolCreateRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> ProtocolResponse:
     """
     Create a new fermentation protocol.
-    
+
     The protocol version must be unique per (winery_id, varietal_code, version) combination.
     New protocols start with is_active=False and must be explicitly activated.
-    
+
     Args:
         request: Protocol creation data (ProtocolCreateRequest - validated by Pydantic)
         current_user: Authenticated user context (provides winery_id)
         repository: Protocol repository (injected)
-    
+
     Returns:
         ProtocolResponse: Created protocol with ID and timestamps
-    
+
     Raises:
         HTTP 403: Insufficient permissions (not WINEMAKER or ADMIN)
         HTTP 422: Invalid request data (Pydantic validation)
@@ -115,12 +115,12 @@ async def create_protocol(
             protocol_name=request.protocol_name,
             expected_duration_days=request.expected_duration_days,
             created_by_user_id=current_user.user_id,
-            description=request.description
+            description=request.description,
         )
-        
+
         # Create protocol via repository
         created_protocol = await repository.create(protocol_dto)
-        
+
         # Convert entity to Pydantic response
         return ProtocolResponse(
             id=created_protocol.id,
@@ -134,24 +134,23 @@ async def create_protocol(
             is_active=created_protocol.is_active,
             description=created_protocol.description,
             created_at=created_protocol.created_at,
-            updated_at=created_protocol.updated_at
+            updated_at=created_protocol.updated_at,
         )
-    
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
     except Exception as e:
         # Check for duplicate constraint violation
         if "unique" in str(e).lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Protocol version {request.version} already exists for this varietal"
+                detail=f"Protocol version {request.version} already exists for this varietal",
             )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create protocol"
+            detail="Failed to create protocol",
         )
 
 
@@ -159,44 +158,46 @@ async def create_protocol(
     "/{protocol_id}",
     response_model=ProtocolResponse,
     summary="Get a specific protocol",
-    description="Retrieves a protocol by ID. Multi-tenancy enforced (only accessible by winery that owns it)."
+    description="Retrieves a protocol by ID. Multi-tenancy enforced (only accessible by winery that owns it).",
 )
 async def get_protocol(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> ProtocolResponse:
     """
     Get a specific protocol by ID.
-    
+
     Args:
         protocol_id: ID of the protocol to retrieve
         current_user: Authenticated user context (for multi-tenancy)
         repository: Protocol repository (injected)
-    
+
     Returns:
         ProtocolResponse: Protocol details
-    
+
     Raises:
         HTTP 404: Protocol not found
         HTTP 403: Protocol belongs to different winery
         HTTP 401: Not authenticated
     """
     protocol = await repository.get_by_id(protocol_id)
-    
+
     if not protocol:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Protocol {protocol_id} not found"
+            detail=f"Protocol {protocol_id} not found",
         )
-    
+
     # Enforce multi-tenancy
     if protocol.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - protocol belongs to different winery"
+            detail="Access denied - protocol belongs to different winery",
         )
-    
+
     # Convert entity to Pydantic response
     return ProtocolResponse(
         id=protocol.id,
@@ -210,7 +211,7 @@ async def get_protocol(
         expected_duration_days=protocol.expected_duration_days,
         description=protocol.description,
         created_at=protocol.created_at,
-        updated_at=protocol.updated_at
+        updated_at=protocol.updated_at,
     )
 
 
@@ -218,29 +219,31 @@ async def get_protocol(
     "/{protocol_id}",
     response_model=ProtocolResponse,
     summary="Update a protocol",
-    description="Updates protocol metadata (name, description). Cannot update version (create new version instead)."
+    description="Updates protocol metadata (name, description). Cannot update version (create new version instead).",
 )
 async def update_protocol(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
     request: ProtocolUpdateRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> ProtocolResponse:
     """
     Update a protocol.
-    
+
     Only metadata can be updated (name, description). Version cannot be changed.
     To create a new version, POST a new protocol with a different version number.
-    
+
     Args:
         protocol_id: ID of the protocol to update
         request: Update data (ProtocolUpdate DTO)
         current_user: Authenticated user context
         repository: Protocol repository (injected)
-    
+
     Returns:
         ProtocolResponse: Updated protocol
-    
+
     Raises:
         HTTP 404: Protocol not found
         HTTP 403: Protocol belongs to different winery
@@ -248,31 +251,31 @@ async def update_protocol(
         HTTP 401: Not authenticated
     """
     protocol = await repository.get_by_id(protocol_id)
-    
+
     if not protocol:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Protocol {protocol_id} not found"
+            detail=f"Protocol {protocol_id} not found",
         )
-    
+
     # Enforce multi-tenancy
     if protocol.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - protocol belongs to different winery"
+            detail="Access denied - protocol belongs to different winery",
         )
-    
+
     try:
         # Update allowed fields
         update_data = {k: v for k, v in request.model_dump(exclude_unset=True).items()}
         updated_protocol = await repository.update(protocol_id, update_data)
-        
+
         if not updated_protocol:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Failed to update protocol {protocol_id}"
+                detail=f"Failed to update protocol {protocol_id}",
             )
-        
+
         return ProtocolResponse(
             id=updated_protocol.id,
             winery_id=updated_protocol.winery_id,
@@ -285,13 +288,12 @@ async def update_protocol(
             expected_duration_days=updated_protocol.expected_duration_days,
             description=updated_protocol.description,
             created_at=updated_protocol.created_at,
-            updated_at=updated_protocol.updated_at
+            updated_at=updated_protocol.updated_at,
         )
-    
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
 
 
@@ -299,24 +301,26 @@ async def update_protocol(
     "/{protocol_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a protocol",
-    description="Soft deletes a protocol (marks as inactive). Hard delete only if no executions exist."
+    description="Soft deletes a protocol (marks as inactive). Hard delete only if no executions exist.",
 )
 async def delete_protocol(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> None:
     """
     Delete a protocol.
-    
+
     Soft delete: Marks protocol as inactive. Existing executions continue with this protocol.
     Hard delete: Only if no executions exist (prevents orphaning active fermentations).
-    
+
     Args:
         protocol_id: ID of the protocol to delete
         current_user: Authenticated user context
         repository: Protocol repository (injected)
-    
+
     Raises:
         HTTP 404: Protocol not found
         HTTP 403: Protocol belongs to different winery
@@ -324,31 +328,31 @@ async def delete_protocol(
         HTTP 401: Not authenticated
     """
     protocol = await repository.get_by_id(protocol_id)
-    
+
     if not protocol:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Protocol {protocol_id} not found"
+            detail=f"Protocol {protocol_id} not found",
         )
-    
+
     # Enforce multi-tenancy
     if protocol.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - protocol belongs to different winery"
+            detail="Access denied - protocol belongs to different winery",
         )
-    
+
     try:
         await repository.delete(protocol_id)
     except Exception as e:
         if "execution" in str(e).lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Cannot delete protocol with active executions. Mark as inactive instead."
+                detail="Cannot delete protocol with active executions. Mark as inactive instead.",
             )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete protocol"
+            detail="Failed to delete protocol",
         )
 
 
@@ -356,26 +360,28 @@ async def delete_protocol(
     "",
     response_model=ProtocolListResponse,
     summary="List protocols with pagination",
-    description="Lists all protocols for the user's winery with pagination support."
+    description="Lists all protocols for the user's winery with pagination support.",
 )
 async def list_protocols(
     page: Annotated[int, Query(ge=1, description="Page number (1-indexed)")] = 1,
     page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
     current_user: Annotated[UserContext, Depends(require_winemaker)] = None,
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)] = None
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ] = None,
 ) -> ProtocolListResponse:
     """
     List all protocols for the authenticated user's winery.
-    
+
     Supports pagination to efficiently handle large lists.
     Only returns protocols belonging to the user's winery (multi-tenancy).
-    
+
     Args:
         page: Page number (1-indexed, default 1)
         page_size: Items per page (default 20, max 100)
         current_user: Authenticated user context (for winery_id)
         repository: Protocol repository (injected)
-    
+
     Returns:
         ProtocolListResponse: List of protocols with pagination metadata
             - items: List of ProtocolResponse
@@ -383,18 +389,16 @@ async def list_protocols(
             - page: Current page number
             - page_size: Items per page
             - total_pages: Calculated total pages
-    
+
     Raises:
         HTTP 422: Invalid pagination parameters
         HTTP 401: Not authenticated
     """
     try:
         protocols, total_count = await repository.list_by_winery_paginated(
-            winery_id=current_user.winery_id,
-            page=page,
-            page_size=page_size
+            winery_id=current_user.winery_id, page=page, page_size=page_size
         )
-        
+
         items = [
             ProtocolResponse(
                 id=p.id,
@@ -408,23 +412,22 @@ async def list_protocols(
                 expected_duration_days=p.expected_duration_days,
                 description=p.description,
                 created_at=p.created_at,
-                updated_at=p.updated_at
+                updated_at=p.updated_at,
             )
             for p in protocols
         ]
-        
+
         return ProtocolListResponse(
             items=items,
             total_count=total_count,
             page=page,
             page_size=page_size,
-            total_pages=(total_count + page_size - 1) // page_size
+            total_pages=(total_count + page_size - 1) // page_size,
         )
-    
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
 
 
@@ -432,76 +435,74 @@ async def list_protocols(
     "/{protocol_id}/activate",
     response_model=ProtocolResponse,
     summary="Activate a protocol version",
-    description="Activates a protocol version. Deactivates all other versions for the same (winery, varietal)."
+    description="Activates a protocol version. Deactivates all other versions for the same (winery, varietal).",
 )
 async def activate_protocol(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> ProtocolResponse:
     """
     Activate a protocol version.
-    
+
     Semantic Versioning Strategy:
     - Only one protocol version can be active per (winery_id, varietal_code)
     - New fermentations use the active version
     - In-progress fermentations continue with their original version
     - Existing executions are NOT retroactively changed
-    
+
     Example:
     - v1.0 (active) has 3 in-progress executions
     - Activate v1.1
     - Result: v1.0 becomes inactive, v1.1 becomes active
     - Existing v1.0 executions continue with v1.0 steps
     - New fermentations use v1.1
-    
+
     Args:
         protocol_id: ID of the protocol version to activate
         current_user: Authenticated user context
         repository: Protocol repository (injected)
-    
+
     Returns:
         ProtocolResponse: Activated protocol
-    
+
     Raises:
         HTTP 404: Protocol not found
         HTTP 403: Protocol belongs to different winery
         HTTP 401: Not authenticated
     """
     protocol = await repository.get_by_id(protocol_id)
-    
+
     if not protocol:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Protocol {protocol_id} not found"
+            detail=f"Protocol {protocol_id} not found",
         )
-    
+
     # Enforce multi-tenancy
     if protocol.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - protocol belongs to different winery"
+            detail="Access denied - protocol belongs to different winery",
         )
-    
+
     try:
         # Deactivate all other versions for this (winery, varietal)
         await repository.deactivate_by_winery_varietal(
-            winery_id=current_user.winery_id,
-            varietal_code=protocol.varietal_code
+            winery_id=current_user.winery_id, varietal_code=protocol.varietal_code
         )
-        
+
         # Activate this version
-        activated_protocol = await repository.update(
-            protocol_id,
-            {"is_active": True}
-        )
-        
+        activated_protocol = await repository.update(protocol_id, {"is_active": True})
+
         if not activated_protocol:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to activate protocol"
+                detail="Failed to activate protocol",
             )
-        
+
         return ProtocolResponse(
             id=activated_protocol.id,
             winery_id=activated_protocol.winery_id,
@@ -514,13 +515,13 @@ async def activate_protocol(
             expected_duration_days=activated_protocol.expected_duration_days,
             description=activated_protocol.description,
             created_at=activated_protocol.created_at,
-            updated_at=activated_protocol.updated_at
+            updated_at=activated_protocol.updated_at,
         )
-    
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to activate protocol: {str(e)}"
+            detail=f"Failed to activate protocol: {str(e)}",
         )
 
 
@@ -539,7 +540,9 @@ async def clone_protocol(
     protocol_id: Annotated[int, Path(gt=0, description="Source protocol ID")],
     request: ProtocolCloneRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> ProtocolResponse:
     """
     Clone a protocol into a new version.
@@ -559,10 +562,18 @@ async def clone_protocol(
         HTTP 409: new_version already exists for (winery, varietal)
         HTTP 422: Invalid version format
     """
-    from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
-    from src.modules.fermentation.src.service_component.services.protocol_service import ProtocolService
-    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
-    from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
+    from src.modules.fermentation.src.repository_component.protocol_step_repository import (
+        ProtocolStepRepository,
+    )
+    from src.modules.fermentation.src.service_component.services.protocol_service import (
+        ProtocolService,
+    )
+    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import (
+        ProtocolComplianceService,
+    )
+    from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+        ProtocolExecutionRepository,
+    )
     from src.modules.fermentation.src.api.dependencies import get_db_session
 
     session = repository.session
@@ -593,7 +604,9 @@ async def clone_protocol(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg)
         if "not found" in msg or "Access denied" in msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg
+        )
 
     return ProtocolResponse(
         id=cloned.id,
@@ -619,12 +632,21 @@ async def clone_protocol(
 # ADR-039: Template Lifecycle Endpoints
 # ---------------------------------------------------------------------------
 
+
 def _build_service(repository: "IFermentationProtocolRepository") -> "ProtocolService":
     """Inline factory — builds ProtocolService from an existing repository instance."""
-    from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
-    from src.modules.fermentation.src.service_component.services.protocol_service import ProtocolService
-    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
-    from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
+    from src.modules.fermentation.src.repository_component.protocol_step_repository import (
+        ProtocolStepRepository,
+    )
+    from src.modules.fermentation.src.service_component.services.protocol_service import (
+        ProtocolService,
+    )
+    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import (
+        ProtocolComplianceService,
+    )
+    from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+        ProtocolExecutionRepository,
+    )
 
     session = repository.session
     step_repo = ProtocolStepRepository(session=session)
@@ -644,7 +666,10 @@ def _build_service(repository: "IFermentationProtocolRepository") -> "ProtocolSe
 
 def _to_response(p: "FermentationProtocol") -> ProtocolResponse:
     """Convert a FermentationProtocol entity to ProtocolResponse."""
-    from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol as _FP  # noqa: F401
+    from src.modules.fermentation.src.domain.entities.protocol_protocol import (
+        FermentationProtocol as _FP,
+    )  # noqa: F401
+
     return ProtocolResponse(
         id=p.id,
         winery_id=p.winery_id,
@@ -679,7 +704,9 @@ async def list_templates(
     page: Annotated[int, Query(ge=1, description="Page number (1-indexed)")] = 1,
     page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
     current_user: Annotated[UserContext, Depends(require_winemaker)] = None,
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)] = None,
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ] = None,
 ) -> ProtocolListResponse:
     """List master-template protocols for the caller's winery."""
     service = _build_service(repository)
@@ -709,7 +736,9 @@ async def list_templates(
 async def approve_template(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> ProtocolResponse:
     """Approve a DRAFT template → FINAL."""
     service = _build_service(repository)
@@ -723,7 +752,9 @@ async def approve_template(
         msg = str(e)
         if "not found" in msg or "Access denied" in msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg
+        )
     return _to_response(protocol)
 
 
@@ -740,7 +771,9 @@ async def approve_template(
 async def deprecate_template(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> ProtocolResponse:
     """Deprecate a FINAL template."""
     service = _build_service(repository)
@@ -753,7 +786,9 @@ async def deprecate_template(
         msg = str(e)
         if "not found" in msg or "Access denied" in msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg
+        )
     return _to_response(protocol)
 
 
@@ -772,7 +807,9 @@ async def instantiate_template(
     protocol_id: Annotated[int, Path(gt=0, description="Source template protocol ID")],
     request: ProtocolInstantiateRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
-    repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+    repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> ProtocolResponse:
     """Instantiate a FINAL template into a fermentation-specific instance."""
     service = _build_service(repository)
@@ -787,5 +824,7 @@ async def instantiate_template(
         msg = str(e)
         if "not found" in msg or "Access denied" in msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg
+        )
     return _to_response(instance)

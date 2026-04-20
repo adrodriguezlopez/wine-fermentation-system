@@ -13,13 +13,13 @@ Import entities directly from their modules instead:
 """
 
 __all__ = [
-    'BaseEntity',
-    'Fermentation', 
-    'FermentationNote', 
-    'FermentationLotSource', 
-    'User', 
-    'BaseSample', 
-    'SugarSample', 
-    'DensitySample', 
-    'CelsiusTemperatureSample'
+    "BaseEntity",
+    "Fermentation",
+    "FermentationNote",
+    "FermentationLotSource",
+    "User",
+    "BaseSample",
+    "SugarSample",
+    "DensitySample",
+    "CelsiusTemperatureSample",
 ]

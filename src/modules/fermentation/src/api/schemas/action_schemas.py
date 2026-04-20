@@ -7,22 +7,25 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, ConfigDict
 
-from src.modules.fermentation.src.domain.enums.step_type import ActionType, ActionOutcome
-
+from src.modules.fermentation.src.domain.enums.step_type import (
+    ActionType,
+    ActionOutcome,
+)
 
 # =============================================================================
 # Request schemas
 # =============================================================================
 
+
 class ActionCreateRequest(BaseModel):
     """Payload for POST /fermentations/{ferm_id}/actions."""
 
-    action_type: ActionType = Field(
-        ..., description="Category of action taken"
-    )
+    action_type: ActionType = Field(..., description="Category of action taken")
     description: str = Field(
-        ..., min_length=1, max_length=2000,
-        description="Free-text description of what the winemaker did"
+        ...,
+        min_length=1,
+        max_length=2000,
+        description="Free-text description of what the winemaker did",
     )
     taken_at: datetime = Field(
         ..., description="When the action was physically taken (may be in the past)"
@@ -36,8 +39,9 @@ class ActionCreateRequest(BaseModel):
         None, gt=0, description="Specific protocol step this action targets"
     )
     alert_id: Optional[int] = Field(
-        None, gt=0,
-        description="Alert that triggered this action (auto-acknowledges the alert)"
+        None,
+        gt=0,
+        description="Alert that triggered this action (auto-acknowledges the alert)",
     )
     recommendation_id: Optional[int] = Field(
         None, gt=0, description="Analysis recommendation that prompted this action"
@@ -51,14 +55,14 @@ class ActionOutcomeUpdateRequest(BaseModel):
         ..., description="Observed result after taking the action"
     )
     outcome_notes: Optional[str] = Field(
-        None, max_length=2000,
-        description="Additional observations about the outcome"
+        None, max_length=2000, description="Additional observations about the outcome"
     )
 
 
 # =============================================================================
 # Response schemas
 # =============================================================================
+
 
 class ActionResponse(BaseModel):
     """Single WinemakerAction serialised for API responses."""

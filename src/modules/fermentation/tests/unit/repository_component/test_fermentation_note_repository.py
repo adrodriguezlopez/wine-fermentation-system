@@ -27,7 +27,9 @@ from src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (
     FermentationNoteUpdate,
 )
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
-from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
+from src.modules.fermentation.src.domain.entities.fermentation_note import (
+    FermentationNote,
+)
 from src.modules.fermentation.src.repository_component.errors import EntityNotFoundError
 
 
@@ -35,11 +37,7 @@ from src.modules.fermentation.src.repository_component.errors import EntityNotFo
 def sample_fermentation():
     """Create a mock fermentation entity using shared factory."""
     return create_mock_entity(
-        Fermentation,
-        id=1,
-        winery_id=100,
-        name="Test Fermentation",
-        is_deleted=False
+        Fermentation, id=1, winery_id=100, name="Test Fermentation", is_deleted=False
     )
 
 
@@ -53,7 +51,7 @@ def sample_note():
         note_text="Test note",
         action_taken="Test action",
         created_by_user_id=5,
-        is_deleted=False
+        is_deleted=False,
     )
 
 
@@ -69,21 +67,19 @@ class TestCreate:
             action_taken="Action taken",
             created_by_user_id=5,
         )
-        
+
         # Mock fermentation lookup - returns fermentation when queried
         fermentation_result = create_query_result([sample_fermentation])
-        
+
         # Create session manager with configured execute result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(fermentation_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(fermentation_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.create(1, 100, create_data)
-        
+
         # Assert
         assert result is not None
         assert result.fermentation_id == 1
@@ -101,22 +97,20 @@ class TestCreate:
             action_taken="Action taken",
             created_by_user_id=5,
         )
-        
+
         # Mock fermentation not found
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act & Assert
         with pytest.raises(EntityNotFoundError) as exc_info:
             await repository.create(999, 100, create_data)
-        
+
         assert "not found" in str(exc_info.value).lower()
         assert "999" in str(exc_info.value)
 
@@ -129,22 +123,20 @@ class TestCreate:
             action_taken="Action taken",
             created_by_user_id=5,
         )
-        
+
         # Mock fermentation not found (due to winery mismatch)
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act & Assert
         with pytest.raises(EntityNotFoundError) as exc_info:
             await repository.create(1, 999, create_data)
-        
+
         assert "not found" in str(exc_info.value).lower()
         assert "does not belong to winery" in str(exc_info.value).lower()
 
@@ -157,18 +149,16 @@ class TestGetById:
         """Test retrieving an existing note."""
         # Arrange
         note_result = create_query_result([sample_note])
-        
+
         # Create session manager with configured execute result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(note_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(note_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.get_by_id(1, 100)
-        
+
         # Assert
         assert result == sample_note
         assert result.id == 1
@@ -178,18 +168,16 @@ class TestGetById:
         """Test retrieving non-existent note."""
         # Arrange
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.get_by_id(999, 100)
-        
+
         # Assert
         assert result is None
 
@@ -198,18 +186,16 @@ class TestGetById:
         """Test retrieving note from different winery returns None."""
         # Arrange
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.get_by_id(1, 999)
-        
+
         # Assert
         assert result is None
 
@@ -218,18 +204,16 @@ class TestGetById:
         """Test soft deleted notes are not returned."""
         # Arrange
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.get_by_id(1, 100)
-        
+
         # Assert
         assert result is None
 
@@ -248,23 +232,21 @@ class TestGetByFermentation:
             note_text="Second note",
             action_taken="Second action",
             created_by_user_id=5,
-            is_deleted=False
+            is_deleted=False,
         )
-        
+
         # Mock multiple notes returned
         notes_result = create_query_result([sample_note, note2])
-        
+
         # Create session manager with configured execute result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(notes_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(notes_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.get_by_fermentation(1, 100)
-        
+
         # Assert
         assert isinstance(result, list)
         assert len(result) == 2
@@ -276,18 +258,16 @@ class TestGetByFermentation:
         """Test retrieving notes for fermentation with no notes."""
         # Arrange
         empty_result = create_query_result([])
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.get_by_fermentation(1, 100)
-        
+
         # Assert
         assert result == []
 
@@ -296,18 +276,16 @@ class TestGetByFermentation:
         """Test retrieving notes for fermentation from different winery returns empty."""
         # Arrange
         empty_result = create_query_result([])
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.get_by_fermentation(1, 999)
-        
+
         # Assert
         assert result == []
 
@@ -316,18 +294,16 @@ class TestGetByFermentation:
         """Test that soft deleted notes are excluded."""
         # Arrange
         notes_result = create_query_result([sample_note])
-        
+
         # Create session manager with configured execute result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(notes_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(notes_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.get_by_fermentation(1, 100)
-        
+
         # Assert
         assert len(result) == 1
         assert all(not note.is_deleted for note in result)
@@ -344,20 +320,18 @@ class TestUpdate:
             note_text="Updated note",
             action_taken="Updated action",
         )
-        
+
         note_result = create_query_result([sample_note])
-        
+
         # Create session manager with configured execute result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(note_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(note_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.update(1, 100, update_data)
-        
+
         # Assert
         assert result == sample_note
         assert sample_note.note_text == "Updated note"
@@ -369,20 +343,18 @@ class TestUpdate:
         # Arrange
         original_action = sample_note.action_taken
         update_data = FermentationNoteUpdate(note_text="Updated note only")
-        
+
         note_result = create_query_result([sample_note])
-        
+
         # Create session manager with configured execute result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(note_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(note_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.update(1, 100, update_data)
-        
+
         # Assert
         assert result.note_text == "Updated note only"
         assert result.action_taken == original_action  # Unchanged
@@ -392,20 +364,18 @@ class TestUpdate:
         """Test updating non-existent note."""
         # Arrange
         update_data = FermentationNoteUpdate(note_text="Updated")
-        
+
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.update(999, 100, update_data)
-        
+
         # Assert
         assert result is None
 
@@ -414,20 +384,18 @@ class TestUpdate:
         """Test updating note from different winery returns None."""
         # Arrange
         update_data = FermentationNoteUpdate(note_text="Updated")
-        
+
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.update(1, 999, update_data)
-        
+
         # Assert
         assert result is None
 
@@ -440,18 +408,16 @@ class TestDelete:
         """Test soft deleting an existing note."""
         # Arrange
         note_result = create_query_result([sample_note])
-        
+
         # Create session manager with configured execute result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(note_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(note_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.delete(1, 100)
-        
+
         # Assert
         assert result is True
         assert sample_note.is_deleted is True
@@ -461,18 +427,16 @@ class TestDelete:
         """Test deleting non-existent note."""
         # Arrange
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.delete(999, 100)
-        
+
         # Assert
         assert result is False
 
@@ -481,18 +445,16 @@ class TestDelete:
         """Test deleting note from different winery returns False."""
         # Arrange
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.delete(1, 999)
-        
+
         # Assert
         assert result is False
 
@@ -501,17 +463,15 @@ class TestDelete:
         """Test deleting already soft-deleted note returns False."""
         # Arrange
         empty_result = create_empty_result()
-        
+
         # Create session manager with empty result
         session_manager = (
-            MockSessionManagerBuilder()
-            .with_execute_result(empty_result)
-            .build()
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
         )
         repository = FermentationNoteRepository(session_manager)
-        
+
         # Act
         result = await repository.delete(1, 100)
-        
+
         # Assert
         assert result is False

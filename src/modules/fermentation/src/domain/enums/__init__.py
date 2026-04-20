@@ -10,10 +10,10 @@ from .data_source import DataSource
 from .step_type import StepType, ProtocolExecutionStatus, SkipReason
 
 __all__ = [
-    'FermentationStatus', 
-    'SampleType', 
-    'DataSource',
-    'StepType',
-    'ProtocolExecutionStatus',
-    'SkipReason',
+    "FermentationStatus",
+    "SampleType",
+    "DataSource",
+    "StepType",
+    "ProtocolExecutionStatus",
+    "SkipReason",
 ]

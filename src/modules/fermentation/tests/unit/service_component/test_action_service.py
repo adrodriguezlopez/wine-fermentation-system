@@ -8,17 +8,22 @@ import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.modules.fermentation.src.domain.entities.winemaker_action import WinemakerAction
-from src.modules.fermentation.src.domain.enums.step_type import ActionType, ActionOutcome
+from src.modules.fermentation.src.domain.entities.winemaker_action import (
+    WinemakerAction,
+)
+from src.modules.fermentation.src.domain.enums.step_type import (
+    ActionType,
+    ActionOutcome,
+)
 from src.modules.fermentation.src.service_component.services.action_service import (
     ActionService,
     ActionNotFoundError,
 )
 
-
 # =============================================================================
 # Helpers
 # =============================================================================
+
 
 def _make_action(**kwargs) -> WinemakerAction:
     """Build a WinemakerAction with sensible defaults."""
@@ -62,8 +67,8 @@ def _make_service() -> tuple[ActionService, MagicMock, MagicMock]:
 # record_action
 # =============================================================================
 
-class TestRecordAction:
 
+class TestRecordAction:
     @pytest.mark.asyncio
     async def test_creates_action_with_correct_fields(self):
         service, repo, _ = _make_service()
@@ -149,8 +154,8 @@ class TestRecordAction:
 # update_outcome
 # =============================================================================
 
-class TestUpdateOutcome:
 
+class TestUpdateOutcome:
     @pytest.mark.asyncio
     async def test_updates_outcome_to_resolved(self):
         service, repo, _ = _make_service()
@@ -158,14 +163,17 @@ class TestUpdateOutcome:
         repo.update_outcome.return_value = updated
 
         result = await service.update_outcome(
-            action_id=1, winery_id=10,
+            action_id=1,
+            winery_id=10,
             outcome=ActionOutcome.RESOLVED.value,
             outcome_notes="Temperature stabilised",
         )
 
         repo.update_outcome.assert_awaited_once_with(
-            action_id=1, winery_id=10,
-            outcome="RESOLVED", outcome_notes="Temperature stabilised",
+            action_id=1,
+            winery_id=10,
+            outcome="RESOLVED",
+            outcome_notes="Temperature stabilised",
         )
         assert result.outcome == ActionOutcome.RESOLVED.value
 
@@ -176,7 +184,8 @@ class TestUpdateOutcome:
 
         with pytest.raises(ActionNotFoundError):
             await service.update_outcome(
-                action_id=999, winery_id=10,
+                action_id=999,
+                winery_id=10,
                 outcome=ActionOutcome.NO_EFFECT.value,
             )
 
@@ -192,12 +201,15 @@ class TestUpdateOutcome:
         repo.update_outcome.assert_not_awaited()
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("outcome", [
-        ActionOutcome.PENDING.value,
-        ActionOutcome.RESOLVED.value,
-        ActionOutcome.NO_EFFECT.value,
-        ActionOutcome.WORSENED.value,
-    ])
+    @pytest.mark.parametrize(
+        "outcome",
+        [
+            ActionOutcome.PENDING.value,
+            ActionOutcome.RESOLVED.value,
+            ActionOutcome.NO_EFFECT.value,
+            ActionOutcome.WORSENED.value,
+        ],
+    )
     async def test_all_valid_outcomes_accepted(self, outcome):
         service, repo, _ = _make_service()
         repo.update_outcome.return_value = _make_action(outcome=outcome)
@@ -212,8 +224,8 @@ class TestUpdateOutcome:
 # get_action
 # =============================================================================
 
-class TestGetAction:
 
+class TestGetAction:
     @pytest.mark.asyncio
     async def test_returns_action_when_found(self):
         service, repo, _ = _make_service()
@@ -238,8 +250,8 @@ class TestGetAction:
 # get_actions_for_fermentation
 # =============================================================================
 
-class TestGetActionsForFermentation:
 
+class TestGetActionsForFermentation:
     @pytest.mark.asyncio
     async def test_returns_paginated_results(self):
         service, repo, _ = _make_service()
@@ -273,8 +285,8 @@ class TestGetActionsForFermentation:
 # get_actions_for_execution
 # =============================================================================
 
-class TestGetActionsForExecution:
 
+class TestGetActionsForExecution:
     @pytest.mark.asyncio
     async def test_delegates_to_repository(self):
         service, repo, _ = _make_service()
@@ -295,8 +307,8 @@ class TestGetActionsForExecution:
 # delete_action
 # =============================================================================
 
-class TestDeleteAction:
 
+class TestDeleteAction:
     @pytest.mark.asyncio
     async def test_succeeds_when_action_exists(self):
         service, repo, _ = _make_service()

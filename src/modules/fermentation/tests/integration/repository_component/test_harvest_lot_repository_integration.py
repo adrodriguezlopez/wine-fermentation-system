@@ -42,15 +42,15 @@ class TestHarvestLotRepositoryCRUD:
     ):
         """
         Test that create() persists HarvestLot to database.
-        
+
         GIVEN a valid HarvestLotCreate DTO
         WHEN create() is called
         THEN the harvest lot should be persisted with ID assigned
         AND should be retrievable from the database
         """
         # Arrange
-        HarvestLot = test_models['HarvestLot']
-        
+        HarvestLot = test_models["HarvestLot"]
+
         harvest_data = HarvestLotCreate(
             block_id=test_vineyard_block.id,
             code="HL2024TEST",
@@ -58,23 +58,22 @@ class TestHarvestLotRepositoryCRUD:
             weight_kg=2000.0,
             brix_at_harvest=25.0,
             grape_variety="Merlot",
-            notes="Test harvest lot"
+            notes="Test harvest lot",
         )
-        
+
         # Act
         created = await harvest_lot_repository.create(
-            winery_id=test_winery.id,
-            data=harvest_data
+            winery_id=test_winery.id, data=harvest_data
         )
         await db_session.flush()
-        
+
         # Assert
         assert created.id is not None, "ID should be assigned after create"
         assert created.winery_id == test_winery.id
         assert created.code == "HL2024TEST"
         assert created.weight_kg == 2000.0
         assert created.grape_variety == "Merlot"
-        
+
         # Verify persistence
         result = await db_session.execute(
             select(HarvestLot).where(HarvestLot.id == created.id)
@@ -92,17 +91,16 @@ class TestHarvestLotRepositoryCRUD:
     ):
         """
         Test that get_by_id() requires winery_id for multi-tenant security.
-        
+
         GIVEN a harvest lot exists
         WHEN get_by_id() is called with correct winery_id
         THEN harvest lot should be returned
         """
         # Act
         retrieved = await harvest_lot_repository.get_by_id(
-            lot_id=test_harvest_lot.id,
-            winery_id=test_winery.id
+            lot_id=test_harvest_lot.id, winery_id=test_winery.id
         )
-        
+
         # Assert
         assert retrieved is not None
         assert retrieved.id == test_harvest_lot.id
@@ -117,17 +115,16 @@ class TestHarvestLotRepositoryCRUD:
     ):
         """
         Test that get_by_id() returns None for non-existent ID.
-        
+
         GIVEN a non-existent harvest lot ID
         WHEN get_by_id() is called
         THEN None should be returned
         """
         # Act
         result = await harvest_lot_repository.get_by_id(
-            lot_id=99999,
-            winery_id=test_winery.id
+            lot_id=99999, winery_id=test_winery.id
         )
-        
+
         # Assert
         assert result is None
 
@@ -141,17 +138,16 @@ class TestHarvestLotRepositoryCRUD:
     ):
         """
         Test that get_by_id() enforces multi-tenant isolation.
-        
+
         GIVEN a harvest lot exists for winery 1
         WHEN get_by_id() is called with different winery_id
         THEN None should be returned (tenant isolation)
         """
         # Act - Try to access with wrong winery ID
         result = await harvest_lot_repository.get_by_id(
-            lot_id=test_harvest_lot.id,
-            winery_id=99999  # Different winery
+            lot_id=test_harvest_lot.id, winery_id=99999  # Different winery
         )
-        
+
         # Assert
         assert result is None, "Should not return lot from different winery"
 
@@ -170,14 +166,14 @@ class TestHarvestLotRepositoryQueries:
     ):
         """
         Test that get_by_winery() returns all lots for a winery.
-        
+
         GIVEN multiple harvest lots exist for a winery
         WHEN get_by_winery() is called
         THEN all lots should be returned
         """
         # Arrange - Create additional lots
-        HarvestLot = test_models['HarvestLot']
-        
+        HarvestLot = test_models["HarvestLot"]
+
         lot1 = HarvestLot(
             winery_id=test_winery.id,
             block_id=test_vineyard_block.id,
@@ -186,7 +182,7 @@ class TestHarvestLotRepositoryQueries:
             weight_kg=1000.0,
             brix_at_harvest=23.0,
             grape_variety="Chardonnay",
-            is_deleted=False
+            is_deleted=False,
         )
         lot2 = HarvestLot(
             winery_id=test_winery.id,
@@ -196,14 +192,14 @@ class TestHarvestLotRepositoryQueries:
             weight_kg=1500.0,
             brix_at_harvest=24.0,
             grape_variety="Pinot Noir",
-            is_deleted=False
+            is_deleted=False,
         )
         db_session.add_all([lot1, lot2])
         await db_session.flush()
-        
+
         # Act
         lots = await harvest_lot_repository.get_by_winery(winery_id=test_winery.id)
-        
+
         # Assert - Should include test_harvest_lot from fixture + 2 new ones
         assert len(lots) >= 2
         codes = [lot.code for lot in lots]
@@ -219,17 +215,16 @@ class TestHarvestLotRepositoryQueries:
     ):
         """
         Test that get_by_code() returns lot by unique code.
-        
+
         GIVEN a harvest lot exists with code "HL2024001"
         WHEN get_by_code() is called
         THEN the correct lot should be returned
         """
         # Act
         lot = await harvest_lot_repository.get_by_code(
-            code="HL2024001",
-            winery_id=test_winery.id
+            code="HL2024001", winery_id=test_winery.id
         )
-        
+
         # Assert
         assert lot is not None
         assert lot.id == test_harvest_lot.id
@@ -243,17 +238,16 @@ class TestHarvestLotRepositoryQueries:
     ):
         """
         Test that get_by_code() enforces multi-tenant isolation.
-        
+
         GIVEN a harvest lot exists for winery 1
         WHEN get_by_code() is called with different winery_id
         THEN None should be returned
         """
         # Act
         lot = await harvest_lot_repository.get_by_code(
-            code="HL2024001",
-            winery_id=99999  # Different winery
+            code="HL2024001", winery_id=99999  # Different winery
         )
-        
+
         # Assert
         assert lot is None
 
@@ -269,33 +263,33 @@ class TestHarvestLotRepositoryQueries:
     ):
         """
         Test that get_by_block() returns lots from specific vineyard block.
-        
+
         GIVEN multiple harvest lots exist in different blocks
         WHEN get_by_block() is called
         THEN only lots from specified block should be returned
         """
         # Arrange - Create another block and lot
-        Vineyard = test_models['Vineyard']
-        VineyardBlock = test_models['VineyardBlock']
-        HarvestLot = test_models['HarvestLot']
-        
+        Vineyard = test_models["Vineyard"]
+        VineyardBlock = test_models["VineyardBlock"]
+        HarvestLot = test_models["HarvestLot"]
+
         # Get existing vineyard
         vineyard_result = await db_session.execute(
             select(Vineyard).where(Vineyard.winery_id == test_winery.id)
         )
         vineyard = vineyard_result.scalar_one()
-        
+
         # Create second block
         block2 = VineyardBlock(
             vineyard_id=vineyard.id,
             code="BLK002",
             soil_type="Sandy",
             area_ha=3.0,
-            is_deleted=False
+            is_deleted=False,
         )
         db_session.add(block2)
         await db_session.flush()
-        
+
         # Create lot in second block
         lot_block2 = HarvestLot(
             winery_id=test_winery.id,
@@ -305,22 +299,21 @@ class TestHarvestLotRepositoryQueries:
             weight_kg=1200.0,
             brix_at_harvest=23.5,
             grape_variety="Syrah",
-            is_deleted=False
+            is_deleted=False,
         )
         db_session.add(lot_block2)
         await db_session.flush()
-        
+
         # Act - Query for first block
         lots = await harvest_lot_repository.get_by_block(
-            block_id=test_vineyard_block.id,
-            winery_id=test_winery.id
+            block_id=test_vineyard_block.id, winery_id=test_winery.id
         )
-        
+
         # Assert
         assert len(lots) >= 1
         for lot in lots:
             assert lot.block_id == test_vineyard_block.id
-        
+
         # Verify lot from block2 is not included
         codes = [lot.code for lot in lots]
         assert "HL2024BLOCK2" not in codes
@@ -337,14 +330,14 @@ class TestHarvestLotRepositoryQueries:
     ):
         """
         Test that get_by_harvest_date_range() filters by date range.
-        
+
         GIVEN harvest lots with different harvest dates
         WHEN get_by_harvest_date_range() is called with date range
         THEN only lots within range should be returned
         """
         # Arrange - Create lots with different dates
-        HarvestLot = test_models['HarvestLot']
-        
+        HarvestLot = test_models["HarvestLot"]
+
         lot_early = HarvestLot(
             winery_id=test_winery.id,
             block_id=test_vineyard_block.id,
@@ -353,7 +346,7 @@ class TestHarvestLotRepositoryQueries:
             weight_kg=1000.0,
             brix_at_harvest=22.0,
             grape_variety="Early Variety",
-            is_deleted=False
+            is_deleted=False,
         )
         lot_late = HarvestLot(
             winery_id=test_winery.id,
@@ -363,18 +356,18 @@ class TestHarvestLotRepositoryQueries:
             weight_kg=1000.0,
             brix_at_harvest=25.0,
             grape_variety="Late Variety",
-            is_deleted=False
+            is_deleted=False,
         )
         db_session.add_all([lot_early, lot_late])
         await db_session.flush()
-        
+
         # Act - Query for September only
         lots = await harvest_lot_repository.get_by_harvest_date_range(
             winery_id=test_winery.id,
             start_date=date(2024, 9, 1),
-            end_date=date(2024, 9, 30)
+            end_date=date(2024, 9, 30),
         )
-        
+
         # Assert - Should include test_harvest_lot (9/15) but not early or late
         codes = [lot.code for lot in lots]
         assert "HL2024001" in codes  # From fixture (9/15)
@@ -392,14 +385,14 @@ class TestHarvestLotRepositoryQueries:
     ):
         """
         Test that get_available_for_blend() filters by minimum weight.
-        
+
         GIVEN harvest lots with different weights
         WHEN get_available_for_blend() is called with min_weight_kg
         THEN only lots with sufficient weight should be returned
         """
         # Arrange - Create lots with different weights
-        HarvestLot = test_models['HarvestLot']
-        
+        HarvestLot = test_models["HarvestLot"]
+
         lot_small = HarvestLot(
             winery_id=test_winery.id,
             block_id=test_vineyard_block.id,
@@ -408,7 +401,7 @@ class TestHarvestLotRepositoryQueries:
             weight_kg=50.0,  # Below minimum
             brix_at_harvest=23.0,
             grape_variety="Small Lot",
-            is_deleted=False
+            is_deleted=False,
         )
         lot_large = HarvestLot(
             winery_id=test_winery.id,
@@ -418,22 +411,21 @@ class TestHarvestLotRepositoryQueries:
             weight_kg=2000.0,  # Above minimum
             brix_at_harvest=24.0,
             grape_variety="Large Lot",
-            is_deleted=False
+            is_deleted=False,
         )
         db_session.add_all([lot_small, lot_large])
         await db_session.flush()
-        
+
         # Act - Query for lots with at least 100kg
         lots = await harvest_lot_repository.get_available_for_blend(
-            winery_id=test_winery.id,
-            min_weight_kg=100.0
+            winery_id=test_winery.id, min_weight_kg=100.0
         )
-        
+
         # Assert
         codes = [lot.code for lot in lots]
         assert "HL2024LARGE" in codes  # 2000kg > 100kg
         assert "HL2024SMALL" not in codes  # 50kg < 100kg
-        
+
         # Verify all returned lots meet minimum
         for lot in lots:
             assert lot.weight_kg >= 100.0
@@ -453,33 +445,29 @@ class TestHarvestLotRepositoryUpdateDelete:
     ):
         """
         Test that update() modifies harvest lot fields.
-        
+
         GIVEN a harvest lot exists
         WHEN update() is called with HarvestLotUpdate DTO
         THEN the lot should be updated in the database
         """
         # Arrange
-        HarvestLot = test_models['HarvestLot']
+        HarvestLot = test_models["HarvestLot"]
         update_data = HarvestLotUpdate(
-            weight_kg=1800.0,
-            brix_at_harvest=25.5,
-            notes="Updated notes for lot"
+            weight_kg=1800.0, brix_at_harvest=25.5, notes="Updated notes for lot"
         )
-        
+
         # Act
         updated = await harvest_lot_repository.update(
-            lot_id=test_harvest_lot.id,
-            winery_id=test_winery.id,
-            data=update_data
+            lot_id=test_harvest_lot.id, winery_id=test_winery.id, data=update_data
         )
         await db_session.flush()
-        
+
         # Assert
         assert updated is not None
         assert updated.weight_kg == 1800.0
         assert updated.brix_at_harvest == 25.5
         assert updated.notes == "Updated notes for lot"
-        
+
         # Verify persistence
         result = await db_session.execute(
             select(HarvestLot).where(HarvestLot.id == test_harvest_lot.id)
@@ -495,21 +483,21 @@ class TestHarvestLotRepositoryUpdateDelete:
     ):
         """
         Test that update() enforces multi-tenant isolation.
-        
+
         GIVEN a harvest lot exists for winery 1
         WHEN update() is called with different winery_id
         THEN None should be returned (no update)
         """
         # Arrange
         update_data = HarvestLotUpdate(weight_kg=2000.0)
-        
+
         # Act
         result = await harvest_lot_repository.update(
             lot_id=test_harvest_lot.id,
             winery_id=99999,  # Different winery
-            data=update_data
+            data=update_data,
         )
-        
+
         # Assert
         assert result is None
 
@@ -524,35 +512,33 @@ class TestHarvestLotRepositoryUpdateDelete:
     ):
         """
         Test that delete() soft-deletes harvest lot (sets is_deleted=True).
-        
+
         GIVEN a harvest lot exists
         WHEN delete() is called
         THEN the lot should be soft-deleted (not physically removed)
         """
         # Arrange
-        HarvestLot = test_models['HarvestLot']
-        
+        HarvestLot = test_models["HarvestLot"]
+
         # Act
         success = await harvest_lot_repository.delete(
-            lot_id=test_harvest_lot.id,
-            winery_id=test_winery.id
+            lot_id=test_harvest_lot.id, winery_id=test_winery.id
         )
         await db_session.flush()
-        
+
         # Assert
         assert success is True
-        
+
         # Verify soft delete (record still exists but is_deleted=True)
         result = await db_session.execute(
             select(HarvestLot).where(HarvestLot.id == test_harvest_lot.id)
         )
         persisted = result.scalar_one()
         assert persisted.is_deleted == True
-        
+
         # Verify get_by_id no longer returns it (filtered out)
         retrieved = await harvest_lot_repository.get_by_id(
-            lot_id=test_harvest_lot.id,
-            winery_id=test_winery.id
+            lot_id=test_harvest_lot.id, winery_id=test_winery.id
         )
         assert retrieved is None
 
@@ -564,16 +550,15 @@ class TestHarvestLotRepositoryUpdateDelete:
     ):
         """
         Test that delete() enforces multi-tenant isolation.
-        
+
         GIVEN a harvest lot exists for winery 1
         WHEN delete() is called with different winery_id
         THEN False should be returned (no deletion)
         """
         # Act
         success = await harvest_lot_repository.delete(
-            lot_id=test_harvest_lot.id,
-            winery_id=99999  # Different winery
+            lot_id=test_harvest_lot.id, winery_id=99999  # Different winery
         )
-        
+
         # Assert
         assert success is False

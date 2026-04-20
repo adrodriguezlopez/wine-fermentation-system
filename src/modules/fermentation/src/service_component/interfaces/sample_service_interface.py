@@ -15,6 +15,7 @@ Following ADR-003 Separation of Concerns:
 - SampleService handles ONLY sample operations
 - Fermentation lifecycle operations are in IFermentationService (separate interface)
 """
+
 from abc import ABC, abstractmethod
 from typing import Optional, List
 from datetime import datetime
@@ -22,18 +23,20 @@ from datetime import datetime
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
 from src.modules.fermentation.src.domain.dtos import SampleCreate
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
-from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import (
+    ValidationResult,
+)
 
 
 class ISampleService(ABC):
     """
     Interface for sample management service.
-    
+
     Orchestrates:
     - Sample addition with full validation (chronology, values, business rules)
     - Sample queries with access control
     - Sample validation (dry-run)
-    
+
     Does NOT handle:
     - Fermentation operations (use IFermentationService)
     - Authentication (API layer responsibility)
@@ -46,11 +49,7 @@ class ISampleService(ABC):
 
     @abstractmethod
     async def add_sample(
-        self,
-        fermentation_id: int,
-        winery_id: int,
-        user_id: int,
-        data: SampleCreate
+        self, fermentation_id: int, winery_id: int, user_id: int, data: SampleCreate
     ) -> BaseSample:
         """
         Adds a new sample with full validation.
@@ -87,10 +86,7 @@ class ISampleService(ABC):
 
     @abstractmethod
     async def get_sample(
-        self,
-        sample_id: int,
-        fermentation_id: int,
-        winery_id: int
+        self, sample_id: int, fermentation_id: int, winery_id: int
     ) -> Optional[BaseSample]:
         """
         Retrieves a specific sample by ID.
@@ -116,9 +112,7 @@ class ISampleService(ABC):
 
     @abstractmethod
     async def get_samples_by_fermentation(
-        self,
-        fermentation_id: int,
-        winery_id: int
+        self, fermentation_id: int, winery_id: int
     ) -> List[BaseSample]:
         """
         Retrieves all samples for a fermentation in chronological order.
@@ -146,7 +140,7 @@ class ISampleService(ABC):
         self,
         fermentation_id: int,
         winery_id: int,
-        sample_type: Optional[SampleType] = None
+        sample_type: Optional[SampleType] = None,
     ) -> Optional[BaseSample]:
         """
         Retrieves the most recent sample (optionally filtered by type).
@@ -172,11 +166,7 @@ class ISampleService(ABC):
 
     @abstractmethod
     async def get_samples_in_timerange(
-        self,
-        fermentation_id: int,
-        winery_id: int,
-        start: datetime,
-        end: datetime
+        self, fermentation_id: int, winery_id: int, start: datetime, end: datetime
     ) -> List[BaseSample]:
         """
         Retrieves samples within a specific time range.
@@ -209,10 +199,7 @@ class ISampleService(ABC):
 
     @abstractmethod
     async def validate_sample_data(
-        self,
-        fermentation_id: int,
-        winery_id: int,
-        data: SampleCreate
+        self, fermentation_id: int, winery_id: int, data: SampleCreate
     ) -> ValidationResult:
         """
         Validates sample data before adding (dry-run).
@@ -242,10 +229,7 @@ class ISampleService(ABC):
 
     @abstractmethod
     async def delete_sample(
-        self,
-        sample_id: int,
-        fermentation_id: int,
-        winery_id: int
+        self, sample_id: int, fermentation_id: int, winery_id: int
     ) -> None:
         """
         Soft deletes a sample.
@@ -266,7 +250,7 @@ class ISampleService(ABC):
         Raises:
             NotFoundError: If sample or fermentation doesn't exist
             RepositoryError: If database operation fails
-        
+
         Status: ✅ Implemented via TDD (Phase 4 - 2025-10-22)
         """
         pass

@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Union
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
-from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import (
+    ValidationResult,
+)
+
 
 class IValueValidationService(ABC):
     """
@@ -11,10 +14,8 @@ class IValueValidationService(ABC):
 
     @abstractmethod
     def validate_sample_value(
-            self,
-            sample_type: Union[str, SampleType],
-            value: Union[float, str, None]
-        ) -> ValidationResult:
+        self, sample_type: Union[str, SampleType], value: Union[float, str, None]
+    ) -> ValidationResult:
         """
         Validates measurement values are physically plausible.
 
@@ -29,11 +30,11 @@ class IValueValidationService(ABC):
 
     @abstractmethod
     def validate_numeric_value(
-            self,
-            value: Union[float, str, None],
-            min_value: float = float('-inf'),
-            max_value: float = float('inf')
-        ) -> ValidationResult:
+        self,
+        value: Union[float, str, None],
+        min_value: float = float("-inf"),
+        max_value: float = float("inf"),
+    ) -> ValidationResult:
         """
         Validates that a numeric value is within specified bounds.
 

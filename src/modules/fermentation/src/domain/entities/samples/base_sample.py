@@ -28,14 +28,21 @@ class BaseSample(BaseEntity):
     )
     recorded_at: Mapped[datetime] = mapped_column(nullable=False, index=True)
     recorded_by_user_id: Mapped[int] = mapped_column(
-        Integer, nullable=False  # Audit: user who recorded - no FK to avoid module dependencies
+        Integer,
+        nullable=False,  # Audit: user who recorded - no FK to avoid module dependencies
     )
     is_deleted: Mapped[bool] = mapped_column(
         default=False, nullable=False
     )  # Soft delete flag
-    
+
     # Data source tracking (ADR-029)
-    data_source: Mapped[str] = mapped_column(String(20), nullable=False, default="system", server_default="system", index=True)
+    data_source: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="system",
+        server_default="system",
+        index=True,
+    )
     imported_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
     # Measurement data

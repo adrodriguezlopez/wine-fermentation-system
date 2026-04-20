@@ -35,7 +35,7 @@ def test_user_id():
 @pytest_asyncio.fixture
 async def test_fermentation(test_models, db_session, test_winery_id, test_user_id):
     """Create a test fermentation."""
-    Fermentation = test_models['Fermentation']
+    Fermentation = test_models["Fermentation"]
     fermentation = Fermentation(
         winery_id=test_winery_id,
         fermented_by_user_id=test_user_id,
@@ -57,7 +57,7 @@ async def test_fermentation(test_models, db_session, test_winery_id, test_user_i
 @pytest_asyncio.fixture
 async def other_winery_fermentation(test_models, db_session):
     """Create fermentation for a different winery."""
-    Fermentation = test_models['Fermentation']
+    Fermentation = test_models["Fermentation"]
     fermentation = Fermentation(
         winery_id=999,
         fermented_by_user_id=99,
@@ -90,12 +90,12 @@ class TestCreate:
             action_taken="Monitored temperature",
             created_by_user_id=test_user_id,
         )
-        
+
         # Act
         result = await repository.create(
             test_fermentation.id, test_winery_id, create_data
         )
-        
+
         # Assert
         assert result.id is not None
         assert result.fermentation_id == test_fermentation.id
@@ -116,11 +116,11 @@ class TestCreate:
             action_taken="Test action",
             created_by_user_id=test_user_id,
         )
-        
+
         # Act & Assert
         with pytest.raises(EntityNotFoundError) as exc_info:
             await repository.create(99999, test_winery_id, create_data)
-        
+
         assert "not found" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
@@ -134,13 +134,13 @@ class TestCreate:
             action_taken="Test action",
             created_by_user_id=test_user_id,
         )
-        
+
         # Act & Assert
         with pytest.raises(EntityNotFoundError) as exc_info:
             await repository.create(
                 other_winery_fermentation.id, test_winery_id, create_data
             )
-        
+
         assert "does not belong to winery" in str(exc_info.value).lower()
 
 
@@ -149,11 +149,17 @@ class TestGetById:
 
     @pytest.mark.asyncio
     async def test_get_by_id_found(
-        self, repository, test_models, db_session, test_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        test_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test retrieving an existing note."""
         # Arrange - create a note
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="Test note content",
@@ -163,10 +169,10 @@ class TestGetById:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         # Act
         result = await repository.get_by_id(note.id, test_winery_id)
-        
+
         # Assert
         assert result is not None
         assert result.id == note.id
@@ -178,17 +184,23 @@ class TestGetById:
         """Test retrieving non-existent note."""
         # Act
         result = await repository.get_by_id(99999, test_winery_id)
-        
+
         # Assert
         assert result is None
 
     @pytest.mark.asyncio
     async def test_get_by_id_wrong_winery(
-        self, repository, test_models, db_session, other_winery_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        other_winery_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test retrieving note from different winery returns None."""
         # Arrange - create note for other winery
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=other_winery_fermentation.id,
             note_text="Other winery note",
@@ -198,20 +210,26 @@ class TestGetById:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         # Act - try to retrieve with test_winery_id
         result = await repository.get_by_id(note.id, test_winery_id)
-        
+
         # Assert
         assert result is None
 
     @pytest.mark.asyncio
     async def test_get_by_id_soft_deleted(
-        self, repository, test_models, db_session, test_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        test_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test soft deleted notes are not returned."""
         # Arrange - create and soft delete a note
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="Deleted note",
@@ -221,10 +239,10 @@ class TestGetById:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         # Act
         result = await repository.get_by_id(note.id, test_winery_id)
-        
+
         # Assert
         assert result is None
 
@@ -234,11 +252,17 @@ class TestGetByFermentation:
 
     @pytest.mark.asyncio
     async def test_get_by_fermentation_success(
-        self, repository, test_models, db_session, test_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        test_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test retrieving all notes for a fermentation."""
         # Arrange - create multiple notes
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note1 = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="First note",
@@ -255,12 +279,12 @@ class TestGetByFermentation:
         )
         db_session.add_all([note1, note2])
         await db_session.flush()
-        
+
         # Act
         result = await repository.get_by_fermentation(
             test_fermentation.id, test_winery_id
         )
-        
+
         # Assert
         assert len(result) >= 2
         assert all(note.fermentation_id == test_fermentation.id for note in result)
@@ -268,11 +292,17 @@ class TestGetByFermentation:
 
     @pytest.mark.asyncio
     async def test_get_by_fermentation_ordered_by_created_at(
-        self, repository, test_models, db_session, test_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        test_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test notes are ordered by created_at DESC."""
         # Arrange - create notes with different timestamps
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note1 = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="Older note",
@@ -282,7 +312,7 @@ class TestGetByFermentation:
         )
         db_session.add(note1)
         await db_session.flush()
-        
+
         note2 = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="Newer note",
@@ -292,12 +322,12 @@ class TestGetByFermentation:
         )
         db_session.add(note2)
         await db_session.flush()
-        
+
         # Act
         result = await repository.get_by_fermentation(
             test_fermentation.id, test_winery_id
         )
-        
+
         # Assert
         assert len(result) >= 2
         # Verify ordering (newer first)
@@ -305,24 +335,32 @@ class TestGetByFermentation:
             assert result[i].created_at >= result[i + 1].created_at
 
     @pytest.mark.asyncio
-    async def test_get_by_fermentation_empty(self, repository, test_fermentation, test_winery_id):
+    async def test_get_by_fermentation_empty(
+        self, repository, test_fermentation, test_winery_id
+    ):
         """Test retrieving notes for fermentation with no notes."""
         # Note: test_fermentation fixture creates fresh fermentation
         # Act
         result = await repository.get_by_fermentation(
             test_fermentation.id, test_winery_id
         )
-        
+
         # Assert
         assert result == []
 
     @pytest.mark.asyncio
     async def test_get_by_fermentation_wrong_winery(
-        self, repository, test_models, db_session, other_winery_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        other_winery_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test retrieving notes for fermentation from different winery."""
         # Arrange - create note for other winery
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=other_winery_fermentation.id,
             note_text="Other winery note",
@@ -332,22 +370,28 @@ class TestGetByFermentation:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         # Act - try to retrieve with test_winery_id
         result = await repository.get_by_fermentation(
             other_winery_fermentation.id, test_winery_id
         )
-        
+
         # Assert
         assert result == []
 
     @pytest.mark.asyncio
     async def test_get_by_fermentation_excludes_deleted(
-        self, repository, test_models, db_session, test_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        test_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test soft deleted notes are excluded."""
         # Arrange - create active and deleted notes
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         active_note = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="Active note",
@@ -364,12 +408,12 @@ class TestGetByFermentation:
         )
         db_session.add_all([active_note, deleted_note])
         await db_session.flush()
-        
+
         # Act
         result = await repository.get_by_fermentation(
             test_fermentation.id, test_winery_id
         )
-        
+
         # Assert
         assert all(not note.is_deleted for note in result)
         assert any(note.note_text == "Active note" for note in result)
@@ -381,11 +425,17 @@ class TestUpdate:
 
     @pytest.mark.asyncio
     async def test_update_success(
-        self, repository, test_models, db_session, test_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        test_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test updating an existing note."""
         # Arrange - create a note
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="Original note",
@@ -395,15 +445,15 @@ class TestUpdate:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         update_data = FermentationNoteUpdate(
             note_text="Updated note",
             action_taken="Updated action",
         )
-        
+
         # Act
         result = await repository.update(note.id, test_winery_id, update_data)
-        
+
         # Assert
         assert result is not None
         assert result.id == note.id
@@ -412,11 +462,17 @@ class TestUpdate:
 
     @pytest.mark.asyncio
     async def test_update_partial(
-        self, repository, test_models, db_session, test_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        test_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test partial update of a note."""
         # Arrange
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="Original note",
@@ -426,12 +482,12 @@ class TestUpdate:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         update_data = FermentationNoteUpdate(note_text="Updated note only")
-        
+
         # Act
         result = await repository.update(note.id, test_winery_id, update_data)
-        
+
         # Assert
         assert result.note_text == "Updated note only"
         assert result.action_taken == "Original action"  # Unchanged
@@ -441,20 +497,26 @@ class TestUpdate:
         """Test updating non-existent note."""
         # Arrange
         update_data = FermentationNoteUpdate(note_text="Updated")
-        
+
         # Act
         result = await repository.update(99999, test_winery_id, update_data)
-        
+
         # Assert
         assert result is None
 
     @pytest.mark.asyncio
     async def test_update_wrong_winery(
-        self, repository, test_models, db_session, other_winery_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        other_winery_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test updating note from different winery."""
         # Arrange - create note for other winery
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=other_winery_fermentation.id,
             note_text="Other winery note",
@@ -464,12 +526,12 @@ class TestUpdate:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         update_data = FermentationNoteUpdate(note_text="Attempted update")
-        
+
         # Act
         result = await repository.update(note.id, test_winery_id, update_data)
-        
+
         # Assert
         assert result is None
 
@@ -479,11 +541,17 @@ class TestDelete:
 
     @pytest.mark.asyncio
     async def test_delete_success(
-        self, repository, test_models, db_session, test_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        test_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test soft deleting a note."""
         # Arrange
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="Note to delete",
@@ -493,13 +561,13 @@ class TestDelete:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         # Act
         result = await repository.delete(note.id, test_winery_id)
-        
+
         # Assert
         assert result is True
-        
+
         # Verify soft delete
         assert note.is_deleted is True
 
@@ -508,17 +576,23 @@ class TestDelete:
         """Test deleting non-existent note."""
         # Act
         result = await repository.delete(99999, test_winery_id)
-        
+
         # Assert
         assert result is False
 
     @pytest.mark.asyncio
     async def test_delete_wrong_winery(
-        self, repository, test_models, db_session, other_winery_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        other_winery_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test deleting note from different winery."""
         # Arrange
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=other_winery_fermentation.id,
             note_text="Other winery note",
@@ -528,23 +602,29 @@ class TestDelete:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         # Act
         result = await repository.delete(note.id, test_winery_id)
-        
+
         # Assert
         assert result is False
-        
+
         # Verify not deleted
         assert note.is_deleted is False
 
     @pytest.mark.asyncio
     async def test_delete_already_deleted(
-        self, repository, test_models, db_session, test_fermentation, test_winery_id, test_user_id
+        self,
+        repository,
+        test_models,
+        db_session,
+        test_fermentation,
+        test_winery_id,
+        test_user_id,
     ):
         """Test deleting already soft-deleted note."""
         # Arrange
-        FermentationNote = test_models['FermentationNote']
+        FermentationNote = test_models["FermentationNote"]
         note = FermentationNote(
             fermentation_id=test_fermentation.id,
             note_text="Already deleted",
@@ -554,9 +634,9 @@ class TestDelete:
         )
         db_session.add(note)
         await db_session.flush()
-        
+
         # Act
         result = await repository.delete(note.id, test_winery_id)
-        
+
         # Assert
         assert result is False

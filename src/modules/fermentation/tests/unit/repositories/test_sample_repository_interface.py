@@ -2,6 +2,7 @@
 Test suite for ISampleRepository interface contract.
 These tests define the expected behavior that any implementation must follow.
 """
+
 import pytest
 
 

@@ -15,30 +15,34 @@ from src.shared.domain.errors import (
     FermentationAlreadyCompleted,
     SampleNotFound,
     InvalidSampleDate,
-    InvalidSampleValue
+    InvalidSampleValue,
 )
 
 # Backward compatibility aliases (DEPRECATED - will be removed in Phase 4)
 ServiceError = FermentationError
-NotFoundError = FermentationNotFound  # Generic not found -> specific fermentation not found
+NotFoundError = (
+    FermentationNotFound  # Generic not found -> specific fermentation not found
+)
 ValidationError = InvalidFermentationState  # Validation errors -> invalid state
-DuplicateError = FermentationAlreadyCompleted  # For now, conflicts map to "already completed"
+DuplicateError = (
+    FermentationAlreadyCompleted  # For now, conflicts map to "already completed"
+)
 BusinessRuleViolation = InvalidFermentationState  # Business rules -> invalid state
 
 # Re-export new errors for direct use
 __all__ = [
     # New ADR-026 errors (preferred)
-    'FermentationError',
-    'FermentationNotFound',
-    'InvalidFermentationState',
-    'FermentationAlreadyCompleted',
-    'SampleNotFound',
-    'InvalidSampleDate',
-    'InvalidSampleValue',
+    "FermentationError",
+    "FermentationNotFound",
+    "InvalidFermentationState",
+    "FermentationAlreadyCompleted",
+    "SampleNotFound",
+    "InvalidSampleDate",
+    "InvalidSampleValue",
     # Legacy aliases (deprecated)
-    'ServiceError',
-    'NotFoundError',
-    'ValidationError',
-    'DuplicateError',
-    'BusinessRuleViolation',
+    "ServiceError",
+    "NotFoundError",
+    "ValidationError",
+    "DuplicateError",
+    "BusinessRuleViolation",
 ]

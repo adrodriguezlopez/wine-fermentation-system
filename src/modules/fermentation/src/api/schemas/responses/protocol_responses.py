@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 class StepResponse(BaseModel):
     """Response DTO for a protocol step"""
-    
+
     id: int = Field(..., description="Step ID")
     protocol_id: int = Field(..., description="Parent protocol ID")
     step_order: int = Field(..., description="Order in protocol")
@@ -27,14 +27,14 @@ class StepResponse(BaseModel):
     notes: Optional[str] = Field(None, description="Additional notes")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
-    
+
     class Config:
         from_attributes = True
 
 
 class StepListResponse(BaseModel):
     """Paginated list of protocol steps"""
-    
+
     items: List[StepResponse] = Field(..., description="Step list")
     total_count: int = Field(..., ge=0, description="Total steps")
     page: int = Field(..., ge=1, description="Current page")
@@ -44,7 +44,7 @@ class StepListResponse(BaseModel):
 
 class ProtocolResponse(BaseModel):
     """Response DTO for a protocol"""
-    
+
     id: int = Field(..., description="Protocol ID")
     winery_id: int = Field(..., description="Winery ID")
     varietal_code: str = Field(..., description="Varietal code")
@@ -56,20 +56,28 @@ class ProtocolResponse(BaseModel):
     expected_duration_days: int = Field(..., description="Expected duration")
     description: Optional[str] = Field(None, description="Protocol description")
     # ADR-039: template management fields (None for old records not yet migrated)
-    is_template: Optional[bool] = Field(None, description="True = master template, False = fermentation instance")
-    state: Optional[str] = Field(None, description="Lifecycle state: DRAFT | FINAL | DEPRECATED")
-    template_id: Optional[int] = Field(None, description="Parent template ID (set on instances)")
-    approved_by_user_id: Optional[int] = Field(None, description="User who approved DRAFT → FINAL")
+    is_template: Optional[bool] = Field(
+        None, description="True = master template, False = fermentation instance"
+    )
+    state: Optional[str] = Field(
+        None, description="Lifecycle state: DRAFT | FINAL | DEPRECATED"
+    )
+    template_id: Optional[int] = Field(
+        None, description="Parent template ID (set on instances)"
+    )
+    approved_by_user_id: Optional[int] = Field(
+        None, description="User who approved DRAFT → FINAL"
+    )
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
-    
+
     class Config:
         from_attributes = True
 
 
 class ProtocolListResponse(BaseModel):
     """Paginated list of protocols"""
-    
+
     items: List[ProtocolResponse] = Field(..., description="Protocol list")
     total_count: int = Field(..., ge=0, description="Total protocols")
     page: int = Field(..., ge=1, description="Current page")
@@ -79,7 +87,7 @@ class ProtocolListResponse(BaseModel):
 
 class ExecutionResponse(BaseModel):
     """Response DTO for a protocol execution"""
-    
+
     id: int = Field(..., description="Execution ID")
     fermentation_id: int = Field(..., description="Fermentation ID")
     protocol_id: int = Field(..., description="Protocol ID")
@@ -91,14 +99,14 @@ class ExecutionResponse(BaseModel):
     notes: Optional[str] = Field(None, description="Execution notes")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
-    
+
     class Config:
         from_attributes = True
 
 
 class ExecutionListResponse(BaseModel):
     """Paginated list of protocol executions"""
-    
+
     items: List[ExecutionResponse] = Field(..., description="Execution list")
     total_count: int = Field(..., ge=0, description="Total executions")
     page: int = Field(..., ge=1, description="Current page")
@@ -108,7 +116,7 @@ class ExecutionListResponse(BaseModel):
 
 class CompletionResponse(BaseModel):
     """Response DTO for a step completion record"""
-    
+
     id: int = Field(..., description="Completion ID")
     execution_id: int = Field(..., description="Execution ID")
     step_id: int = Field(..., description="Step ID")
@@ -122,14 +130,14 @@ class CompletionResponse(BaseModel):
     notes: Optional[str] = Field(None, description="Completion notes")
     created_at: datetime = Field(..., description="Record creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
-    
+
     class Config:
         from_attributes = True
 
 
 class CompletionListResponse(BaseModel):
     """Paginated list of step completions"""
-    
+
     items: List[CompletionResponse] = Field(..., description="Completion list")
     total_count: int = Field(..., ge=0, description="Total completions")
     page: int = Field(..., ge=1, description="Current page")
@@ -141,6 +149,7 @@ class CompletionListResponse(BaseModel):
 # Alert Responses (ADR-040)
 # ============================================================================
 
+
 class AlertResponse(BaseModel):
     """Response DTO for a ProtocolAlert (ADR-040)."""
 
@@ -148,19 +157,27 @@ class AlertResponse(BaseModel):
     execution_id: int = Field(..., description="Protocol execution ID")
     protocol_id: int = Field(..., description="Protocol ID")
     winery_id: int = Field(..., description="Winery ID")
-    step_id: Optional[int] = Field(None, description="Related step ID (null for execution-level alerts)")
+    step_id: Optional[int] = Field(
+        None, description="Related step ID (null for execution-level alerts)"
+    )
     step_name: Optional[str] = Field(None, description="Step description")
     alert_type: str = Field(
         ...,
-        description="STEP_OVERDUE | STEP_DUE_SOON | EXECUTION_NEARING_COMPLETION | EXECUTION_BEHIND_SCHEDULE | CRITICAL_DEVIATION"
+        description="STEP_OVERDUE | STEP_DUE_SOON | EXECUTION_NEARING_COMPLETION | EXECUTION_BEHIND_SCHEDULE | CRITICAL_DEVIATION",
     )
     severity: str = Field(..., description="INFO | WARNING | CRITICAL")
     status: str = Field(..., description="PENDING | SENT | ACKNOWLEDGED | DISMISSED")
     message: str = Field(..., description="Human-readable alert message")
     created_at: datetime = Field(..., description="When the alert was created (UTC)")
-    sent_at: Optional[datetime] = Field(None, description="When the alert was delivered")
-    acknowledged_at: Optional[datetime] = Field(None, description="When acknowledged by winemaker")
-    dismissed_at: Optional[datetime] = Field(None, description="When dismissed by winemaker")
+    sent_at: Optional[datetime] = Field(
+        None, description="When the alert was delivered"
+    )
+    acknowledged_at: Optional[datetime] = Field(
+        None, description="When acknowledged by winemaker"
+    )
+    dismissed_at: Optional[datetime] = Field(
+        None, description="When dismissed by winemaker"
+    )
 
     class Config:
         from_attributes = True
@@ -171,5 +188,6 @@ class AlertListResponse(BaseModel):
 
     items: List[AlertResponse] = Field(..., description="Alert list")
     total: int = Field(..., ge=0, description="Total alerts returned")
-    pending_count: int = Field(..., ge=0, description="Total PENDING alerts for this execution")
-
+    pending_count: int = Field(
+        ..., ge=0, description="Total PENDING alerts for this execution"
+    )

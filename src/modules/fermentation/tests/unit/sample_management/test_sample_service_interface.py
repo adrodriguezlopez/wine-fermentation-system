@@ -5,11 +5,12 @@ Tests define the expected behavior for sample collection and retrieval operation
 Updated: 2025-10-11
 Following Clean Architecture and ADR-003 Separation of Concerns.
 """
+
 import pytest
 import sys
 from pathlib import Path
 
-# Add src to path for imports  
+# Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 
@@ -18,7 +19,7 @@ def test_sample_service_interface_methods() -> None:
     Test to ensure ISampleService defines EXACTLY the required methods.
     If a new method is added, this test will fail,
     enforcing TDD and documentation updates.
-    
+
     Expected methods (7):
     - add_sample: Add sample with full validation
     - get_sample: Get specific sample by ID
@@ -27,7 +28,7 @@ def test_sample_service_interface_methods() -> None:
     - get_samples_in_timerange: Get samples in date range
     - validate_sample_data: Pre-validation (dry-run)
     - delete_sample: Soft delete sample
-    
+
     NOTE: Following ADR-003, sample operations are separate from fermentation operations.
     """
     try:

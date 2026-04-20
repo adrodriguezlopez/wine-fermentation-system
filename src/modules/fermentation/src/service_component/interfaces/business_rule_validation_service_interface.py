@@ -1,21 +1,21 @@
 from abc import ABC, abstractmethod
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
-from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import (
+    ValidationResult,
+)
+
 
 class IBusinessRuleValidationService(ABC):
     """
     Interface for business rule validation service.
-    
+
     Defines methods for enforcing business rules and data integrity
     in fermentation workflows.
     """
 
     @abstractmethod
     def validate_sugar_trend(
-        self,
-        current: float,
-        fermentation_id: int,
-        tolerance: float = 0.0
+        self, current: float, fermentation_id: int, tolerance: float = 0.0
     ) -> ValidationResult:
         """
         Validates that sugar levels are non-increasing over time.
@@ -29,7 +29,6 @@ class IBusinessRuleValidationService(ABC):
             ValidationResult: Success if trend is valid, failure with details if not.
         """
         pass
-    
 
     @abstractmethod
     def validate_temperature_range(
@@ -41,6 +40,3 @@ class IBusinessRuleValidationService(ABC):
         Validates that temperature is within acceptable fermentation range.
         """
         pass
-
-
-    

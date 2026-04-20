@@ -16,26 +16,37 @@ Following ADR-003 Separation of Concerns:
 - FermentationService handles ONLY fermentation lifecycle operations
 - Sample operations are in ISampleService (separate interface)
 """
+
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
-from src.modules.fermentation.src.domain.dtos import FermentationCreate, FermentationUpdate, FermentationWithBlendCreate
-from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
-from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
-from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import IUnitOfWork
+from src.modules.fermentation.src.domain.dtos import (
+    FermentationCreate,
+    FermentationUpdate,
+    FermentationWithBlendCreate,
+)
+from src.modules.fermentation.src.domain.enums.fermentation_status import (
+    FermentationStatus,
+)
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import (
+    ValidationResult,
+)
+from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import (
+    IUnitOfWork,
+)
 
 
 class IFermentationService(ABC):
     """
     Interface for fermentation lifecycle management.
-    
+
     Orchestrates:
     - Fermentation creation with validation
     - Status transitions with business rules
     - Fermentation queries with access control
     - Business logic coordination
-    
+
     Does NOT handle:
     - Sample operations (use ISampleService)
     - Authentication (API layer responsibility)
@@ -48,10 +59,7 @@ class IFermentationService(ABC):
 
     @abstractmethod
     async def create_fermentation(
-        self,
-        winery_id: int,
-        user_id: int,
-        data: FermentationCreate
+        self, winery_id: int, user_id: int, data: FermentationCreate
     ) -> Fermentation:
         """
         Creates a new fermentation with full validation.
@@ -83,14 +91,14 @@ class IFermentationService(ABC):
         winery_id: int,
         user_id: int,
         data: FermentationWithBlendCreate,
-        uow: IUnitOfWork
+        uow: IUnitOfWork,
     ) -> Fermentation:
         """
         Creates a fermentation from multiple harvest lots (blend) atomically.
-        
+
         Uses UnitOfWork pattern to ensure fermentation and all lot sources
         are created together or not at all. Critical for data integrity in blends.
-        
+
         Business logic:
         1. Validates fermentation base data
         2. Validates all harvest lots exist and belong to winery
@@ -99,21 +107,21 @@ class IFermentationService(ABC):
         5. Creates fermentation record
         6. Creates all lot source records
         7. Commits transaction atomically
-        
+
         Use Case (ADR-001 Fruit Origin Model):
         - Creating wine blends from multiple vineyard blocks
         - Tracking grape origin for regulatory/quality purposes
         - Maintaining referential integrity across fermentation + lot sources
-        
+
         Args:
             winery_id: ID of the winery (multi-tenant scoping)
             user_id: ID of user creating fermentation (audit trail)
             data: Fermentation + blend data (DTO)
             uow: Unit of Work for atomic transaction
-        
+
         Returns:
             Fermentation: Created fermentation entity with generated ID
-        
+
         Raises:
             ValidationError: If blend data is invalid
                 - Lot doesn't exist or doesn't belong to winery
@@ -121,7 +129,7 @@ class IFermentationService(ABC):
                 - Lot already exhausted
                 - Duplicate lot IDs
             RepositoryError: If database operation fails
-        
+
         Example:
             ```python
             data = FermentationWithBlendCreate(
@@ -131,14 +139,14 @@ class IFermentationService(ABC):
                     LotSourceData(harvest_lot_id=2, mass_used_kg=40.0)
                 ]
             )
-            
+
             async with uow:
                 fermentation = await service.create_fermentation_with_blend(
                     winery_id=1, user_id=1, data=data, uow=uow
                 )
                 # Auto-rollback on exception, explicit commit in service
             ```
-        
+
         Status: ⏳ NEW - Part of UnitOfWork implementation (Nov 22, 2025)
         """
         pass
@@ -149,9 +157,7 @@ class IFermentationService(ABC):
 
     @abstractmethod
     async def get_fermentation(
-        self,
-        fermentation_id: int,
-        winery_id: int
+        self, fermentation_id: int, winery_id: int
     ) -> Optional[Fermentation]:
         """
         Retrieves a fermentation by ID with access control.
@@ -179,7 +185,7 @@ class IFermentationService(ABC):
         winery_id: int,
         status: Optional[FermentationStatus] = None,
         include_completed: bool = False,
-        data_source: Optional[str] = None
+        data_source: Optional[str] = None,
     ) -> List[Fermentation]:
         """
         Retrieves fermentations for a winery with optional filters.
@@ -215,7 +221,7 @@ class IFermentationService(ABC):
         fermentation_id: int,
         winery_id: int,
         user_id: int,
-        data: FermentationUpdate
+        data: FermentationUpdate,
     ) -> Fermentation:
         """
         Updates an existing fermentation with partial data.
@@ -253,7 +259,7 @@ class IFermentationService(ABC):
         fermentation_id: int,
         winery_id: int,
         new_status: FermentationStatus,
-        user_id: int
+        user_id: int,
     ) -> Fermentation:
         """
         Updates fermentation status with business rule validation.
@@ -293,7 +299,7 @@ class IFermentationService(ABC):
         fermentation_id: int,
         winery_id: int,
         user_id: int,
-        completion_notes: Optional[str] = None
+        completion_notes: Optional[str] = None,
     ) -> Fermentation:
         """
         Marks a fermentation as completed with validation.
@@ -327,10 +333,7 @@ class IFermentationService(ABC):
 
     @abstractmethod
     async def soft_delete(
-        self,
-        fermentation_id: int,
-        winery_id: int,
-        user_id: int
+        self, fermentation_id: int, winery_id: int, user_id: int
     ) -> bool:
         """
         Soft deletes a fermentation (sets is_deleted=True).
@@ -362,8 +365,7 @@ class IFermentationService(ABC):
 
     @abstractmethod
     async def validate_creation_data(
-        self,
-        data: FermentationCreate
+        self, data: FermentationCreate
     ) -> ValidationResult:
         """
         Validates fermentation data before creation (dry-run).

@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import List
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
-from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import (
+    ValidationResult,
+)
+
 
 class IValidationOrchestrator(ABC):
     """
@@ -11,9 +14,7 @@ class IValidationOrchestrator(ABC):
 
     @abstractmethod
     async def validate_sample_complete(
-        self,
-        fermentation_id: int,
-        new_sample: BaseSample
+        self, fermentation_id: int, new_sample: BaseSample
     ) -> ValidationResult:
         """
         Run all validations for a single sample.
@@ -26,12 +27,9 @@ class IValidationOrchestrator(ABC):
         """
         pass
 
-
     @abstractmethod
     async def validate_sample_batch(
-        self,
-        fermentation_id: int,
-        samples: List[BaseSample]
+        self, fermentation_id: int, samples: List[BaseSample]
     ) -> ValidationResult:
         """
         Validates a batch of samples for both value correctness and chronology.

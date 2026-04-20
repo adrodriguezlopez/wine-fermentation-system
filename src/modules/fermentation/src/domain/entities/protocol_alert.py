@@ -16,7 +16,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.shared.infra.orm.base_entity import BaseEntity
 
 if TYPE_CHECKING:
-    from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
+    from src.modules.fermentation.src.domain.entities.protocol_execution import (
+        ProtocolExecution,
+    )
     from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
 
 
@@ -134,8 +136,12 @@ class ProtocolAlert(BaseEntity):
             "message": self.message,
             "created_at": self.created_at.isoformat(),
             "sent_at": self.sent_at.isoformat() if self.sent_at else None,
-            "acknowledged_at": self.acknowledged_at.isoformat() if self.acknowledged_at else None,
-            "dismissed_at": self.dismissed_at.isoformat() if self.dismissed_at else None,
+            "acknowledged_at": (
+                self.acknowledged_at.isoformat() if self.acknowledged_at else None
+            ),
+            "dismissed_at": (
+                self.dismissed_at.isoformat() if self.dismissed_at else None
+            ),
         }
 
     def __repr__(self) -> str:
