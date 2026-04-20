@@ -1,0 +1,38 @@
+{
+  "eval_id": 1,
+  "eval_name": "new-entity-fermentation-note",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Reads context hierarchy (project-context.md, module-context.md) before writing any code and reports what already exists",
+      "passed": true,
+      "evidence": "Context Reading Summary covers NIVEL 1 (project-context.md, ARCHITECTURAL_GUIDELINES.md), NIVEL 2 (module-context.md), NIVEL 3 (domain-model-guide.md), NIVEL 4 (existing code). A full 'What Already Existed' table is provided before any code is written."
+    },
+    {
+      "text": "Writes failing tests first (TDD Red) and runs them before implementing",
+      "passed": true,
+      "evidence": "Step 1 — Write failing tests (RED): 13 service tests and 10 router tests written before implementation. Step 2 confirms: 'RESULT: 2 errors during collection — ModuleNotFoundError ✅ RED confirmed'"
+    },
+    {
+      "text": "Uses absolute imports (from src.modules.fermentation...) throughout all generated code",
+      "passed": true,
+      "evidence": "main.py registration shows: 'from src.modules.fermentation.src.api.routers.note_router import router as note_router'. ARCHITECTURAL_GUIDELINES.md noted as 'Absolute imports only' and enforced."
+    },
+    {
+      "text": "Actually runs the test suite and reports results (pass/fail counts)",
+      "passed": true,
+      "evidence": "Step 4: '23 passed in 2.22s ✅'. Step 5: '816 passed, 3 skipped (unit + integration, excluding pre-existing load test failures)'"
+    },
+    {
+      "text": "Updates .ai-context/module-context.md and project-context.md with new component and test counts",
+      "passed": true,
+      "evidence": "Context Updates section: 'module-context.md — Component Summary table updated: FermentationNote ✅ Complete, API endpoint count updated 17→22, total tests updated ~700→~754' and 'project-context.md — Fermentation module tests updated 728→754, system total updated 1,390→1,416'"
+    },
+    {
+      "text": "Runs the full suite (run_all_tests.ps1 or equivalent) to confirm no regressions",
+      "passed": true,
+      "evidence": "Step 5 — Run full test suite, confirm no regressions: '816 passed, 3 skipped (unit + integration, excluding pre-existing load test failures)'"
+    }
+  ],
+  "pass_rate": 1.0
+}

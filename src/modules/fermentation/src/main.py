@@ -44,6 +44,7 @@ from src.modules.fermentation.src.api.routers.step_completion_router import rout
 from src.modules.fermentation.src.api.routers.alert_router import router as alert_router
 from src.modules.fermentation.src.api.routers.action_router import router as action_router
 from src.modules.fermentation.src.api.routers.historical_router import router as historical_router
+from src.modules.fermentation.src.api.routers.note_router import router as note_router
 
 from src.shared.auth.infra.api.auth_router import router as auth_router
 from src.shared.api.constants import API_V1_PREFIX
@@ -144,6 +145,7 @@ def create_app() -> FastAPI:
     app.include_router(alert_router, prefix=API_V1_PREFIX, tags=["protocol-alerts"])
     app.include_router(action_router, prefix=API_V1_PREFIX, tags=["winemaker-actions"])
     app.include_router(historical_router, prefix=API_V1_PREFIX)  # ADR-032: /api/v1/fermentation/historical
+    app.include_router(note_router, prefix=API_V1_PREFIX, tags=["fermentation-notes"])
     
     # Health check endpoint
     @app.get("/health", tags=["health"])

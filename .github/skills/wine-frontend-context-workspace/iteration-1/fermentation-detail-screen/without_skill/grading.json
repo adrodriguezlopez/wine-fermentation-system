@@ -1,0 +1,33 @@
+{
+  "eval_id": 1,
+  "eval_name": "fermentation-detail-screen",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "References only real endpoints from the skill's catalog",
+      "passed": false,
+      "evidence": "Endpoints use '/api/fermentations/:fermentationId' (missing the '/v1/' version prefix) and the alert endpoint is '/api/fermentations/:id/alerts?status=active' rather than the catalog's '/api/v1/executions/{execution_id}/alerts'"
+    },
+    {
+      "text": "Explains Bearer token auth requirement",
+      "passed": false,
+      "evidence": "No Authorization header or Bearer token is mentioned anywhere in the response; authentication requirements are entirely absent"
+    },
+    {
+      "text": "Notes that winery_id is automatic via JWT (not passed manually)",
+      "passed": false,
+      "evidence": "winery_id is not mentioned at all in the response, and there is no discussion of JWT-derived identity or automatic tenant resolution"
+    },
+    {
+      "text": "Suggests polling interval for live fermentation data",
+      "passed": true,
+      "evidence": "Add a polling interval (e.g., 60s) on samples and alerts for near-real-time monitoring"
+    },
+    {
+      "text": "Covers the alert acknowledge/dismiss flow",
+      "passed": false,
+      "evidence": "No acknowledge or dismiss actions are described; the response only covers fetching alerts via GET and filtering by status=active, with no mention of POST actions to change alert state"
+    }
+  ],
+  "pass_rate": 0.2
+}

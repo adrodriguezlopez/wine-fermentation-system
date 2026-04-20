@@ -1,0 +1,33 @@
+{
+  "eval_id": 2,
+  "eval_name": "analysis-caching-adr",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Reads ADR-INDEX.md before creating anything",
+      "passed": true,
+      "evidence": "Response explicitly states: 'the skill requires checking ADR-INDEX.md for existing related ADRs' and 'Upon reading the index and the file itself, ADR-042 already fully covers this decision.'"
+    },
+    {
+      "text": "Detects that a related ADR already exists and avoids duplication",
+      "passed": true,
+      "evidence": "'ADR-042 already fully covers this decision.' and 'No new ADR was created — duplication is explicitly prohibited by the skill.'"
+    },
+    {
+      "text": "References the existing ADR by number and explains why no new one is needed",
+      "passed": true,
+      "evidence": "ADR-042 is referenced by number throughout. A full summary of its key decisions is provided, explaining why it covers the requested caching task completely."
+    },
+    {
+      "text": "Does not create a duplicate ADR file",
+      "passed": true,
+      "evidence": "Directory listing of .ai-context/adr/ shows exactly one ADR-042 file (ADR-042-analysis-engine-detection-cache.md). No duplicate was created."
+    },
+    {
+      "text": "Tells the developer what the next step is",
+      "passed": true,
+      "evidence": "'Review ADR-042 (.ai-context/adr/ADR-042-analysis-engine-detection-cache.md) and confirm or accept it. Use wine-backend-dev skill when ready to implement.'"
+    }
+  ],
+  "pass_rate": 1.0
+}

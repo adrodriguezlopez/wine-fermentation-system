@@ -1,0 +1,38 @@
+{
+  "eval_id": 3,
+  "eval_name": "winery-settings-adr",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "Reads ADR-INDEX.md before assigning a number",
+      "passed": false,
+      "evidence": "Response states 'The next available number is ADR-042' but ADR-042 already existed (ADR-042-analysis-engine-detection-cache.md is in the index). The model did not read the actual ADR-INDEX.md before assigning a number."
+    },
+    {
+      "text": "Identifies cross-module impact (touches notifications ADR-040 and/or analysis ADR-020)",
+      "passed": true,
+      "evidence": "Response explicitly calls out: 'ADR-040 (Notifications & Alerts) — Notification preferences are one of the three stated fields' and discusses the AlertPreference relationship."
+    },
+    {
+      "text": "ADR covers the storage strategy decision (separate table vs columns vs JSON)",
+      "passed": true,
+      "evidence": "Response dedicates a full section to this: 'Storage model: Separate winery_settings table (1:1 with Winery) vs. JSON column on wineries vs. additional columns on wineries.' with a recommendation."
+    },
+    {
+      "text": "Updates ADR-INDEX.md with the new entry",
+      "passed": false,
+      "evidence": "No ADR was actually written. The response only recommends writing ADR-042 and describes what it should cover. Disk check confirms no new entry was added by this session (ADR-044 was added by the with_skill run)."
+    },
+    {
+      "text": "Links the ADR from the winery module-context.md",
+      "passed": false,
+      "evidence": "No ADR was written and no module-context.md update was made. The response never mentions updating module-context.md."
+    },
+    {
+      "text": "Stops after writing the ADR — does not start implementing",
+      "passed": true,
+      "evidence": "The response does not begin implementing. However, this passes only vacuously — no ADR was written at all. The response is purely advisory, recommending that an ADR be written rather than writing one."
+    }
+  ],
+  "pass_rate": 0.5
+}

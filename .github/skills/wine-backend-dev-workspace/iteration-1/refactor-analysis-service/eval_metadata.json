@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "refactor-analysis-service",
+  "prompt": "The analysis engine's AnomalyDetectionService is getting too large. It's doing anomaly detection AND recommendation generation AND protocol integration all in one class. What should we do?",
+  "assertions": [
+    "Does not just agree — identifies SRP violation explicitly",
+    "Reads analysis_engine module-context.md to understand current state",
+    "Proposes concrete alternative (3 services with interfaces)",
+    "Explains safe refactoring path (interface first, then extract)",
+    "References SOLID principles from ARCHITECTURAL_GUIDELINES.md"
+  ]
+}

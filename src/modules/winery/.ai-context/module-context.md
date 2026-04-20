@@ -123,6 +123,11 @@ fermentation = await session.get(Fermentation, fermentation_id)
 - ✅ **Service Component**: Business logic for winery management (ADR-016)
 - ✅ **API Component**: Admin REST endpoints for winery operations (ADR-017 ✅)
 
+### Governing ADRs
+- [ADR-016: Winery Service Layer Architecture](../../../../.ai-context/adr/ADR-016-winery-service-layer.md)
+- [ADR-017: Winery API Design & REST Endpoints](../../../../.ai-context/adr/ADR-017-winery-api-design.md)
+- [ADR-044: WinerySettings Entity Design](../../../../.ai-context/adr/ADR-044-winery-settings-entity.md)
+
 ## Key architectural decisions
 See [ADR-004](/.ai-context/adr/ADR-004-harvest-module-consolidation.md):
 - **Separate module rationale**: Winery is distinct bounded context (organization identity)

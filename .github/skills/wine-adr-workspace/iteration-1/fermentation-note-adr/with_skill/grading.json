@@ -1,0 +1,38 @@
+{
+  "eval_id": 1,
+  "eval_name": "fermentation-note-adr",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Reads ADR-INDEX.md before assigning a number — does not invent one",
+      "passed": true,
+      "evidence": "Response explicitly states: 'Next ADR number: 043 (last entry was ADR-042, 2026-04-18)' — demonstrates the index was read and the next sequential number was used correctly."
+    },
+    {
+      "text": "Writes ADR file at correct path /.ai-context/adr/ADR-NNN-*.md",
+      "passed": true,
+      "evidence": "Response states file written to '/.ai-context/adr/ADR-043-fermentation-note-entity.md'. Confirmed on disk: .ai-context/adr/ADR-043-fermentation-note-entity.md exists with correct content."
+    },
+    {
+      "text": "ADR covers multi-tenancy scoping for the new entity",
+      "passed": true,
+      "evidence": "ADR-043 decision #2 explicitly states: 'winery_id stored on note directly (join-free scoping, consistent with ADR-002)'. Confirmed in the written file: 'winery_id is stored directly on FermentationNote (denormalized from its parent Fermentation) so all note queries can be scoped by winery_id without a join'."
+    },
+    {
+      "text": "Updates ADR-INDEX.md with the new entry",
+      "passed": true,
+      "evidence": "ADR-INDEX.md on disk contains the row: '| **[ADR-043](./ADR-043-fermentation-note-entity.md)** | FermentationNote Entity Design | Proposed | 2026-04-19 | Medium |'"
+    },
+    {
+      "text": "Links the ADR from the fermentation module-context.md",
+      "passed": true,
+      "evidence": "module-context.md on disk contains a 'Governing ADRs' section with: '- [ADR-043: FermentationNote Entity Design](../../../../.ai-context/adr/ADR-043-fermentation-note-entity.md)'"
+    },
+    {
+      "text": "Stops after writing the ADR — does not start implementing",
+      "passed": true,
+      "evidence": "Response ends with: 'ADR-043 is written and added to the index. Review and confirm the decision… Use the wine-backend-dev skill when ready to implement.' No implementation code or steps were started."
+    }
+  ],
+  "pass_rate": 1.0
+}

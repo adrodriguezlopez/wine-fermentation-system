@@ -56,9 +56,9 @@
 **Details:** See [auth module-context.md](../src/shared/auth/.ai-context/module-context.md)
 
 ### Fermentation Management Module
-**Status:** ✅ COMPLETE (Repository + Service + API + Integration Tests) + **Protocol Engine (ADR-035/036/038) + Alert Service (ADR-040 partial)**  
-**Last Updated:** March 2, 2026  
-**Total Tests:** 728 passing (Fermentation Engine + Protocol Engine combined)  
+**Status:** ✅ COMPLETE (Repository + Service + API + Integration Tests) + **Protocol Engine (ADR-035/036/038) + Alert Service (ADR-040 partial) + FermentationNote Service + API**  
+**Last Updated:** April 18, 2026  
+**Total Tests:** 754 passing (Fermentation Engine + Protocol Engine + FermentationNote combined)  
 **Details:** See [fermentation module-context.md](../src/modules/fermentation/.ai-context/module-context.md)
 
 ### Fruit Origin Module  
@@ -105,8 +105,8 @@
 - **docker-compose.yml**: Corrected `JWT_SECRET_KEY` env var (was broken as `JWT_SECRET`)
 
 ### Project Totals
-**Tests:** **1,390 passing** (100% pass rate - March 2, 2026)
-  - Fermentation (Engine + Protocol ADR-035/036/038/040): 728 tests ✅
+**Tests:** **1,416 passing** (100% pass rate - April 18, 2026)
+  - Fermentation (Engine + Protocol ADR-035/036/038/040 + FermentationNote): 754 tests ✅
   - Analysis Engine (ADR-020 + ADR-037): 185 tests ✅
   - Shared (Auth + Testing + Errors): 261 tests ✅
   - Fruit Origin: 147 tests ✅

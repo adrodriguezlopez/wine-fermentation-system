@@ -1,0 +1,33 @@
+{
+  "eval_id": 3,
+  "eval_name": "refactor-analysis-service",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Does not just agree — identifies SRP violation explicitly",
+      "passed": true,
+      "evidence": "SRP violation? ❌ No — recommendations and protocol are already separate classes"
+    },
+    {
+      "text": "Reads analysis_engine module-context.md to understand current state",
+      "passed": true,
+      "evidence": "module-context.md: The service layer already has 5 distinct services: AnalysisOrchestratorService, ComparisonService, AnomalyDetectionService, RecommendationService, and ProtocolAnalysisIntegrationService."
+    },
+    {
+      "text": "Proposes concrete alternative (3 services with interfaces)",
+      "passed": false,
+      "evidence": "Proposes a Strategy pattern (IAnomalyDetector Protocol interface) rather than splitting into 3 services; explicitly argues the 3-service split is unnecessary"
+    },
+    {
+      "text": "Explains safe refactoring path (interface first, then extract)",
+      "passed": false,
+      "evidence": "Mentions OCP-based Strategy extraction but does not describe an 'interface first, then extract' incremental safe refactoring path"
+    },
+    {
+      "text": "References SOLID principles from ARCHITECTURAL_GUIDELINES.md",
+      "passed": false,
+      "evidence": "Mentions OCP and SRP in the summary table but does not cite or reference ARCHITECTURAL_GUIDELINES.md"
+    }
+  ],
+  "pass_rate": 0.4
+}

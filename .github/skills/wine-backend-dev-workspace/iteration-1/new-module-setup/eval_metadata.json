@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "new-module-setup",
+  "prompt": "We want a completely new module called 'notifications' that sends alerts when fermentation anomalies are detected. What's the setup process before I write any code?",
+  "assertions": [
+    "Creates .ai-context/module-context.md from Template 1 before any code",
+    "Creates .ai-context/domain-model-guide.md from Template 2",
+    "Updates /.ai-context/project-context.md with new module entry",
+    "Updates PROJECT_STRUCTURE_MAP.md",
+    "Lists docker-compose.yml changes needed",
+    "Does not write entity/service code until context is set up"
+  ]
+}

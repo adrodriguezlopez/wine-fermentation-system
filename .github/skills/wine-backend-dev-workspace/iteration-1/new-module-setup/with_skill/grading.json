@@ -1,0 +1,38 @@
+{
+  "eval_id": 2,
+  "eval_name": "new-module-setup",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Creates .ai-context/module-context.md from Template 1 before any code",
+      "passed": true,
+      "evidence": "Step 1 — Create `src/modules/notifications/.ai-context/module-context.md` / Use Template 1. Key specifics: port 8004... (preceded by 'Before writing any implementation code, complete all 10 setup steps')"
+    },
+    {
+      "text": "Creates .ai-context/domain-model-guide.md from Template 2",
+      "passed": true,
+      "evidence": "Step 2 — Create `src/modules/notifications/.ai-context/domain-model-guide.md` / Use Template 2. Document: `Alert` entity, `AlertRule` entity, `AlertStatus` enum..."
+    },
+    {
+      "text": "Updates /.ai-context/project-context.md with new module entry",
+      "passed": true,
+      "evidence": "Step 3 — Add module entry to `/.ai-context/project-context.md` / Use Template 4 under `## System modules`: ### Notifications Module / **Status:** 📋 Planned"
+    },
+    {
+      "text": "Updates PROJECT_STRUCTURE_MAP.md",
+      "passed": true,
+      "evidence": "Step 4 — Add module entry to `/.ai-context/PROJECT_STRUCTURE_MAP.md` / Use Template 6 under `modules/` — all layers marked 📋, 0 tests, port 8004."
+    },
+    {
+      "text": "Lists docker-compose.yml changes needed",
+      "passed": true,
+      "evidence": "Step 10 — Add service block to `docker-compose.yml` / Copy the `analysis_engine` block, adjust name, port 8004, Dockerfile path, healthcheck URL."
+    },
+    {
+      "text": "Does not write entity/service code until context is set up",
+      "passed": true,
+      "evidence": "Before writing any implementation code, complete all 10 setup steps ... Ready to start on domain entities when you give the go-ahead."
+    }
+  ],
+  "pass_rate": 1.0
+}

@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "fermentation-detail-screen",
+  "prompt": "I want to build a fermentation detail screen in React. It should show the current status, the latest sample values, and any active protocol alerts. What API calls do I need and what will the responses look like?",
+  "assertions": [
+    "References only real endpoints from the skill's catalog",
+    "Explains Bearer token auth requirement",
+    "Notes that winery_id is automatic via JWT (not passed manually)",
+    "Suggests polling interval for live fermentation data",
+    "Covers the alert acknowledge/dismiss flow"
+  ]
+}

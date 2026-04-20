@@ -1,0 +1,33 @@
+{
+  "eval_id": 3,
+  "eval_name": "refactor-analysis-service",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "Reads analysis_engine module-context.md before proposing any changes and reports what it found",
+      "passed": true,
+      "evidence": "NIVEL 2 (module-context.md): The service layer already has 5 separate services: AnalysisOrchestratorService, ComparisonService, AnomalyDetectionService, RecommendationService, ProtocolAnalysisIntegrationService"
+    },
+    {
+      "text": "Does not blindly accept the premise — verifies if the stated violation actually exists in the real code",
+      "passed": true,
+      "evidence": "NIVEL 4 (actual code): Read all five services. [...] Stop. Before proposing a refactor, let's be precise about what problem actually exists — because the premise in the question is partially wrong."
+    },
+    {
+      "text": "If the premise is wrong, says so clearly with evidence from the context files",
+      "passed": true,
+      "evidence": "The three responsibilities are already split into three separate classes. AnomalyDetectionService does not touch recommendations or protocol integration. [...] anomaly_detection_service.py — 444 lines — ONLY anomaly detection / recommendation_service.py — 299 lines — ONLY recommendation generation / protocol_integration_service.py — 383 lines — ONLY protocol integration"
+    },
+    {
+      "text": "If a real design problem exists, proposes a concrete alternative with interfaces",
+      "passed": true,
+      "evidence": "def __init__(self, session: AsyncSession, threshold_config: ThresholdConfigService, advisory_repo: IProtocolAdvisoryRepository, # add this) [...] await self.advisory_repo.save_many(advisories) # ← correct"
+    },
+    {
+      "text": "References SOLID principles (SRP, OCP) by name when explaining the diagnosis",
+      "passed": true,
+      "evidence": "That's two reasons to change — a mild SRP violation. [...] SRP is mandatory, god objects are explicitly listed as an anti-pattern. [...] SOLID checklist must pass before submitting."
+    }
+  ],
+  "pass_rate": 1.0
+}
