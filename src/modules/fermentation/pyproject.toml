@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Fermentation Management Module for Wine Fermentation Monitoring System"
 authors = ["Your Name <your.email@example.com>"]
 packages = [
-    { include = "api", from = "src" },
+    { include = "api_component", from = "src" },
     { include = "service_component", from = "src" },
     { include = "repository_component", from = "src" },
     { include = "domain", from = "src" }
