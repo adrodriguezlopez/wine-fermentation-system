@@ -69,7 +69,6 @@ def _make_service() -> tuple[ActionService, MagicMock, MagicMock]:
 
 
 class TestRecordAction:
-
     @pytest.mark.asyncio
     async def test_creates_action_with_correct_fields(self):
         service, repo, _ = _make_service()
@@ -157,7 +156,6 @@ class TestRecordAction:
 
 
 class TestUpdateOutcome:
-
     @pytest.mark.asyncio
     async def test_updates_outcome_to_resolved(self):
         service, repo, _ = _make_service()
@@ -228,7 +226,6 @@ class TestUpdateOutcome:
 
 
 class TestGetAction:
-
     @pytest.mark.asyncio
     async def test_returns_action_when_found(self):
         service, repo, _ = _make_service()
@@ -255,7 +252,6 @@ class TestGetAction:
 
 
 class TestGetActionsForFermentation:
-
     @pytest.mark.asyncio
     async def test_returns_paginated_results(self):
         service, repo, _ = _make_service()
@@ -291,7 +287,6 @@ class TestGetActionsForFermentation:
 
 
 class TestGetActionsForExecution:
-
     @pytest.mark.asyncio
     async def test_delegates_to_repository(self):
         service, repo, _ = _make_service()
@@ -314,7 +309,6 @@ class TestGetActionsForExecution:
 
 
 class TestDeleteAction:
-
     @pytest.mark.asyncio
     async def test_succeeds_when_action_exists(self):
         service, repo, _ = _make_service()

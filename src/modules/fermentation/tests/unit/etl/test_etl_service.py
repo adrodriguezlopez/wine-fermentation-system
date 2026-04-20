@@ -687,7 +687,6 @@ class TestETLService:
                 return_value=mock_lot_source_repo,
             ),
         ):
-
             etl_service = ETLService(
                 session_manager=mock_session_manager,
                 fruit_origin_service=mock_fruit_origin_service,
@@ -783,7 +782,6 @@ class TestETLService:
                 return_value=mock_lot_source_repo,
             ),
         ):
-
             etl_service = ETLService(
                 session_manager=mock_session_manager,
                 fruit_origin_service=mock_fruit_origin_service,

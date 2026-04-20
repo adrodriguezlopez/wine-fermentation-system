@@ -59,7 +59,6 @@ def _make_service() -> tuple:
 
 
 class TestAddNote:
-
     @pytest.mark.asyncio
     async def test_creates_note_with_correct_fields(self):
         service, repo = _make_service()
@@ -123,7 +122,6 @@ class TestAddNote:
 
 
 class TestGetNote:
-
     @pytest.mark.asyncio
     async def test_returns_note_when_found(self):
         service, repo = _make_service()
@@ -158,7 +156,6 @@ class TestGetNote:
 
 
 class TestGetNotesForFermentation:
-
     @pytest.mark.asyncio
     async def test_returns_list_of_notes(self):
         service, repo = _make_service()
@@ -192,7 +189,6 @@ class TestGetNotesForFermentation:
 
 
 class TestUpdateNote:
-
     @pytest.mark.asyncio
     async def test_updates_note_successfully(self):
         service, repo = _make_service()
@@ -244,7 +240,6 @@ class TestUpdateNote:
 
 
 class TestDeleteNote:
-
     @pytest.mark.asyncio
     async def test_deletes_note_successfully(self):
         service, repo = _make_service()

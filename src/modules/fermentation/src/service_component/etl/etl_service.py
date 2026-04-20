@@ -71,9 +71,9 @@ class ImportResult:
     )  # [{'code': 'FERM-001', 'error': 'message'}]
     errors: List[str] = field(default_factory=list)
     row_errors: Dict[int, List[str]] = field(default_factory=dict)
-    phase_failed: Optional[str] = (
-        None  # 'pre_validation', 'row_validation', 'post_validation', 'import'
-    )
+    phase_failed: Optional[
+        str
+    ] = None  # 'pre_validation', 'row_validation', 'post_validation', 'import'
     duration_seconds: float = 0.0
 
 
@@ -169,10 +169,12 @@ class ETLService:
             result.total_rows = len(df)
 
             # Import data with per-fermentation transactions (partial success)
-            fermentations_created, samples_created, failed_fermentations = (
-                await self._import_data(
-                    df, winery_id, user_id, progress_callback, cancellation_token
-                )
+            (
+                fermentations_created,
+                samples_created,
+                failed_fermentations,
+            ) = await self._import_data(
+                df, winery_id, user_id, progress_callback, cancellation_token
             )
 
             result.fermentations_created = fermentations_created

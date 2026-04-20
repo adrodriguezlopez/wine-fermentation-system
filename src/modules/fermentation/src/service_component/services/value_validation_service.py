@@ -12,7 +12,6 @@ from src.modules.fermentation.src.service_component.models.schemas.validations.v
 
 
 class ValueValidationService(IValueValidationService):
-
     def validate_sample_value(
         self, sample_type: Union[str, SampleType], value: Union[float, str, None]
     ) -> ValidationResult:

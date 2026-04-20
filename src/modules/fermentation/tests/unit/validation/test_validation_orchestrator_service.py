@@ -60,7 +60,6 @@ async def test_validate_sample_complete_chronology_failure(
     mock_value_validation_service,
     mock_business_rule_validation_service,
 ):
-
     mock_chronology_service.validate_sample_chronology = AsyncMock(
         return_value=ValidationResult.failure(
             errors=[
@@ -103,7 +102,6 @@ async def test_validate_sample_complete_chronology_success(
     mock_value_validation_service,
     mock_business_rule_validation_service,
 ):
-
     mock_chronology_service.validate_sample_chronology = AsyncMock(
         return_value=ValidationResult.success()
     )

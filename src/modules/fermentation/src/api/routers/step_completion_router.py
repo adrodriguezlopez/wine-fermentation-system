@@ -231,10 +231,11 @@ async def list_execution_completions(
         )
 
     try:
-        completions, total_count = (
-            await completion_repository.list_by_execution_paginated(
-                execution_id=execution_id, page=page, page_size=page_size
-            )
+        (
+            completions,
+            total_count,
+        ) = await completion_repository.list_by_execution_paginated(
+            execution_id=execution_id, page=page, page_size=page_size
         )
 
         items = [

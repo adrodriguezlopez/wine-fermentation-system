@@ -37,9 +37,9 @@ async def docker_internal_test():
     if db_url == "NOT_SET":
         print("⚠️  DATABASE_URL not set, using fallback configuration")
         # Set the internal Docker URL manually for testing
-        os.environ["DATABASE_URL"] = (
-            "postgresql://postgres:postgres@db:5432/wine_fermentation"
-        )
+        os.environ[
+            "DATABASE_URL"
+        ] = "postgresql://postgres:postgres@db:5432/wine_fermentation"
         print(f"📋 Using fallback: {os.environ['DATABASE_URL']}")
 
     # Test configuration

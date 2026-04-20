@@ -89,12 +89,12 @@ def client(app, mock_fermentation_service, mock_pattern_service, mock_sample_ser
     async def override_get_winery_id():
         return 1
 
-    app.dependency_overrides[get_fermentation_service] = (
-        override_get_fermentation_service
-    )
-    app.dependency_overrides[get_pattern_analysis_service] = (
-        override_get_pattern_service
-    )
+    app.dependency_overrides[
+        get_fermentation_service
+    ] = override_get_fermentation_service
+    app.dependency_overrides[
+        get_pattern_analysis_service
+    ] = override_get_pattern_service
     app.dependency_overrides[get_sample_service] = override_get_sample_service
     app.dependency_overrides[get_winery_id] = override_get_winery_id
 

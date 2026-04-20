@@ -57,7 +57,6 @@ def _make_note(**kwargs) -> FermentationNote:
 
 
 class TestAddNote:
-
     @pytest.mark.asyncio
     async def test_create_note_returns_201_with_note_data(self):
         from src.modules.fermentation.src.api.routers.note_router import add_note
@@ -128,7 +127,6 @@ class TestAddNote:
 
 
 class TestListNotes:
-
     @pytest.mark.asyncio
     async def test_list_notes_returns_list(self):
         from src.modules.fermentation.src.api.routers.note_router import list_notes
@@ -173,7 +171,6 @@ class TestListNotes:
 
 
 class TestGetNote:
-
     @pytest.mark.asyncio
     async def test_get_note_returns_note(self):
         from src.modules.fermentation.src.api.routers.note_router import get_note
@@ -217,7 +214,6 @@ class TestGetNote:
 
 
 class TestUpdateNote:
-
     @pytest.mark.asyncio
     async def test_update_note_returns_updated_data(self):
         from src.modules.fermentation.src.api.routers.note_router import update_note
@@ -270,7 +266,6 @@ class TestUpdateNote:
 
 
 class TestDeleteNote:
-
     @pytest.mark.asyncio
     async def test_delete_note_succeeds(self):
         from src.modules.fermentation.src.api.routers.note_router import delete_note
