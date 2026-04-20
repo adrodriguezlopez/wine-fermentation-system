@@ -2,6 +2,7 @@
 TDD tests for AceticAcidSample entity and SampleType.ACETIC_ACID enum value.
 RED: All tests fail because neither class nor enum value exist yet.
 """
+
 import pytest
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
 
@@ -37,6 +38,7 @@ class TestAceticAcidSample:
         from src.modules.fermentation.src.domain.entities.samples.acetic_acid_sample import (
             AceticAcidSample,
         )
+
         assert AceticAcidSample.__mapper_args__["polymorphic_identity"] == "acetic_acid"
 
     def test_units_cannot_be_overridden(self):

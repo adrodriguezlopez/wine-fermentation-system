@@ -12,8 +12,11 @@ from typing import List, Optional
 
 # Forward references for type hints
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
-    from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
+    from src.modules.fermentation.src.domain.entities.fermentation_note import (
+        FermentationNote,
+    )
     from src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (
         FermentationNoteCreate,
         FermentationNoteUpdate,
@@ -23,10 +26,10 @@ if TYPE_CHECKING:
 class IFermentationNoteRepository(ABC):
     """
     Interface for fermentation note repository operations.
-    
+
     Security: Multi-tenant via JOIN with fermentation table.
     All operations validate that the fermentation belongs to the winery.
-    
+
     Methods:
         create: Create a new fermentation note
         get_by_id: Retrieve note by ID with winery scoping
@@ -37,10 +40,7 @@ class IFermentationNoteRepository(ABC):
 
     @abstractmethod
     async def create(
-        self, 
-        fermentation_id: int,
-        winery_id: int,
-        data: "FermentationNoteCreate"
+        self, fermentation_id: int, winery_id: int, data: "FermentationNoteCreate"
     ) -> "FermentationNote":
         """
         Create a new fermentation note.
@@ -61,13 +61,11 @@ class IFermentationNoteRepository(ABC):
 
     @abstractmethod
     async def get_by_id(
-        self, 
-        note_id: int, 
-        winery_id: int
+        self, note_id: int, winery_id: int
     ) -> Optional["FermentationNote"]:
         """
         Retrieve a fermentation note by its ID.
-        
+
         Security: Validates note's fermentation belongs to winery via JOIN.
 
         Args:
@@ -81,13 +79,11 @@ class IFermentationNoteRepository(ABC):
 
     @abstractmethod
     async def get_by_fermentation(
-        self, 
-        fermentation_id: int, 
-        winery_id: int
+        self, fermentation_id: int, winery_id: int
     ) -> List["FermentationNote"]:
         """
         Retrieve all notes for a fermentation.
-        
+
         Security: Validates fermentation belongs to winery.
 
         Args:
@@ -101,14 +97,11 @@ class IFermentationNoteRepository(ABC):
 
     @abstractmethod
     async def update(
-        self, 
-        note_id: int, 
-        winery_id: int,
-        data: "FermentationNoteUpdate"
+        self, note_id: int, winery_id: int, data: "FermentationNoteUpdate"
     ) -> Optional["FermentationNote"]:
         """
         Update fermentation note information.
-        
+
         Security: Validates note's fermentation belongs to winery.
 
         Args:
@@ -125,14 +118,10 @@ class IFermentationNoteRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(
-        self, 
-        note_id: int, 
-        winery_id: int
-    ) -> bool:
+    async def delete(self, note_id: int, winery_id: int) -> bool:
         """
         Soft delete a fermentation note (sets is_deleted flag).
-        
+
         Security: Validates note's fermentation belongs to winery.
 
         Args:

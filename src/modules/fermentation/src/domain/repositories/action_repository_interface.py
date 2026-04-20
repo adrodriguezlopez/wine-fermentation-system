@@ -5,7 +5,9 @@ Repository Interface for WinemakerAction (ADR-041).
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 
-from src.modules.fermentation.src.domain.entities.winemaker_action import WinemakerAction
+from src.modules.fermentation.src.domain.entities.winemaker_action import (
+    WinemakerAction,
+)
 
 
 class IActionRepository(ABC):

@@ -9,9 +9,9 @@ Import sample entities directly from their modules.
 """
 
 __all__ = [
-    'BaseSample',
-    'SugarSample',
-    'DensitySample',
-    'CelsiusTemperatureSample',
-    'AceticAcidSample'
+    "BaseSample",
+    "SugarSample",
+    "DensitySample",
+    "CelsiusTemperatureSample",
+    "AceticAcidSample",
 ]

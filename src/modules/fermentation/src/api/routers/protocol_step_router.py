@@ -51,20 +51,20 @@ from src.modules.fermentation.src.repository_component.fermentation_protocol_rep
 from src.modules.fermentation.src.api.dependencies import get_db_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 # Router instance
-router = APIRouter(
-    prefix="/protocols",
-    tags=["protocol-steps"]
-)
+router = APIRouter(prefix="/protocols", tags=["protocol-steps"])
 
 
-def get_step_repository(session: Annotated[AsyncSession, Depends(get_db_session)]) -> IProtocolStepRepository:
+def get_step_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> IProtocolStepRepository:
     """Dependency: Get protocol step repository instance"""
     return ProtocolStepRepository(session=session)
 
 
-def get_protocol_repository(session: Annotated[AsyncSession, Depends(get_db_session)]) -> IFermentationProtocolRepository:
+def get_protocol_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> IFermentationProtocolRepository:
     """Dependency: Get protocol repository instance"""
     return FermentationProtocolRepository(session=session)
 
@@ -74,28 +74,30 @@ def get_protocol_repository(session: Annotated[AsyncSession, Depends(get_db_sess
     response_model=StepResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add a step to a protocol",
-    description="Creates a new step within a protocol. Steps are ordered and can have dependencies."
+    description="Creates a new step within a protocol. Steps are ordered and can have dependencies.",
 )
 async def create_protocol_step(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
     request: StepCreateRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
     step_repository: Annotated[IProtocolStepRepository, Depends(get_step_repository)],
-    protocol_repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+    protocol_repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> StepResponse:
     """
     Add a step to a protocol.
-    
+
     Args:
         protocol_id: ID of the parent protocol
         request: Step creation data (StepCreateRequest - validated by Pydantic)
         current_user: Authenticated user context
         step_repository: Step repository (injected)
         protocol_repository: Protocol repository (injected)
-    
+
     Returns:
         StepResponse: Created step with ID
-    
+
     Raises:
         HTTP 404: Protocol not found
         HTTP 403: Protocol belongs to different winery
@@ -109,19 +111,19 @@ async def create_protocol_step(
     """
     # Verify protocol exists and belongs to user's winery
     protocol = await protocol_repository.get_by_id(protocol_id)
-    
+
     if not protocol:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Protocol {protocol_id} not found"
+            detail=f"Protocol {protocol_id} not found",
         )
-    
+
     if protocol.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - protocol belongs to different winery"
+            detail="Access denied - protocol belongs to different winery",
         )
-    
+
     try:
         # Create step DTO from request
         step_dto = StepCreate(
@@ -135,12 +137,12 @@ async def create_protocol_step(
             criticality_score=request.criticality_score,
             can_repeat_daily=request.can_repeat_daily,
             depends_on_step_id=request.depends_on_step_id,
-            notes=request.notes
+            notes=request.notes,
         )
-        
+
         # Create step
         created_step = await step_repository.create(step_dto)
-        
+
         return StepResponse(
             id=created_step.id,
             protocol_id=created_step.protocol_id,
@@ -155,23 +157,22 @@ async def create_protocol_step(
             depends_on_step_id=created_step.depends_on_step_id,
             notes=created_step.notes,
             created_at=created_step.created_at,
-            updated_at=created_step.updated_at
+            updated_at=created_step.updated_at,
         )
-    
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
     except Exception as e:
         if "unique" in str(e).lower() or "order" in str(e).lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Step order {request.step_order} already exists for this protocol"
+                detail=f"Step order {request.step_order} already exists for this protocol",
             )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create step"
+            detail="Failed to create step",
         )
 
 
@@ -179,7 +180,7 @@ async def create_protocol_step(
     "/{protocol_id}/steps/{step_id}",
     response_model=StepResponse,
     summary="Update a protocol step",
-    description="Updates step metadata (description, timing, criticality). Cannot change step order or step type."
+    description="Updates step metadata (description, timing, criticality). Cannot change step order or step type.",
 )
 async def update_protocol_step(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
@@ -187,11 +188,13 @@ async def update_protocol_step(
     request: StepUpdateRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
     step_repository: Annotated[IProtocolStepRepository, Depends(get_step_repository)],
-    protocol_repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+    protocol_repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> StepResponse:
     """
     Update a protocol step.
-    
+
     Args:
         protocol_id: ID of the parent protocol
         step_id: ID of the step to update
@@ -199,10 +202,10 @@ async def update_protocol_step(
         current_user: Authenticated user context
         step_repository: Step repository (injected)
         protocol_repository: Protocol repository (injected)
-    
+
     Returns:
         StepResponse: Updated step
-    
+
     Raises:
         HTTP 404: Protocol or step not found
         HTTP 403: Protocol belongs to different winery
@@ -211,38 +214,38 @@ async def update_protocol_step(
     """
     # Verify protocol exists and belongs to user's winery
     protocol = await protocol_repository.get_by_id(protocol_id)
-    
+
     if not protocol:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Protocol {protocol_id} not found"
+            detail=f"Protocol {protocol_id} not found",
         )
-    
+
     if protocol.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - protocol belongs to different winery"
+            detail="Access denied - protocol belongs to different winery",
         )
-    
+
     # Verify step belongs to protocol
     step = await step_repository.get_by_id(step_id)
-    
+
     if not step or step.protocol_id != protocol_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Step {step_id} not found in protocol {protocol_id}"
+            detail=f"Step {step_id} not found in protocol {protocol_id}",
         )
-    
+
     try:
         update_data = {k: v for k, v in request.model_dump(exclude_unset=True).items()}
         updated_step = await step_repository.update(step_id, update_data)
-        
+
         if not updated_step:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Failed to update step {step_id}"
+                detail=f"Failed to update step {step_id}",
             )
-        
+
         return StepResponse(
             id=updated_step.id,
             protocol_id=updated_step.protocol_id,
@@ -257,13 +260,12 @@ async def update_protocol_step(
             depends_on_step_id=updated_step.depends_on_step_id,
             notes=updated_step.notes,
             created_at=updated_step.created_at,
-            updated_at=updated_step.updated_at
+            updated_at=updated_step.updated_at,
         )
-    
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
 
 
@@ -271,25 +273,27 @@ async def update_protocol_step(
     "/{protocol_id}/steps/{step_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a protocol step",
-    description="Deletes a step from a protocol. Only allowed if no completions exist for this step."
+    description="Deletes a step from a protocol. Only allowed if no completions exist for this step.",
 )
 async def delete_protocol_step(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
     step_id: Annotated[int, Path(gt=0, description="Step ID")],
     current_user: Annotated[UserContext, Depends(require_winemaker)],
     step_repository: Annotated[IProtocolStepRepository, Depends(get_step_repository)],
-    protocol_repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)]
+    protocol_repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> None:
     """
     Delete a protocol step.
-    
+
     Args:
         protocol_id: ID of the parent protocol
         step_id: ID of the step to delete
         current_user: Authenticated user context
         step_repository: Step repository (injected)
         protocol_repository: Protocol repository (injected)
-    
+
     Raises:
         HTTP 404: Protocol or step not found
         HTTP 403: Protocol belongs to different winery
@@ -298,39 +302,39 @@ async def delete_protocol_step(
     """
     # Verify protocol exists and belongs to user's winery
     protocol = await protocol_repository.get_by_id(protocol_id)
-    
+
     if not protocol:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Protocol {protocol_id} not found"
+            detail=f"Protocol {protocol_id} not found",
         )
-    
+
     if protocol.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - protocol belongs to different winery"
+            detail="Access denied - protocol belongs to different winery",
         )
-    
+
     # Verify step belongs to protocol
     step = await step_repository.get_by_id(step_id)
-    
+
     if not step or step.protocol_id != protocol_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Step {step_id} not found in protocol {protocol_id}"
+            detail=f"Step {step_id} not found in protocol {protocol_id}",
         )
-    
+
     try:
         await step_repository.delete(step_id)
     except Exception as e:
         if "completion" in str(e).lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Cannot delete step with existing completions"
+                detail="Cannot delete step with existing completions",
             )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete step"
+            detail="Failed to delete step",
         )
 
 
@@ -338,19 +342,23 @@ async def delete_protocol_step(
     "/{protocol_id}/steps",
     response_model=StepListResponse,
     summary="List steps in a protocol",
-    description="Lists all steps in a protocol, ordered by step_order. Supports pagination."
+    description="Lists all steps in a protocol, ordered by step_order. Supports pagination.",
 )
 async def list_protocol_steps(
     protocol_id: Annotated[int, Path(gt=0, description="Protocol ID")],
     page: Annotated[int, Query(ge=1, description="Page number (1-indexed)")] = 1,
     page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
     current_user: Annotated[UserContext, Depends(require_winemaker)] = None,
-    step_repository: Annotated[IProtocolStepRepository, Depends(get_step_repository)] = None,
-    protocol_repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)] = None
+    step_repository: Annotated[
+        IProtocolStepRepository, Depends(get_step_repository)
+    ] = None,
+    protocol_repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ] = None,
 ) -> StepListResponse:
     """
     List all steps in a protocol.
-    
+
     Args:
         protocol_id: ID of the protocol
         page: Page number (1-indexed, default 1)
@@ -358,10 +366,10 @@ async def list_protocol_steps(
         current_user: Authenticated user context
         step_repository: Step repository (injected)
         protocol_repository: Protocol repository (injected)
-    
+
     Returns:
         StepListResponse: List of steps with pagination metadata
-    
+
     Raises:
         HTTP 404: Protocol not found
         HTTP 403: Protocol belongs to different winery
@@ -370,26 +378,24 @@ async def list_protocol_steps(
     """
     # Verify protocol exists and belongs to user's winery
     protocol = await protocol_repository.get_by_id(protocol_id)
-    
+
     if not protocol:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Protocol {protocol_id} not found"
+            detail=f"Protocol {protocol_id} not found",
         )
-    
+
     if protocol.winery_id != current_user.winery_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied - protocol belongs to different winery"
+            detail="Access denied - protocol belongs to different winery",
         )
-    
+
     try:
         steps, total_count = await step_repository.list_by_protocol_paginated(
-            protocol_id=protocol_id,
-            page=page,
-            page_size=page_size
+            protocol_id=protocol_id, page=page, page_size=page_size
         )
-        
+
         items = [
             StepResponse(
                 id=s.id,
@@ -405,29 +411,29 @@ async def list_protocol_steps(
                 depends_on_step_id=s.depends_on_step_id,
                 notes=s.notes,
                 created_at=s.created_at,
-                updated_at=s.updated_at
+                updated_at=s.updated_at,
             )
             for s in steps
         ]
-        
+
         return StepListResponse(
             items=items,
             total_count=total_count,
             page=page,
             page_size=page_size,
-            total_pages=(total_count + page_size - 1) // page_size
+            total_pages=(total_count + page_size - 1) // page_size,
         )
-    
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
 
 
 # ---------------------------------------------------------------------------
 # ADR-039: Template Management endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.post(
     "/{protocol_id}/steps/custom",
@@ -444,7 +450,9 @@ async def add_custom_step(
     request: StepCreateRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
     step_repository: Annotated[IProtocolStepRepository, Depends(get_step_repository)],
-    protocol_repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+    protocol_repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> StepResponse:
     """
     Inject a custom step into a protocol.
@@ -455,9 +463,15 @@ async def add_custom_step(
         HTTP 409: Protocol is active (must clone first)
         HTTP 422: Validation error
     """
-    from src.modules.fermentation.src.service_component.services.protocol_service import ProtocolService
-    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
-    from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
+    from src.modules.fermentation.src.service_component.services.protocol_service import (
+        ProtocolService,
+    )
+    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import (
+        ProtocolComplianceService,
+    )
+    from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+        ProtocolExecutionRepository,
+    )
 
     session = step_repository.session
     execution_repo = ProtocolExecutionRepository(session=session)
@@ -484,7 +498,7 @@ async def add_custom_step(
             tolerance_hours=request.tolerance_hours,
             duration_minutes=request.duration_minutes,
             criticality_score=request.criticality_score,
-            is_critical=getattr(request, 'is_critical', False),
+            is_critical=getattr(request, "is_critical", False),
             can_repeat_daily=request.can_repeat_daily,
             notes=request.notes,
         )
@@ -494,7 +508,9 @@ async def add_custom_step(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg)
         if "not found" in msg or "Access denied" in msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg
+        )
 
     return StepResponse(
         id=step.id,
@@ -530,7 +546,9 @@ async def override_step(
     request: StepOverrideRequest,
     current_user: Annotated[UserContext, Depends(require_winemaker)],
     step_repository: Annotated[IProtocolStepRepository, Depends(get_step_repository)],
-    protocol_repository: Annotated[IFermentationProtocolRepository, Depends(get_protocol_repository)],
+    protocol_repository: Annotated[
+        IFermentationProtocolRepository, Depends(get_protocol_repository)
+    ],
 ) -> StepResponse:
     """
     Override parameters of an existing step.
@@ -541,9 +559,15 @@ async def override_step(
         HTTP 409: Protocol is active (must clone first)
         HTTP 422: Non-overridable field or validation error
     """
-    from src.modules.fermentation.src.service_component.services.protocol_service import ProtocolService
-    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
-    from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
+    from src.modules.fermentation.src.service_component.services.protocol_service import (
+        ProtocolService,
+    )
+    from src.modules.fermentation.src.service_component.services.protocol_compliance_service import (
+        ProtocolComplianceService,
+    )
+    from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+        ProtocolExecutionRepository,
+    )
 
     session = step_repository.session
     execution_repo = ProtocolExecutionRepository(session=session)
@@ -580,7 +604,9 @@ async def override_step(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg)
         if "not found" in msg or "Access denied" in msg or "does not belong" in msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg
+        )
 
     return StepResponse(
         id=step.id,

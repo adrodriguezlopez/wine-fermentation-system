@@ -19,11 +19,12 @@ sys.path.insert(0, str(workspace_root))
 def event_loop():
     """
     Create a new event loop for each test function.
-    
+
     This prevents "Event loop is closed" errors when running many tests together.
     Using function scope ensures each test gets a fresh event loop.
     """
     import asyncio
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     yield loop

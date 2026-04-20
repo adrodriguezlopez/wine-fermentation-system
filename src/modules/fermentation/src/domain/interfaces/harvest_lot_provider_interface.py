@@ -8,6 +8,7 @@ during ETL import, without coupling to fruit_origin's full service contract.
 This interface is implemented by fruit_origin's FruitOriginService — injected
 at the composition root via Dependency Inversion.
 """
+
 from abc import ABC, abstractmethod
 from datetime import date
 from decimal import Decimal

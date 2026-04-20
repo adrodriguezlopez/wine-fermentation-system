@@ -18,24 +18,37 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
-from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol
-from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
+from src.modules.fermentation.src.domain.entities.protocol_protocol import (
+    FermentationProtocol,
+)
+from src.modules.fermentation.src.domain.entities.protocol_execution import (
+    ProtocolExecution,
+)
 from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
 from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion
 from src.modules.fermentation.src.domain.enums.step_type import SkipReason
-from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import FermentationProtocolRepository
-from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
-from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
-from src.modules.fermentation.src.repository_component.step_completion_repository import StepCompletionRepository
-
+from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import (
+    FermentationProtocolRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+    ProtocolExecutionRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_step_repository import (
+    ProtocolStepRepository,
+)
+from src.modules.fermentation.src.repository_component.step_completion_repository import (
+    StepCompletionRepository,
+)
 
 # ============================================================================
 # Data Models for Compliance Scoring
 # ============================================================================
 
+
 @dataclass
 class StepCompletionBreakdown:
     """Detailed breakdown of points earned for a single step."""
+
     step_id: int
     step_type: str
     earned_points: float
@@ -49,6 +62,7 @@ class StepCompletionBreakdown:
 @dataclass
 class WeightedCompletionScore:
     """Result of weighted completion score calculation."""
+
     score: float  # 0-100
     step_breakdown: List[StepCompletionBreakdown]
     total_earned: float
@@ -61,6 +75,7 @@ class WeightedCompletionScore:
 @dataclass
 class TimingScore:
     """Result of timing score calculation."""
+
     score: float  # 0-100 (percentage of on-time completions)
     on_time_count: int
     late_count: int
@@ -70,6 +85,7 @@ class TimingScore:
 @dataclass
 class ComplianceScoreResult:
     """Final compliance score with detailed breakdown."""
+
     compliance_score: float  # 0-100
     weighted_completion: float  # 0-100
     timing_score: float  # 0-100
@@ -81,6 +97,7 @@ class ComplianceScoreResult:
 @dataclass
 class StepDeviation:
     """Represents a deviation from expected protocol execution."""
+
     step_id: int
     step_type: str
     description: str
@@ -95,17 +112,17 @@ class StepDeviation:
 
 # These skip reasons earn 60% credit
 JUSTIFIED_SKIP_REASONS = {
-    SkipReason.CONDITION_NOT_MET,      # pH already optimal, fermentation ended, etc.
-    SkipReason.FERMENTATION_ENDED,     # Early fermentation completion
-    SkipReason.WINEMAKER_DECISION,     # Expert judgment override
+    SkipReason.CONDITION_NOT_MET,  # pH already optimal, fermentation ended, etc.
+    SkipReason.FERMENTATION_ENDED,  # Early fermentation completion
+    SkipReason.WINEMAKER_DECISION,  # Expert judgment override
 }
 
 # These skip reasons earn 0% credit
 UNJUSTIFIED_SKIP_REASONS = {
-    SkipReason.EQUIPMENT_FAILURE,      # Equipment failure (should have alternative)
-    SkipReason.FERMENTATION_FAILED,    # Fermentation failure (unrecoverable)
-    SkipReason.REPLACED_BY_ALTERNATIVE,# Replaced by alternative step (already accounted)
-    SkipReason.OTHER,                  # Unexplained skip
+    SkipReason.EQUIPMENT_FAILURE,  # Equipment failure (should have alternative)
+    SkipReason.FERMENTATION_FAILED,  # Fermentation failure (unrecoverable)
+    SkipReason.REPLACED_BY_ALTERNATIVE,  # Replaced by alternative step (already accounted)
+    SkipReason.OTHER,  # Unexplained skip
 }
 
 
@@ -113,10 +130,11 @@ UNJUSTIFIED_SKIP_REASONS = {
 # Protocol Compliance Service
 # ============================================================================
 
+
 class ProtocolComplianceService:
     """
     Service for calculating compliance scores for protocol executions.
-    
+
     Implements ADR-036 compliance scoring algorithm:
     - Deterministic: Same inputs always produce same output
     - Explainable: Can detail why score is X, not Y+1
@@ -184,9 +202,8 @@ class ProtocolComplianceService:
         timing_score_data = await self._calculate_timing_score(execution)
 
         # Step 3: Combine into final score
-        final_score = (
-            (completion_score_data.score * 0.70) +
-            (timing_score_data.score * 0.30)
+        final_score = (completion_score_data.score * 0.70) + (
+            timing_score_data.score * 0.30
         )
 
         # Step 4: Apply critical steps adjustments
@@ -391,8 +408,10 @@ class ProtocolComplianceService:
         # Get all completions for this execution
         completions = await self.completion_repo.get_by_execution(execution_id)
         completed_step_ids = {
-            c.step_id for c in completions
-            if not c.was_skipped or c.skip_reason in [r.value for r in JUSTIFIED_SKIP_REASONS]
+            c.step_id
+            for c in completions
+            if not c.was_skipped
+            or c.skip_reason in [r.value for r in JUSTIFIED_SKIP_REASONS]
         }
 
         for step in protocol.steps:
@@ -401,7 +420,7 @@ class ProtocolComplianceService:
                 # Check if it's an unjustified skip
                 skip_record = next(
                     (c for c in completions if c.step_id == step.id and c.was_skipped),
-                    None
+                    None,
                 )
                 if skip_record:
                     if skip_record.skip_reason not in [
@@ -430,11 +449,12 @@ class ProtocolComplianceService:
                     )
 
             # Check if step was late
-            completion = next(
-                (c for c in completions if c.step_id == step.id),
-                None
-            )
-            if completion and not completion.was_skipped and not completion.is_on_schedule:
+            completion = next((c for c in completions if c.step_id == step.id), None)
+            if (
+                completion
+                and not completion.was_skipped
+                and not completion.is_on_schedule
+            ):
                 severity = "HIGH" if completion.days_late > 2 else "MEDIUM"
                 deviations.append(
                     StepDeviation(
@@ -545,7 +565,9 @@ class ProtocolComplianceService:
                 continue
 
             # Calculate expected completion date
-            expected_date = execution.start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            expected_date = execution.start_date.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
             expected_date = expected_date + timedelta(days=step.expected_day)
 
             # Check if overdue
@@ -750,11 +772,9 @@ class ProtocolComplianceService:
             return 100.0
 
         completed_critical = sum(
-            1 for step in critical_steps
-            if any(
-                c.step_id == step.id and not c.was_skipped
-                for c in completions
-            )
+            1
+            for step in critical_steps
+            if any(c.step_id == step.id and not c.was_skipped for c in completions)
         )
 
         return (completed_critical / len(critical_steps)) * 100
@@ -770,7 +790,9 @@ class ProtocolComplianceService:
         execution = await self.execution_repo.get_by_id(execution_id)
         if execution:
             execution.compliance_score = score_result.compliance_score
-            execution.completed_steps = score_result.breakdown["completion"].completed_count
+            execution.completed_steps = score_result.breakdown[
+                "completion"
+            ].completed_count
             await self.execution_repo.update(execution)
             await self.execution_repo.session.commit()
 

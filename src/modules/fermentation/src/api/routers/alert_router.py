@@ -17,10 +17,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.infra.api.dependencies import require_winemaker
 from src.modules.fermentation.src.api.dependencies import get_db_session
-from src.modules.fermentation.src.api.schemas.responses import AlertResponse, AlertListResponse
+from src.modules.fermentation.src.api.schemas.responses import (
+    AlertResponse,
+    AlertListResponse,
+)
 from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert
-from src.modules.fermentation.src.repository_component.protocol_alert_repository import ProtocolAlertRepository
-from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
+from src.modules.fermentation.src.repository_component.protocol_alert_repository import (
+    ProtocolAlertRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+    ProtocolExecutionRepository,
+)
 
 router = APIRouter(
     tags=["protocol-alerts"],
@@ -28,14 +35,14 @@ router = APIRouter(
 
 
 def get_alert_repository(
-    session: Annotated[AsyncSession, Depends(get_db_session)]
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> ProtocolAlertRepository:
     """Dependency: ProtocolAlertRepository connected to current DB session."""
     return ProtocolAlertRepository(session=session)
 
 
 def get_execution_repository(
-    session: Annotated[AsyncSession, Depends(get_db_session)]
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> ProtocolExecutionRepository:
     """Dependency: ProtocolExecutionRepository for access control checks."""
     return ProtocolExecutionRepository(session=session)
@@ -55,14 +62,17 @@ async def list_execution_alerts(
     execution_id: Annotated[int, Path(gt=0, description="Protocol execution ID")],
     current_user: Annotated[UserContext, Depends(require_winemaker)],
     alert_repo: Annotated[ProtocolAlertRepository, Depends(get_alert_repository)],
-    execution_repo: Annotated[ProtocolExecutionRepository, Depends(get_execution_repository)],
+    execution_repo: Annotated[
+        ProtocolExecutionRepository, Depends(get_execution_repository)
+    ],
     status_filter: Annotated[
         Optional[str],
-        Query(description="Filter by status: PENDING | SENT | ACKNOWLEDGED | DISMISSED")
+        Query(
+            description="Filter by status: PENDING | SENT | ACKNOWLEDGED | DISMISSED"
+        ),
     ] = None,
     alert_type: Annotated[
-        Optional[str],
-        Query(description="Filter by alert type, e.g. STEP_OVERDUE")
+        Optional[str], Query(description="Filter by alert type, e.g. STEP_OVERDUE")
     ] = None,
     skip: Annotated[int, Query(ge=0, description="Pagination offset")] = 0,
     limit: Annotated[int, Query(ge=1, le=100, description="Max items")] = 50,

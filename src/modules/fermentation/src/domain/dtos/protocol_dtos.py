@@ -26,8 +26,10 @@ import re
 
 def validate_semantic_version(version: str) -> None:
     """Validate version is semantic format (e.g., '1.0', '2.1')."""
-    if not re.match(r'^\d+\.\d+$', version):
-        raise ValueError(f"Version must be semantic format (e.g., '1.0'). Got: {version}")
+    if not re.match(r"^\d+\.\d+$", version):
+        raise ValueError(
+            f"Version must be semantic format (e.g., '1.0'). Got: {version}"
+        )
 
 
 def validate_positive_int(value: int, field_name: str) -> None:
@@ -46,8 +48,10 @@ def validate_score_range(value: float, field_name: str) -> None:
 # Enums (for API request/response serialization)
 # ============================================================================
 
+
 class StepTypeDTO(str, Enum):
     """DTO representation of StepType categories"""
+
     INITIALIZATION = "INITIALIZATION"
     MONITORING = "MONITORING"
     ADDITIONS = "ADDITIONS"
@@ -58,6 +62,7 @@ class StepTypeDTO(str, Enum):
 
 class ProtocolExecutionStatusDTO(str, Enum):
     """DTO representation of ProtocolExecutionStatus"""
+
     NOT_STARTED = "NOT_STARTED"
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
@@ -66,6 +71,7 @@ class ProtocolExecutionStatusDTO(str, Enum):
 
 class SkipReasonDTO(str, Enum):
     """DTO representation of SkipReason"""
+
     EQUIPMENT_MALFUNCTION = "EQUIPMENT_MALFUNCTION"
     WEATHER_CONDITIONS = "WEATHER_CONDITIONS"
     QUALITY_ISSUE = "QUALITY_ISSUE"
@@ -77,13 +83,14 @@ class SkipReasonDTO(str, Enum):
 # Protocol DTOs
 # ============================================================================
 
+
 @dataclass
 class ProtocolCreate:
     """
     DTO for creating a new fermentation protocol.
-    
+
     A protocol is a master template defining fermentation steps for a varietal.
-    
+
     Attributes:
         winery_id: Owning winery
         varietal_code: Short code (e.g., "PN", "CS")
@@ -94,6 +101,7 @@ class ProtocolCreate:
         description: Long description
         expected_duration_days: Estimated fermentation duration
     """
+
     winery_id: int
     varietal_code: str
     varietal_name: str
@@ -103,16 +111,16 @@ class ProtocolCreate:
     expected_duration_days: int
     created_by_user_id: int
     description: Optional[str] = None
-    
+
     def __post_init__(self):
         """Validate protocol creation data."""
         validate_semantic_version(self.version)
         validate_positive_int(self.expected_duration_days, "expected_duration_days")
-        
+
         # Validate color
         if self.color not in ("RED", "WHITE", "ROSÉ"):
             raise ValueError(f"color must be RED, WHITE, or ROSÉ. Got: {self.color}")
-        
+
         # Validate required fields not empty
         if not self.varietal_code.strip():
             raise ValueError("varietal_code cannot be empty")
@@ -126,9 +134,10 @@ class ProtocolCreate:
 class ProtocolUpdate:
     """
     DTO for updating an existing protocol.
-    
+
     All fields optional for partial updates.
     """
+
     protocol_name: Optional[str] = None
     description: Optional[str] = None
     expected_duration_days: Optional[int] = None
@@ -139,7 +148,7 @@ class ProtocolUpdate:
 class ProtocolResponse:
     """
     DTO for protocol API responses.
-    
+
     Attributes:
         id: Protocol ID
         winery_id: Owning winery
@@ -156,6 +165,7 @@ class ProtocolResponse:
         updated_at: Last update timestamp
         step_count: Number of steps in protocol
     """
+
     id: int
     winery_id: int
     varietal_code: str
@@ -176,11 +186,12 @@ class ProtocolResponse:
 # Protocol Step DTOs
 # ============================================================================
 
+
 @dataclass
 class StepCreate:
     """
     DTO for adding a step to a protocol.
-    
+
     Attributes:
         protocol_id: Parent protocol
         step_order: Position in protocol (1-indexed)
@@ -194,6 +205,7 @@ class StepCreate:
         depends_on_step_id: Optional dependency on previous step
         notes: Additional notes
     """
+
     protocol_id: int
     step_order: int
     step_type: str  # StepType value
@@ -205,21 +217,27 @@ class StepCreate:
     can_repeat_daily: bool = False
     depends_on_step_id: Optional[int] = None
     notes: Optional[str] = None
-    
+
     def __post_init__(self):
         """Validate step creation data."""
         # Validate step type is valid category
         valid_types = {
-            "INITIALIZATION", "MONITORING", "ADDITIONS", 
-            "CAP_MANAGEMENT", "POST_FERMENTATION", "QUALITY_CHECK"
+            "INITIALIZATION",
+            "MONITORING",
+            "ADDITIONS",
+            "CAP_MANAGEMENT",
+            "POST_FERMENTATION",
+            "QUALITY_CHECK",
         }
         if self.step_type not in valid_types:
-            raise ValueError(f"step_type must be one of {valid_types}. Got: {self.step_type}")
-        
+            raise ValueError(
+                f"step_type must be one of {valid_types}. Got: {self.step_type}"
+            )
+
         validate_positive_int(self.step_order, "step_order")
         validate_positive_int(self.duration_minutes, "duration_minutes")
         validate_score_range(self.criticality_score, "criticality_score")
-        
+
         if not self.description.strip():
             raise ValueError("description cannot be empty")
 
@@ -227,6 +245,7 @@ class StepCreate:
 @dataclass
 class StepUpdate:
     """DTO for updating a protocol step."""
+
     description: Optional[str] = None
     expected_day: Optional[int] = None
     tolerance_hours: Optional[int] = None
@@ -241,7 +260,7 @@ class StepUpdate:
 class StepResponse:
     """
     DTO for step API responses.
-    
+
     Attributes:
         id: Step ID
         protocol_id: Parent protocol
@@ -257,6 +276,7 @@ class StepResponse:
         notes: Additional notes
         created_at: Creation timestamp
     """
+
     id: int
     protocol_id: int
     step_order: int
@@ -276,16 +296,18 @@ class StepResponse:
 # Protocol Execution DTOs
 # ============================================================================
 
+
 @dataclass
 class ExecutionStart:
     """
     DTO for starting a new protocol execution.
-    
+
     Attributes:
         protocol_id: Protocol to execute
         fermentation_id: Associated fermentation
         start_date: When execution starts (defaults to now)
     """
+
     protocol_id: int
     fermentation_id: int
     start_date: Optional[datetime] = None
@@ -295,16 +317,17 @@ class ExecutionStart:
 class ExecutionUpdate:
     """
     DTO for updating protocol execution status and scores.
-    
+
     Attributes:
         status: New execution status (NOT_STARTED, ACTIVE, PAUSED, COMPLETED, ABANDONED)
         compliance_score: Updated compliance score (0-100)
         notes: Optional notes about execution
     """
+
     status: Optional[str] = None
     compliance_score: Optional[float] = None
     notes: Optional[str] = None
-    
+
     def __post_init__(self):
         """Validate execution update data."""
         if self.compliance_score is not None:
@@ -315,7 +338,7 @@ class ExecutionUpdate:
 class ExecutionResponse:
     """
     DTO for execution API responses.
-    
+
     Attributes:
         id: Execution ID
         protocol_id: Executed protocol
@@ -329,6 +352,7 @@ class ExecutionResponse:
         completed_at: When execution finished
         notes: Notes about execution
     """
+
     id: int
     protocol_id: int
     fermentation_id: int
@@ -346,11 +370,12 @@ class ExecutionResponse:
 # Step Completion DTOs
 # ============================================================================
 
+
 @dataclass
 class CompletionCreate:
     """
     DTO for marking a step as completed.
-    
+
     Attributes:
         execution_id: Parent execution
         step_id: Step being completed
@@ -364,6 +389,7 @@ class CompletionCreate:
         verified_by_user_id: User who verified completion
         notes: Completion notes
     """
+
     execution_id: int
     step_id: int
     was_skipped: bool = False
@@ -375,32 +401,37 @@ class CompletionCreate:
     skip_notes: Optional[str] = None
     verified_by_user_id: Optional[int] = None
     notes: Optional[str] = None
-    
+
     def __post_init__(self):
         """Validate completion data."""
         # Business rule: skip_reason required when was_skipped=true
         if self.was_skipped and not self.skip_reason:
             raise ValueError("skip_reason is required when was_skipped=True")
-        
+
         # Business rule: completed_at required when not skipped
         if not self.was_skipped and not self.completed_at:
             raise ValueError("completed_at is required when was_skipped=False")
-        
+
         # Validate skip reason if provided
         if self.skip_reason:
             valid_reasons = {
-                "EQUIPMENT_MALFUNCTION", "WEATHER_CONDITIONS", 
-                "QUALITY_ISSUE", "RESOURCE_UNAVAILABLE", "OTHER"
+                "EQUIPMENT_MALFUNCTION",
+                "WEATHER_CONDITIONS",
+                "QUALITY_ISSUE",
+                "RESOURCE_UNAVAILABLE",
+                "OTHER",
             }
             if self.skip_reason not in valid_reasons:
-                raise ValueError(f"skip_reason must be one of {valid_reasons}. Got: {self.skip_reason}")
+                raise ValueError(
+                    f"skip_reason must be one of {valid_reasons}. Got: {self.skip_reason}"
+                )
 
 
 @dataclass
 class CompletionResponse:
     """
     DTO for completion API responses.
-    
+
     Attributes:
         id: Completion ID
         execution_id: Parent execution
@@ -416,6 +447,7 @@ class CompletionResponse:
         created_at: Record creation time
         notes: Completion notes
     """
+
     id: int
     execution_id: int
     step_id: int
@@ -435,10 +467,12 @@ class CompletionResponse:
 # Batch/Query DTOs
 # ============================================================================
 
+
 @dataclass
 class ProtocolListResponse:
     """Response for listing protocols with pagination."""
-    items: List['ProtocolResponse']
+
+    items: List["ProtocolResponse"]
     total_count: int
     page: int
     page_size: int
@@ -448,7 +482,8 @@ class ProtocolListResponse:
 @dataclass
 class StepListResponse:
     """Response for listing protocol steps with pagination."""
-    items: List['StepResponse']
+
+    items: List["StepResponse"]
     total_count: int
     page: int
     page_size: int
@@ -458,7 +493,8 @@ class StepListResponse:
 @dataclass
 class ExecutionListResponse:
     """Response for listing executions with pagination."""
-    items: List['ExecutionResponse']
+
+    items: List["ExecutionResponse"]
     total_count: int
     page: int
     page_size: int
@@ -468,7 +504,8 @@ class ExecutionListResponse:
 @dataclass
 class CompletionListResponse:
     """Response for listing step completions with pagination."""
-    items: List['CompletionResponse']
+
+    items: List["CompletionResponse"]
     total_count: int
     page: int
     page_size: int
@@ -478,6 +515,7 @@ class CompletionListResponse:
 @dataclass
 class ExecutionDetailResponse:
     """Detailed execution response with all steps and completions."""
-    execution: 'ExecutionResponse'
-    steps: List['StepResponse']
-    completions: List['CompletionResponse']
+
+    execution: "ExecutionResponse"
+    steps: List["StepResponse"]
+    completions: List["CompletionResponse"]

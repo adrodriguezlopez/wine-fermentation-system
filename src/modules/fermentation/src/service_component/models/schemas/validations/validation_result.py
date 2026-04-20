@@ -5,8 +5,8 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class ValidationResult(BaseModel):
     """Result of business rule validation."""
-    
-    model_config = ConfigDict(revalidate_instances='never')
+
+    model_config = ConfigDict(revalidate_instances="never")
 
     is_valid: bool
     errors: List[ValidationError] = Field(default_factory=list)
@@ -47,5 +47,5 @@ class ValidationResult(BaseModel):
         return ValidationResult.model_construct(
             is_valid=self.is_valid and other.is_valid,
             errors=self.errors + other.errors,
-            warnings=self.warnings + other.warnings
+            warnings=self.warnings + other.warnings,
         )

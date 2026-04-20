@@ -18,8 +18,12 @@ from datetime import datetime
 from fastapi import HTTPException
 
 # Add paths for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent.parent.parent / "shared"))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent.parent.parent / "src"))
+sys.path.insert(
+    0, str(Path(__file__).parent.parent.parent.parent.parent.parent.parent / "shared")
+)
+sys.path.insert(
+    0, str(Path(__file__).parent.parent.parent.parent.parent.parent.parent / "src")
+)
 
 from src.shared.auth.domain.dtos import UserContext
 from src.shared.auth.domain.enums.user_role import UserRole
@@ -85,19 +89,16 @@ from src.modules.fermentation.src.domain.dtos import (
     CompletionCreate,
 )
 
-
 # ======================================================================================
 # Fixtures
 # ======================================================================================
+
 
 @pytest.fixture
 def mock_user_context():
     """Mock authenticated winemaker user context"""
     return UserContext(
-        user_id=1,
-        email="winemaker@test.com",
-        role=UserRole.WINEMAKER,
-        winery_id=10
+        user_id=1, email="winemaker@test.com", role=UserRole.WINEMAKER, winery_id=10
     )
 
 
@@ -229,8 +230,11 @@ def sample_completion():
 # Protocol Router Tests
 # ======================================================================================
 
+
 @pytest.mark.asyncio
-async def test_create_protocol_success(mock_user_context, mock_protocol_repository, sample_protocol):
+async def test_create_protocol_success(
+    mock_user_context, mock_protocol_repository, sample_protocol
+):
     """Test POST /protocols - Create protocol successfully"""
     # Setup
     request = ProtocolCreateRequest(
@@ -239,27 +243,30 @@ async def test_create_protocol_success(mock_user_context, mock_protocol_reposito
         color="RED",
         version="1.0",
         protocol_name="Pinot Noir Standard",
-        expected_duration_days=20
+        expected_duration_days=20,
     )
     mock_protocol_repository.create.return_value = sample_protocol
-    
+
     # Execute
     result = await create_protocol(
         request=request,
         current_user=mock_user_context,
-        repository=mock_protocol_repository
+        repository=mock_protocol_repository,
     )
-    
+
     # Assert
     assert result is not None
     mock_protocol_repository.create.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_create_protocol_invalid_version(mock_user_context, mock_protocol_repository):
+async def test_create_protocol_invalid_version(
+    mock_user_context, mock_protocol_repository
+):
     """Test POST /protocols - Reject invalid semantic version"""
     # Execute & Assert
     from pydantic import ValidationError
+
     with pytest.raises(ValidationError):
         ProtocolCreateRequest(
             varietal_code="PN",
@@ -267,22 +274,25 @@ async def test_create_protocol_invalid_version(mock_user_context, mock_protocol_
             color="RED",
             version="invalid",  # Invalid format
             protocol_name="Pinot Noir Standard",
-            expected_duration_days=20
+            expected_duration_days=20,
         )
 
+
 @pytest.mark.asyncio
-async def test_get_protocol_success(mock_user_context, mock_protocol_repository, sample_protocol):
+async def test_get_protocol_success(
+    mock_user_context, mock_protocol_repository, sample_protocol
+):
     """Test GET /protocols/{id} - Get protocol successfully"""
     # Setup
     mock_protocol_repository.get_by_id.return_value = sample_protocol
-    
+
     # Execute
     result = await get_protocol(
         protocol_id=1,
         current_user=mock_user_context,
-        repository=mock_protocol_repository
+        repository=mock_protocol_repository,
     )
-    
+
     # Assert
     assert result is not None
     mock_protocol_repository.get_by_id.assert_called_once_with(1)
@@ -293,95 +303,101 @@ async def test_get_protocol_not_found(mock_user_context, mock_protocol_repositor
     """Test GET /protocols/{id} - Protocol not found"""
     # Setup
     mock_protocol_repository.get_by_id.return_value = None
-    
+
     # Execute & Assert
     with pytest.raises(HTTPException) as exc_info:
         await get_protocol(
             protocol_id=999,
             current_user=mock_user_context,
-            repository=mock_protocol_repository
+            repository=mock_protocol_repository,
         )
     assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_get_protocol_multi_tenancy_denied(mock_user_context, mock_protocol_repository):
+async def test_get_protocol_multi_tenancy_denied(
+    mock_user_context, mock_protocol_repository
+):
     """Test GET /protocols/{id} - Multi-tenancy enforcement"""
     # Setup
     protocol = Mock()
     protocol.id = 1
     protocol.winery_id = 999  # Different winery
     mock_protocol_repository.get_by_id.return_value = protocol
-    
+
     # Execute & Assert
     with pytest.raises(HTTPException) as exc_info:
         await get_protocol(
             protocol_id=1,
             current_user=mock_user_context,
-            repository=mock_protocol_repository
+            repository=mock_protocol_repository,
         )
     assert exc_info.value.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_update_protocol_success(mock_user_context, mock_protocol_repository, sample_protocol):
+async def test_update_protocol_success(
+    mock_user_context, mock_protocol_repository, sample_protocol
+):
     """Test PATCH /protocols/{id} - Update protocol successfully"""
     # Setup
     mock_protocol_repository.get_by_id.return_value = sample_protocol
     updated_protocol = sample_protocol
     updated_protocol.protocol_name = "Updated Name"
     mock_protocol_repository.update.return_value = updated_protocol
-    
-    request = ProtocolUpdateRequest(
-        protocol_name="Updated Name"
-    )
-    
+
+    request = ProtocolUpdateRequest(protocol_name="Updated Name")
+
     # Execute
     result = await update_protocol(
         protocol_id=1,
         request=request,
         current_user=mock_user_context,
-        repository=mock_protocol_repository
+        repository=mock_protocol_repository,
     )
-    
+
     # Assert
     assert result is not None
     mock_protocol_repository.update.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_delete_protocol_success(mock_user_context, mock_protocol_repository, sample_protocol):
+async def test_delete_protocol_success(
+    mock_user_context, mock_protocol_repository, sample_protocol
+):
     """Test DELETE /protocols/{id} - Delete protocol successfully"""
     # Setup
     mock_protocol_repository.get_by_id.return_value = sample_protocol
     mock_protocol_repository.delete = AsyncMock()
-    
+
     # Execute
     await delete_protocol(
         protocol_id=1,
         current_user=mock_user_context,
-        repository=mock_protocol_repository
+        repository=mock_protocol_repository,
     )
-    
+
     # Assert
     mock_protocol_repository.delete.assert_called_once_with(1)
 
 
 @pytest.mark.asyncio
-async def test_list_protocols_success(mock_user_context, mock_protocol_repository, sample_protocol):
+async def test_list_protocols_success(
+    mock_user_context, mock_protocol_repository, sample_protocol
+):
     """Test GET /protocols - List protocols with pagination"""
     # Setup
     protocols = [sample_protocol]
     mock_protocol_repository.list_by_winery_paginated.return_value = (protocols, 1)
-    
+
     # Execute
     result = await list_protocols(
         page=1,
         page_size=20,
         current_user=mock_user_context,
-        repository=mock_protocol_repository
+        repository=mock_protocol_repository,
     )
-    
+
     # Assert
     assert result is not None
     assert len(result.items) == 1
@@ -390,7 +406,9 @@ async def test_list_protocols_success(mock_user_context, mock_protocol_repositor
 
 
 @pytest.mark.asyncio
-async def test_activate_protocol_success(mock_user_context, mock_protocol_repository, sample_protocol):
+async def test_activate_protocol_success(
+    mock_user_context, mock_protocol_repository, sample_protocol
+):
     """Test PATCH /protocols/{id}/activate - Activate protocol version"""
     # Setup
     mock_protocol_repository.get_by_id.return_value = sample_protocol
@@ -398,14 +416,14 @@ async def test_activate_protocol_success(mock_user_context, mock_protocol_reposi
     activated = sample_protocol
     activated.is_active = True
     mock_protocol_repository.update.return_value = activated
-    
+
     # Execute
     result = await activate_protocol(
         protocol_id=1,
         current_user=mock_user_context,
-        repository=mock_protocol_repository
+        repository=mock_protocol_repository,
     )
-    
+
     # Assert
     assert result is not None
     mock_protocol_repository.deactivate_by_winery_varietal.assert_called_once()
@@ -416,13 +434,14 @@ async def test_activate_protocol_success(mock_user_context, mock_protocol_reposi
 # Protocol Step Router Tests
 # ======================================================================================
 
+
 @pytest.mark.asyncio
 async def test_create_protocol_step_success(
     mock_user_context,
     mock_step_repository,
     mock_protocol_repository,
     sample_protocol,
-    sample_step
+    sample_step,
 ):
     """Test POST /protocols/{id}/steps - Create step successfully"""
     # Setup
@@ -434,20 +453,20 @@ async def test_create_protocol_step_success(
         tolerance_hours=2,
         duration_minutes=30,
         criticality_score=95,
-        can_repeat_daily=False
+        can_repeat_daily=False,
     )
     mock_protocol_repository.get_by_id.return_value = sample_protocol
     mock_step_repository.create.return_value = sample_step
-    
+
     # Execute
     result = await create_protocol_step(
         protocol_id=1,
         request=request,
         current_user=mock_user_context,
         step_repository=mock_step_repository,
-        protocol_repository=mock_protocol_repository
+        protocol_repository=mock_protocol_repository,
     )
-    
+
     # Assert
     assert result is not None
     mock_step_repository.create.assert_called_once()
@@ -459,14 +478,14 @@ async def test_list_protocol_steps_success(
     mock_step_repository,
     mock_protocol_repository,
     sample_protocol,
-    sample_step
+    sample_step,
 ):
     """Test GET /protocols/{id}/steps - List steps with pagination"""
     # Setup
     steps = [sample_step]
     mock_protocol_repository.get_by_id.return_value = sample_protocol
     mock_step_repository.list_by_protocol_paginated.return_value = (steps, 1)
-    
+
     # Execute
     result = await list_protocol_steps(
         protocol_id=1,
@@ -474,9 +493,9 @@ async def test_list_protocol_steps_success(
         page_size=20,
         current_user=mock_user_context,
         step_repository=mock_step_repository,
-        protocol_repository=mock_protocol_repository
+        protocol_repository=mock_protocol_repository,
     )
-    
+
     # Assert
     assert result is not None
     assert len(result.items) == 1
@@ -487,27 +506,24 @@ async def test_list_protocol_steps_success(
 # Protocol Execution Router Tests
 # ======================================================================================
 
+
 @pytest.mark.asyncio
 async def test_start_protocol_execution_success(
-    mock_user_context,
-    mock_execution_repository,
-    sample_execution
+    mock_user_context, mock_execution_repository, sample_execution
 ):
     """Test POST /fermentations/{id}/execute - Start execution"""
     # Setup
-    request = ExecutionStartRequest(
-        protocol_id=1
-    )
+    request = ExecutionStartRequest(protocol_id=1)
     mock_execution_repository.create.return_value = sample_execution
-    
+
     # Execute
     result = await start_protocol_execution(
         fermentation_id=100,
         request=request,
         current_user=mock_user_context,
-        execution_repository=mock_execution_repository
+        execution_repository=mock_execution_repository,
     )
-    
+
     # Assert
     assert result is not None
     mock_execution_repository.create.assert_called_once()
@@ -515,23 +531,21 @@ async def test_start_protocol_execution_success(
 
 @pytest.mark.asyncio
 async def test_list_protocol_executions_success(
-    mock_user_context,
-    mock_execution_repository,
-    sample_execution
+    mock_user_context, mock_execution_repository, sample_execution
 ):
     """Test GET /executions - List executions with pagination"""
     # Setup
     executions = [sample_execution]
     mock_execution_repository.list_by_winery_paginated.return_value = (executions, 1)
-    
+
     # Execute
     result = await list_protocol_executions(
         page=1,
         page_size=20,
         current_user=mock_user_context,
-        execution_repository=mock_execution_repository
+        execution_repository=mock_execution_repository,
     )
-    
+
     # Assert
     assert result is not None
     assert len(result.items) == 1
@@ -542,13 +556,14 @@ async def test_list_protocol_executions_success(
 # Step Completion Router Tests
 # ======================================================================================
 
+
 @pytest.mark.asyncio
 async def test_complete_protocol_step_success(
     mock_user_context,
     mock_execution_repository,
     mock_completion_repository,
     sample_execution,
-    sample_completion
+    sample_completion,
 ):
     """Test POST /executions/{id}/complete - Mark step complete"""
     # Setup
@@ -557,20 +572,20 @@ async def test_complete_protocol_step_success(
         completed_at=datetime.now(),
         is_on_schedule=True,
         notes="H2S levels normal",
-        was_skipped=False
+        was_skipped=False,
     )
     mock_execution_repository.get_by_id.return_value = sample_execution
     mock_completion_repository.create.return_value = sample_completion
-    
+
     # Execute
     result = await complete_protocol_step(
         execution_id=1,
         request=request,
         current_user=mock_user_context,
         completion_repository=mock_completion_repository,
-        execution_repository=mock_execution_repository
+        execution_repository=mock_execution_repository,
     )
-    
+
     # Assert
     assert result is not None
     mock_completion_repository.create.assert_called_once()
@@ -582,14 +597,17 @@ async def test_list_execution_completions_success(
     mock_execution_repository,
     mock_completion_repository,
     sample_execution,
-    sample_completion
+    sample_completion,
 ):
     """Test GET /executions/{id}/completions - List completions"""
     # Setup
     completions = [sample_completion]
     mock_execution_repository.get_by_id.return_value = sample_execution
-    mock_completion_repository.list_by_execution_paginated.return_value = (completions, 1)
-    
+    mock_completion_repository.list_by_execution_paginated.return_value = (
+        completions,
+        1,
+    )
+
     # Execute
     result = await list_execution_completions(
         execution_id=1,
@@ -597,9 +615,9 @@ async def test_list_execution_completions_success(
         page_size=20,
         current_user=mock_user_context,
         completion_repository=mock_completion_repository,
-        execution_repository=mock_execution_repository
+        execution_repository=mock_execution_repository,
     )
-    
+
     # Assert
     assert result is not None
     assert len(result.items) == 1
@@ -610,21 +628,22 @@ async def test_list_execution_completions_success(
 # Additional Coverage Tests
 # ======================================================================================
 
+
 @pytest.mark.asyncio
-async def test_skip_protocol_step_validation(mock_user_context, mock_execution_repository, mock_completion_repository):
+async def test_skip_protocol_step_validation(
+    mock_user_context, mock_execution_repository, mock_completion_repository
+):
     """Test that skip_reason is validated when was_skipped=True"""
     # Setup
     execution = Mock()
     execution.id = 1
     execution.winery_id = 10
     mock_execution_repository.get_by_id.return_value = execution
-    
+
     request = CompletionCreateRequest(
-        step_id=1,
-        was_skipped=True,
-        skip_reason="EQUIPMENT_MALFUNCTION"
+        step_id=1, was_skipped=True, skip_reason="EQUIPMENT_MALFUNCTION"
     )
-    
+
     completion = Mock()
     completion.id = 1
     completion.execution_id = 1
@@ -640,16 +659,16 @@ async def test_skip_protocol_step_validation(mock_user_context, mock_execution_r
     completion.created_at = datetime.now()
     completion.updated_at = datetime.now()
     mock_completion_repository.create.return_value = completion
-    
+
     # Execute
     result = await complete_protocol_step(
         execution_id=1,
         request=request,
         current_user=mock_user_context,
         completion_repository=mock_completion_repository,
-        execution_repository=mock_execution_repository
+        execution_repository=mock_execution_repository,
     )
-    
+
     # Assert
     assert result is not None
     mock_completion_repository.create.assert_called_once()

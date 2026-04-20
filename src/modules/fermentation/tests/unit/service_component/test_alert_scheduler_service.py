@@ -29,10 +29,18 @@ from unittest.mock import AsyncMock, MagicMock, patch, call
 
 # Import ALL ORM entities first so SQLAlchemy's mapper registry resolves all
 # relationships before any mapper is triggered by individual imports.
-from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol  # noqa: F401
-from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep  # noqa: F401
-from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution  # noqa: F401
-from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion  # noqa: F401
+from src.modules.fermentation.src.domain.entities.protocol_protocol import (
+    FermentationProtocol,
+)  # noqa: F401
+from src.modules.fermentation.src.domain.entities.protocol_step import (
+    ProtocolStep,
+)  # noqa: F401
+from src.modules.fermentation.src.domain.entities.protocol_execution import (
+    ProtocolExecution,
+)  # noqa: F401
+from src.modules.fermentation.src.domain.entities.step_completion import (
+    StepCompletion,
+)  # noqa: F401
 from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert
 
 from src.modules.fermentation.src.service_component.services.alert_scheduler_service import (
@@ -41,7 +49,6 @@ from src.modules.fermentation.src.service_component.services.alert_scheduler_ser
     _DEDUP_HOURS,
 )
 from src.modules.fermentation.src.domain.enums.step_type import ProtocolExecutionStatus
-
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
@@ -103,10 +110,12 @@ def _async_result(value):
     """Return an AsyncMock that yields *value* from its scalar / scalars calls."""
     scalars_mock = MagicMock()
     scalars_mock.all.return_value = value
-    scalars_mock.first.return_value = value[0] if isinstance(value, list) and value else value
+    scalars_mock.first.return_value = (
+        value[0] if isinstance(value, list) and value else value
+    )
     result_mock = MagicMock()
     result_mock.scalars.return_value = scalars_mock
-    result_mock.scalar_one_or_none.return_value = None   # default: no dedup hit
+    result_mock.scalar_one_or_none.return_value = None  # default: no dedup hit
     am = AsyncMock(return_value=result_mock)
     return am
 
@@ -114,6 +123,7 @@ def _async_result(value):
 # ---------------------------------------------------------------------------
 # Lifecycle tests
 # ---------------------------------------------------------------------------
+
 
 class TestLifecycle:
     def test_start_registers_job_and_starts_scheduler(self):
@@ -137,6 +147,7 @@ class TestLifecycle:
 # ---------------------------------------------------------------------------
 # _get_active_executions
 # ---------------------------------------------------------------------------
+
 
 class TestGetActiveExecutions:
     @pytest.mark.asyncio
@@ -169,6 +180,7 @@ class TestGetActiveExecutions:
 # ---------------------------------------------------------------------------
 # _process_execution
 # ---------------------------------------------------------------------------
+
 
 class TestProcessExecution:
     def _build_session(
@@ -327,6 +339,7 @@ class TestProcessExecution:
 # ---------------------------------------------------------------------------
 # _maybe_create_alert  (dedup)
 # ---------------------------------------------------------------------------
+
 
 class TestMaybeCreateAlert:
     def _session_with_dedup(self, hit: bool) -> AsyncMock:

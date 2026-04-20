@@ -51,6 +51,7 @@ def _get_service(
 # POST /fermentations/{fermentation_id}/notes
 # =============================================================================
 
+
 @router.post(
     "/fermentations/{fermentation_id}/notes",
     response_model=NoteResponse,
@@ -84,6 +85,7 @@ async def add_note(
 # GET /fermentations/{fermentation_id}/notes
 # =============================================================================
 
+
 @router.get(
     "/fermentations/{fermentation_id}/notes",
     response_model=NoteListResponse,
@@ -105,6 +107,7 @@ async def list_notes(
 # =============================================================================
 # GET /notes/{note_id}
 # =============================================================================
+
 
 @router.get(
     "/notes/{note_id}",
@@ -130,6 +133,7 @@ async def get_note(
 # =============================================================================
 # PATCH /notes/{note_id}
 # =============================================================================
+
 
 @router.patch(
     "/notes/{note_id}",
@@ -161,6 +165,7 @@ async def update_note(
 # =============================================================================
 # DELETE /notes/{note_id}
 # =============================================================================
+
 
 @router.delete(
     "/notes/{note_id}",

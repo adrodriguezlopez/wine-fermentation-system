@@ -28,19 +28,18 @@ from src.shared.auth.infra.api.dependencies import get_current_user
 def test_health_check_with_correlation_id():
     """Test 1: Health check returns correlation ID in response"""
     print("\n=== Test 1: Health Check with Correlation ID ===")
-    
+
     client = TestClient(app)
-    
+
     # Make request with custom correlation ID
     response = client.get(
-        "/health",
-        headers={"X-Correlation-ID": "test-correlation-123"}
+        "/health", headers={"X-Correlation-ID": "test-correlation-123"}
     )
-    
+
     print(f"Status: {response.status_code}")
     print(f"Response: {response.json()}")
     print(f"Correlation ID in response: {response.headers.get('X-Correlation-ID')}")
-    
+
     assert response.status_code == 200
     # Note: TestClient may not trigger middleware the same as real ASGI server
     correlation_id = response.headers.get("X-Correlation-ID")
@@ -54,35 +53,29 @@ def test_health_check_with_correlation_id():
 def test_auth_endpoint_with_user_context():
     """Test 2: /me endpoint logs user context"""
     print("\n=== Test 2: User Context Binding ===")
-    
+
     # Mock user
     mock_user = UserContext(
-        user_id=123,
-        winery_id=456,
-        email="test@winery.com",
-        role=UserRole.WINEMAKER
+        user_id=123, winery_id=456, email="test@winery.com", role=UserRole.WINEMAKER
     )
-    
+
     # Override auth dependency
     app.dependency_overrides[get_current_user] = lambda: mock_user
-    
+
     client = TestClient(app)
-    
-    response = client.get(
-        "/me",
-        headers={"X-Correlation-ID": "user-context-test"}
-    )
-    
+
+    response = client.get("/me", headers={"X-Correlation-ID": "user-context-test"})
+
     print(f"Status: {response.status_code}")
     print(f"Response: {response.json()}")
     print(f"Correlation ID: {response.headers.get('X-Correlation-ID')}")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["user_id"] == 123
     assert data["winery_id"] == 456
     print("[OK] PASS: User context retrieved")
-    
+
     # Clean up
     app.dependency_overrides.clear()
 
@@ -90,18 +83,17 @@ def test_auth_endpoint_with_user_context():
 def test_nonexistent_endpoint_logs_404():
     """Test 3: 404 errors are logged"""
     print("\n=== Test 3: Error Handler Logging (404) ===")
-    
+
     client = TestClient(app)
-    
+
     response = client.get(
-        "/nonexistent",
-        headers={"X-Correlation-ID": "error-test-404"}
+        "/nonexistent", headers={"X-Correlation-ID": "error-test-404"}
     )
-    
+
     print(f"Status: {response.status_code}")
     print(f"Response: {response.json()}")
     print(f"Correlation ID: {response.headers.get('X-Correlation-ID')}")
-    
+
     assert response.status_code == 404
     print("[OK] PASS: 404 error handled")
 
@@ -109,14 +101,11 @@ def test_nonexistent_endpoint_logs_404():
 def test_request_timing_logged():
     """Test 4: Request timing is measured"""
     print("\n=== Test 4: Request Timing ===")
-    
+
     client = TestClient(app)
-    
-    response = client.get(
-        "/health",
-        headers={"X-Correlation-ID": "timing-test"}
-    )
-    
+
+    response = client.get("/health", headers={"X-Correlation-ID": "timing-test"})
+
     print(f"Status: {response.status_code}")
     # Timing logged to console via LoggingMiddleware
     print("[OK] PASS: Request timing logged (check console output)")
@@ -133,13 +122,13 @@ if __name__ == "__main__":
     print("  4. Request/response timing is measured")
     print("\nWatch console output for structured logs!")
     print("=" * 70)
-    
+
     try:
         test_health_check_with_correlation_id()
         test_auth_endpoint_with_user_context()
         test_nonexistent_endpoint_logs_404()
         test_request_timing_logged()
-        
+
         print("\n" + "=" * 70)
         print("[OK] ALL TESTS PASSED - Phase 4 API Integration Working!")
         print("=" * 70)
@@ -148,12 +137,13 @@ if __name__ == "__main__":
         print("  - Check logs for correlation_id, user_id, winery_id")
         print("  - Verify request timing in milliseconds")
         print("  - Move to Phase 5: Integration testing")
-        
+
     except AssertionError as e:
         print(f"\n[FAIL] TEST FAILED: {e}")
         sys.exit(1)
     except Exception as e:
         print(f"\n[FAIL] UNEXPECTED ERROR: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

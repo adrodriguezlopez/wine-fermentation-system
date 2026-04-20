@@ -2,6 +2,7 @@
 Test suite for IFermentationRepository interface contract.
 These tests define the expected behavior that any implementation must follow.
 """
+
 import pytest
 
 
@@ -24,13 +25,13 @@ def test_fermentation_repository_interface_methods() -> None:
         "get_by_winery",
         "list_by_data_source",  # ADR-029: Data source tracking
     }
-    
+
     # NOTE: Sample operations removed (ADR-003: Separation of Concerns)
     # Sample methods now live exclusively in ISampleRepository:
     # - add_sample() → ISampleRepository.upsert_sample()
     # - get_latest_sample() → ISampleRepository.get_latest_sample()
     # This follows Single Responsibility Principle - one repository per aggregate
-    
+
     # NOTE: Sample query methods (get_samples_by_fermentation_id, get_samples_in_timerange)
     # are defined in ISampleRepository, not IFermentationRepository
     # This follows single responsibility principle

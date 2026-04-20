@@ -9,7 +9,7 @@ from .fermentation_dtos import (
     FermentationCreate,
     FermentationUpdate,
     FermentationWithBlendCreate,
-    LotSourceData
+    LotSourceData,
 )
 from .sample_dtos import SampleCreate
 from .fermentation_note_dtos import FermentationNoteCreate, FermentationNoteUpdate

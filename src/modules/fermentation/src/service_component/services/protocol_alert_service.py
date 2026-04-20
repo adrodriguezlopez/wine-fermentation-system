@@ -14,20 +14,31 @@ from dataclasses import dataclass
 from enum import Enum
 
 from src.modules.fermentation.src.domain.enums.step_type import ProtocolExecutionStatus
-from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import FermentationProtocolRepository
-from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
-from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
-from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
+from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import (
+    FermentationProtocolRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+    ProtocolExecutionRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_step_repository import (
+    ProtocolStepRepository,
+)
+from src.modules.fermentation.src.service_component.services.protocol_compliance_service import (
+    ProtocolComplianceService,
+)
 from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert
-from src.modules.fermentation.src.domain.repositories.protocol_alert_repository_interface import IProtocolAlertRepository
-
+from src.modules.fermentation.src.domain.repositories.protocol_alert_repository_interface import (
+    IProtocolAlertRepository,
+)
 
 # ============================================================================
 # Enums
 # ============================================================================
 
+
 class AlertType(str, Enum):
     """Types of alerts."""
+
     STEP_OVERDUE = "STEP_OVERDUE"
     STEP_DUE_SOON = "STEP_DUE_SOON"
     EXECUTION_NEARING_COMPLETION = "EXECUTION_NEARING_COMPLETION"
@@ -37,6 +48,7 @@ class AlertType(str, Enum):
 
 class AlertStatus(str, Enum):
     """Status of an alert."""
+
     PENDING = "PENDING"
     SENT = "SENT"
     DISMISSED = "DISMISSED"
@@ -47,9 +59,11 @@ class AlertStatus(str, Enum):
 # Data Models
 # ============================================================================
 
+
 @dataclass
 class AlertDetail:
     """Details of an alert."""
+
     alert_id: int
     alert_type: AlertType
     execution_id: int
@@ -68,6 +82,7 @@ class AlertDetail:
 @dataclass
 class AlertSummary:
     """Summary of pending alerts for execution."""
+
     execution_id: int
     total_pending: int
     critical_count: int
@@ -80,10 +95,11 @@ class AlertSummary:
 # Protocol Alert Service
 # ============================================================================
 
+
 class ProtocolAlertService:
     """
     Service for managing protocol execution alerts.
-    
+
     Provides:
     - Overdue step alerts
     - Completion reminder alerts
@@ -163,7 +179,11 @@ class ProtocolAlertService:
                     step_id=step.id,
                     step_name=step.description,
                     message=f"Step '{step.description}' is overdue since {expected_completion.strftime('%Y-%m-%d %H:%M')}",
-                    severity="WARNING" if datetime.utcnow() < expected_completion + timedelta(hours=24) else "CRITICAL",
+                    severity=(
+                        "WARNING"
+                        if datetime.utcnow() < expected_completion + timedelta(hours=24)
+                        else "CRITICAL"
+                    ),
                     status=AlertStatus.PENDING,
                     created_at=datetime.utcnow(),
                     sent_at=None,
@@ -320,10 +340,10 @@ class ProtocolAlertService:
         alerts = []
         for deviation in deviations:
             # Alert for unjustified skips and missing critical steps
-            if (
-                deviation.step.is_critical
-                and deviation.step_status in ["UNJUSTIFIED_SKIP", "MISSING"]
-            ):
+            if deviation.step.is_critical and deviation.step_status in [
+                "UNJUSTIFIED_SKIP",
+                "MISSING",
+            ]:
                 alert = AlertDetail(
                     alert_id=0,
                     alert_type=AlertType.CRITICAL_DEVIATION,
@@ -460,20 +480,12 @@ class ProtocolAlertService:
         )
 
         # Count by type
-        critical = sum(
-            1
-            for a in pending_alerts
-            if a.severity == "CRITICAL"
-        )
+        critical = sum(1 for a in pending_alerts if a.severity == "CRITICAL")
         overdue = sum(
-            1
-            for a in pending_alerts
-            if a.alert_type == AlertType.STEP_OVERDUE
+            1 for a in pending_alerts if a.alert_type == AlertType.STEP_OVERDUE
         )
         due_soon = sum(
-            1
-            for a in pending_alerts
-            if a.alert_type == AlertType.STEP_DUE_SOON
+            1 for a in pending_alerts if a.alert_type == AlertType.STEP_DUE_SOON
         )
         completion_reminder = sum(
             1
