@@ -12,20 +12,20 @@ print("=" * 60)
 
 with pdfplumber.open(pdf_path) as pdf:
     print(f"Total pages: {len(pdf.pages)}\n")
-    
+
     for page_num, page in enumerate(pdf.pages, 1):
         print(f"\n📄 PAGE {page_num}")
         print("-" * 60)
-        
+
         # Show text preview
         text = page.extract_text()
         if text:
-            lines = text.split('\n')
+            lines = text.split("\n")
             print("TEXT CONTENT (first 30 lines):")
             for i, line in enumerate(lines[:30], 1):
                 if line.strip():
                     print(f"  {i:2}. {line[:80]}")
-        
+
         # Show tables
         tables = page.extract_tables()
         if tables:

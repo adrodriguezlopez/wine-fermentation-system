@@ -22,16 +22,24 @@ from src.modules.fermentation.src.service_component.services.protocol_alert_serv
     AlertDetail,
     AlertSummary,
 )
-from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import FermentationProtocolRepository
-from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
-from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
-from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
+from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import (
+    FermentationProtocolRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+    ProtocolExecutionRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_step_repository import (
+    ProtocolStepRepository,
+)
+from src.modules.fermentation.src.service_component.services.protocol_compliance_service import (
+    ProtocolComplianceService,
+)
 from src.modules.fermentation.src.domain.enums.step_type import ProtocolExecutionStatus
-
 
 # ============================================================================
 # Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def mock_protocol_repo() -> AsyncMock:
@@ -72,7 +80,9 @@ def alert_service(
 ) -> ProtocolAlertService:
     """Create service with mock dependencies (includes a mock alert_repo)."""
     from unittest.mock import AsyncMock as _AsyncMock
-    from src.modules.fermentation.src.domain.entities.protocol_alert import ProtocolAlert
+    from src.modules.fermentation.src.domain.entities.protocol_alert import (
+        ProtocolAlert,
+    )
     from src.modules.fermentation.src.domain.repositories.protocol_alert_repository_interface import (
         IProtocolAlertRepository,
     )
@@ -154,6 +164,7 @@ def overdue_step() -> MagicMock:
 # ============================================================================
 # Test Classes
 # ============================================================================
+
 
 class TestSendOverdueAlert:
     """Test overdue step alerts."""
@@ -368,9 +379,7 @@ class TestDetectCriticalDeviations:
         deviation.step_status = "UNJUSTIFIED_SKIP"
 
         mock_execution_repo.get_by_id = AsyncMock(return_value=sample_execution)
-        mock_compliance_service.detect_deviations = AsyncMock(
-            return_value=[deviation]
-        )
+        mock_compliance_service.detect_deviations = AsyncMock(return_value=[deviation])
 
         alerts = await alert_service.detect_critical_deviations(1, 1)
 
@@ -395,9 +404,7 @@ class TestDetectCriticalDeviations:
         deviation.step_status = "MISSING"
 
         mock_execution_repo.get_by_id = AsyncMock(return_value=sample_execution)
-        mock_compliance_service.detect_deviations = AsyncMock(
-            return_value=[deviation]
-        )
+        mock_compliance_service.detect_deviations = AsyncMock(return_value=[deviation])
 
         alerts = await alert_service.detect_critical_deviations(1, 1)
 
@@ -418,9 +425,7 @@ class TestDetectCriticalDeviations:
         deviation.step_status = "UNJUSTIFIED_SKIP"
 
         mock_execution_repo.get_by_id = AsyncMock(return_value=sample_execution)
-        mock_compliance_service.detect_deviations = AsyncMock(
-            return_value=[deviation]
-        )
+        mock_compliance_service.detect_deviations = AsyncMock(return_value=[deviation])
 
         alerts = await alert_service.detect_critical_deviations(1, 1)
 

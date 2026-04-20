@@ -17,11 +17,13 @@ from datetime import datetime
 def test_fermentation_response_from_entity():
     """
     Test: FermentationResponse should convert from entity-like data
-    
+
     GREEN: Will pass once FermentationResponse schema exists
     """
-    from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import FermentationResponse
-    
+    from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import (
+        FermentationResponse,
+    )
+
     # Arrange: Create a mock fermentation entity using a simple object
     # We avoid instantiating actual SQLAlchemy entity to prevent relationship issues
     class MockFermentation:
@@ -40,12 +42,12 @@ def test_fermentation_response_from_entity():
             self.created_at = datetime(2024, 11, 1, 9, 30, 0)
             self.updated_at = datetime(2024, 11, 1, 9, 30, 0)
             self.is_deleted = False
-    
+
     fermentation = MockFermentation()
-    
+
     # Act
     response = FermentationResponse.from_entity(fermentation)
-    
+
     # Assert
     assert response.id == 1
     assert response.winery_id == 1
@@ -66,11 +68,13 @@ def test_fermentation_response_from_entity():
 def test_fermentation_response_json_serialization():
     """
     Test: FermentationResponse should serialize to JSON correctly
-    
+
     RED: Will fail until schema is implemented with Pydantic
     """
-    from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import FermentationResponse
-    
+    from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import (
+        FermentationResponse,
+    )
+
     response = FermentationResponse(
         id=1,
         winery_id=1,
@@ -83,16 +87,16 @@ def test_fermentation_response_json_serialization():
         status="ACTIVE",
         start_date=datetime(2024, 11, 1, 10, 0, 0),
         created_at=datetime(2024, 11, 1, 9, 30, 0),
-        updated_at=datetime(2024, 11, 1, 9, 30, 0)
+        updated_at=datetime(2024, 11, 1, 9, 30, 0),
     )
-    
+
     # Pydantic v2 uses model_dump for dict conversion
     data = response.model_dump()
-    
+
     assert isinstance(data, dict)
     assert data["id"] == 1
     assert data["status"] == "ACTIVE"
-    
+
     # JSON serialization should handle datetime
     json_str = response.model_dump_json()
     assert isinstance(json_str, str)
@@ -105,11 +109,13 @@ def test_fermentation_response_json_serialization():
 def test_fermentation_response_optional_vessel_code():
     """
     Test: FermentationResponse should handle optional vessel_code
-    
+
     RED: Will fail until schema properly defines optional fields
     """
-    from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import FermentationResponse
-    
+    from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import (
+        FermentationResponse,
+    )
+
     response = FermentationResponse(
         id=1,
         winery_id=1,
@@ -122,9 +128,9 @@ def test_fermentation_response_optional_vessel_code():
         status="ACTIVE",
         start_date=datetime(2024, 11, 1, 10, 0, 0),
         created_at=datetime(2024, 11, 1, 9, 30, 0),
-        updated_at=datetime(2024, 11, 1, 9, 30, 0)
+        updated_at=datetime(2024, 11, 1, 9, 30, 0),
     )
-    
+
     assert response.vessel_code is None
     data = response.model_dump()
     assert data["vessel_code"] is None
@@ -136,11 +142,13 @@ def test_fermentation_response_optional_vessel_code():
 def test_sample_response_from_entity():
     """
     Test: SampleResponse should convert from BaseSample entity
-    
+
     GREEN: Will pass once SampleResponse schema exists
     """
-    from src.modules.fermentation.src.api.schemas.responses.sample_responses import SampleResponse
-    
+    from src.modules.fermentation.src.api.schemas.responses.sample_responses import (
+        SampleResponse,
+    )
+
     # Arrange: Create a mock sample entity using a simple object
     class MockSample:
         def __init__(self):
@@ -154,12 +162,12 @@ def test_sample_response_from_entity():
             self.created_at = datetime(2024, 11, 2, 14, 30, 0)
             self.updated_at = datetime(2024, 11, 2, 14, 30, 0)
             self.is_deleted = False
-    
+
     sample = MockSample()
-    
+
     # Act
     response = SampleResponse.from_entity(sample)
-    
+
     # Assert
     assert response.id == 1
     assert response.fermentation_id == 1
@@ -176,11 +184,13 @@ def test_sample_response_from_entity():
 def test_sample_response_json_serialization():
     """
     Test: SampleResponse should serialize to JSON correctly
-    
+
     RED: Will fail until schema is implemented
     """
-    from src.modules.fermentation.src.api.schemas.responses.sample_responses import SampleResponse
-    
+    from src.modules.fermentation.src.api.schemas.responses.sample_responses import (
+        SampleResponse,
+    )
+
     response = SampleResponse(
         id=1,
         fermentation_id=1,
@@ -189,14 +199,14 @@ def test_sample_response_json_serialization():
         units="g/L",
         recorded_at=datetime(2024, 11, 2, 14, 30, 0),
         created_at=datetime(2024, 11, 2, 14, 30, 0),
-        updated_at=datetime(2024, 11, 2, 14, 30, 0)
+        updated_at=datetime(2024, 11, 2, 14, 30, 0),
     )
-    
+
     data = response.model_dump()
     assert isinstance(data, dict)
     assert data["sample_type"] == "glucose"
     assert data["value"] == 15.5
-    
+
     json_str = response.model_dump_json()
     assert "glucose" in json_str
 
@@ -207,19 +217,21 @@ def test_sample_response_json_serialization():
 def test_fermentation_response_validation_error():
     """
     Test: FermentationResponse should validate required fields
-    
+
     RED: Will fail until Pydantic validation is set up
     """
-    from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import FermentationResponse
+    from src.modules.fermentation.src.api.schemas.responses.fermentation_responses import (
+        FermentationResponse,
+    )
     from pydantic import ValidationError
-    
+
     # Missing required fields should raise ValidationError
     with pytest.raises(ValidationError) as exc_info:
         FermentationResponse(
             id=1,
             # Missing winery_id, vintage_year, etc.
         )
-    
+
     errors = exc_info.value.errors()
     assert len(errors) > 0
     assert any(err["type"] == "missing" for err in errors)

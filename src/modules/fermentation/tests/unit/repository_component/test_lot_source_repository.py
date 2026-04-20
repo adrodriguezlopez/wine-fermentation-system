@@ -17,11 +17,15 @@ from datetime import datetime
 from decimal import Decimal
 
 # Import domain entities and DTOs from their canonical locations
-from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
+from src.modules.fermentation.src.domain.entities.fermentation_lot_source import (
+    FermentationLotSource,
+)
 from src.modules.fermentation.src.domain.dtos import LotSourceData
 
 # Import repository implementation
-from src.modules.fermentation.src.repository_component.repositories import LotSourceRepository
+from src.modules.fermentation.src.repository_component.repositories import (
+    LotSourceRepository,
+)
 
 # Import ADR-012 testing utilities
 from src.shared.testing.unit import (
@@ -34,7 +38,7 @@ from src.shared.testing.unit import (
 
 class TestLotSourceRepository:
     """Test LotSourceRepository with proper mocking strategy.
-    
+
     Following ADR-012: Each test creates its own session manager and repository instance for isolation.
     """
 
@@ -42,6 +46,7 @@ class TestLotSourceRepository:
     async def test_repository_inherits_from_base_repository(self):
         """Test that LotSourceRepository extends BaseRepository."""
         from src.shared.infra.repository.base_repository import BaseRepository
+
         session_manager = MockSessionManagerBuilder().build()
         repository = LotSourceRepository(session_manager)
         assert isinstance(repository, BaseRepository)
@@ -51,9 +56,7 @@ class TestLotSourceRepository:
         """Test that create method returns a FermentationLotSource domain entity."""
         # Create test data
         lot_source_data = LotSourceData(
-            harvest_lot_id=10,
-            mass_used_kg=Decimal("50.5"),
-            notes="Test notes"
+            harvest_lot_id=10, mass_used_kg=Decimal("50.5"), notes="Test notes"
         )
 
         # Create session manager and repository
@@ -62,7 +65,7 @@ class TestLotSourceRepository:
 
         # This test verifies the repository interface contract
         # Full implementation tests require integration testing with real DB
-        assert hasattr(repository, 'create')
+        assert hasattr(repository, "create")
         assert callable(repository.create)
 
     @pytest.mark.asyncio
@@ -72,7 +75,9 @@ class TestLotSourceRepository:
         empty_result = create_empty_result()
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        )
         repository = LotSourceRepository(session_manager)
 
         # Call the method
@@ -91,7 +96,7 @@ class TestLotSourceRepository:
             id=1,
             fermentation_id=1,
             harvest_lot_id=10,
-            mass_used_kg=50.0
+            mass_used_kg=50.0,
         )
 
         mock_source2 = create_mock_entity(
@@ -99,14 +104,16 @@ class TestLotSourceRepository:
             id=2,
             fermentation_id=1,
             harvest_lot_id=11,
-            mass_used_kg=30.0
+            mass_used_kg=30.0,
         )
 
         # Mock the query result
         query_result = create_query_result([mock_source1, mock_source2])
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(query_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(query_result).build()
+        )
         repository = LotSourceRepository(session_manager)
 
         # Call the method
@@ -127,7 +134,9 @@ class TestLotSourceRepository:
         empty_result = create_empty_result()
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        )
         repository = LotSourceRepository(session_manager)
 
         # Call the method
@@ -140,16 +149,15 @@ class TestLotSourceRepository:
     async def test_delete_returns_true_when_successful(self):
         """Test that delete returns True when lot source is deleted successfully."""
         # Mock the SQLAlchemy entity
-        mock_lot_source = create_mock_entity(
-            FermentationLotSource,
-            id=1
-        )
+        mock_lot_source = create_mock_entity(FermentationLotSource, id=1)
 
         # Mock the query result
         query_result = create_query_result([mock_lot_source])
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(query_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(query_result).build()
+        )
         repository = LotSourceRepository(session_manager)
 
         # Call the method
@@ -165,7 +173,9 @@ class TestLotSourceRepository:
         empty_result = create_empty_result()
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        )
         repository = LotSourceRepository(session_manager)
 
         # Call the method
@@ -184,14 +194,16 @@ class TestLotSourceRepository:
             fermentation_id=1,
             harvest_lot_id=10,
             mass_used_kg=50.0,
-            notes="Test notes"
+            notes="Test notes",
         )
 
         # Mock the query result
         query_result = create_query_result([mock_lot_source])
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(query_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(query_result).build()
+        )
         repository = LotSourceRepository(session_manager)
 
         # Call the method
@@ -211,11 +223,15 @@ class TestLotSourceRepository:
         empty_result = create_empty_result()
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        )
         repository = LotSourceRepository(session_manager)
 
         # Call the method
-        result = await repository.update_mass(lot_source_id=999, winery_id=1, new_mass_kg=75.0)
+        result = await repository.update_mass(
+            lot_source_id=999, winery_id=1, new_mass_kg=75.0
+        )
 
         # Verify result
         assert result is None
@@ -225,21 +241,22 @@ class TestLotSourceRepository:
         """Test that update_mass returns updated FermentationLotSource when update succeeds."""
         # Mock the SQLAlchemy entity
         mock_lot_source = create_mock_entity(
-            FermentationLotSource,
-            id=1,
-            fermentation_id=1,
-            mass_used_kg=50.0
+            FermentationLotSource, id=1, fermentation_id=1, mass_used_kg=50.0
         )
 
         # Mock the query result
         query_result = create_query_result([mock_lot_source])
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(query_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(query_result).build()
+        )
         repository = LotSourceRepository(session_manager)
 
         # Call the method
-        result = await repository.update_mass(lot_source_id=1, winery_id=1, new_mass_kg=75.0)
+        result = await repository.update_mass(
+            lot_source_id=1, winery_id=1, new_mass_kg=75.0
+        )
 
         # Verify result (check behavior, not type)
         assert result is not None
@@ -252,7 +269,9 @@ class TestLotSourceRepository:
         empty_result = create_empty_result()
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        )
         repository = LotSourceRepository(session_manager)
 
         # Try to access lot source from different winery

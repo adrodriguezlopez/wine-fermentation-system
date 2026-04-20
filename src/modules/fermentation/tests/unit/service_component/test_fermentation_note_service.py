@@ -9,7 +9,9 @@ import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
-from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
+from src.modules.fermentation.src.domain.entities.fermentation_note import (
+    FermentationNote,
+)
 from src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (
     FermentationNoteCreate,
     FermentationNoteUpdate,
@@ -19,10 +21,10 @@ from src.modules.fermentation.src.service_component.services.fermentation_note_s
     FermentationNoteNotFoundError,
 )
 
-
 # =============================================================================
 # Helpers
 # =============================================================================
+
 
 def _make_note(**kwargs) -> FermentationNote:
     """Build a FermentationNote mock with sensible defaults."""
@@ -55,8 +57,8 @@ def _make_service() -> tuple:
 # add_note
 # =============================================================================
 
-class TestAddNote:
 
+class TestAddNote:
     @pytest.mark.asyncio
     async def test_creates_note_with_correct_fields(self):
         service, repo = _make_service()
@@ -98,7 +100,10 @@ class TestAddNote:
     @pytest.mark.asyncio
     async def test_propagates_repo_error(self):
         service, repo = _make_service()
-        from src.modules.fermentation.src.repository_component.errors import EntityNotFoundError
+        from src.modules.fermentation.src.repository_component.errors import (
+            EntityNotFoundError,
+        )
+
         repo.create.side_effect = EntityNotFoundError("Fermentation not found")
 
         with pytest.raises(EntityNotFoundError):
@@ -115,8 +120,8 @@ class TestAddNote:
 # get_note
 # =============================================================================
 
-class TestGetNote:
 
+class TestGetNote:
     @pytest.mark.asyncio
     async def test_returns_note_when_found(self):
         service, repo = _make_service()
@@ -149,25 +154,31 @@ class TestGetNote:
 # get_notes_for_fermentation
 # =============================================================================
 
-class TestGetNotesForFermentation:
 
+class TestGetNotesForFermentation:
     @pytest.mark.asyncio
     async def test_returns_list_of_notes(self):
         service, repo = _make_service()
         notes = [_make_note(id=1), _make_note(id=2)]
         repo.get_by_fermentation.return_value = notes
 
-        result = await service.get_notes_for_fermentation(fermentation_id=10, winery_id=100)
+        result = await service.get_notes_for_fermentation(
+            fermentation_id=10, winery_id=100
+        )
 
         assert result == notes
-        repo.get_by_fermentation.assert_called_once_with(fermentation_id=10, winery_id=100)
+        repo.get_by_fermentation.assert_called_once_with(
+            fermentation_id=10, winery_id=100
+        )
 
     @pytest.mark.asyncio
     async def test_returns_empty_list_when_no_notes(self):
         service, repo = _make_service()
         repo.get_by_fermentation.return_value = []
 
-        result = await service.get_notes_for_fermentation(fermentation_id=10, winery_id=100)
+        result = await service.get_notes_for_fermentation(
+            fermentation_id=10, winery_id=100
+        )
 
         assert result == []
 
@@ -176,8 +187,8 @@ class TestGetNotesForFermentation:
 # update_note
 # =============================================================================
 
-class TestUpdateNote:
 
+class TestUpdateNote:
     @pytest.mark.asyncio
     async def test_updates_note_successfully(self):
         service, repo = _make_service()
@@ -227,8 +238,8 @@ class TestUpdateNote:
 # delete_note
 # =============================================================================
 
-class TestDeleteNote:
 
+class TestDeleteNote:
     @pytest.mark.asyncio
     async def test_deletes_note_successfully(self):
         service, repo = _make_service()

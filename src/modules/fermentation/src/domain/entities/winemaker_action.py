@@ -9,11 +9,22 @@ Table: winemaker_actions
 
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Index, CheckConstraint
+from sqlalchemy import (
+    String,
+    Integer,
+    Text,
+    DateTime,
+    ForeignKey,
+    Index,
+    CheckConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.shared.infra.orm.base_entity import BaseEntity
-from src.modules.fermentation.src.domain.enums.step_type import ActionType, ActionOutcome
+from src.modules.fermentation.src.domain.enums.step_type import (
+    ActionType,
+    ActionOutcome,
+)
 
 
 class WinemakerAction(BaseEntity):
@@ -32,11 +43,11 @@ class WinemakerAction(BaseEntity):
 
     __tablename__ = "winemaker_actions"
     __table_args__ = (
-        Index("ix_winemaker_actions_winery_id",        "winery_id"),
-        Index("ix_winemaker_actions_fermentation_id",  "fermentation_id"),
-        Index("ix_winemaker_actions_execution_id",     "execution_id"),
-        Index("ix_winemaker_actions_alert_id",         "alert_id"),
-        Index("ix_winemaker_actions_taken_at",         "taken_at"),
+        Index("ix_winemaker_actions_winery_id", "winery_id"),
+        Index("ix_winemaker_actions_fermentation_id", "fermentation_id"),
+        Index("ix_winemaker_actions_execution_id", "execution_id"),
+        Index("ix_winemaker_actions_alert_id", "alert_id"),
+        Index("ix_winemaker_actions_taken_at", "taken_at"),
         CheckConstraint(
             "outcome IN ('PENDING', 'RESOLVED', 'NO_EFFECT', 'WORSENED')",
             name="ck_winemaker_actions_outcome",
@@ -45,9 +56,7 @@ class WinemakerAction(BaseEntity):
     )
 
     # Multi-tenancy
-    winery_id: Mapped[int] = mapped_column(
-        ForeignKey("wineries.id"), nullable=False
-    )
+    winery_id: Mapped[int] = mapped_column(ForeignKey("wineries.id"), nullable=False)
 
     # Optional contextual links (any combination may be present)
     fermentation_id: Mapped[Optional[int]] = mapped_column(
@@ -74,9 +83,12 @@ class WinemakerAction(BaseEntity):
 
     # Outcome tracking (updated separately via PATCH /outcome)
     outcome: Mapped[str] = mapped_column(
-        String(20), nullable=False,
+        String(20),
+        nullable=False,
         default=ActionOutcome.PENDING.value,
         server_default="PENDING",
     )
     outcome_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    outcome_recorded_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    outcome_recorded_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )

@@ -352,10 +352,51 @@ poetry run pytest -v
 # Run all tests from workspace root
 python run_all_tests.ps1
 
-# Lint checks (must pass before commit)
+# Lint checks — ALL must pass **locally before pushing** (not just before committing)
 poetry run black . --check
 poetry run flake8 .
 poetry run mypy src
+```
+
+---
+
+## Type annotation standards — enforce strictly on new code
+
+This codebase targets `mypy strict = true`. There is existing type debt in 17 files
+(tracked in GitHub issue #3) that is temporarily silenced with `ignore_errors = true`
+overrides. **Do not add new overrides.** Fix errors instead.
+
+**Every new function, method, and class you write must be fully typed:**
+
+```python
+# ✅ Correct — full annotations
+async def create_fermentation(
+    self,
+    winery_id: int,
+    data: FermentationCreateDTO,
+) -> Fermentation:
+    ...
+
+# ❌ Wrong — missing annotations (mypy strict will reject this)
+async def create_fermentation(self, winery_id, data):
+    ...
+```
+
+**Rules:**
+- All function arguments and return types must be annotated
+- Use `list[X]` not `List[X]` (Python 3.9+)
+- Use `dict[K, V]` not `Dict[K, V]`
+- Use `X | None` not `Optional[X]` (or `Optional` when on Python <3.10 — use `from __future__ import annotations`)
+- Never use bare `Any` — if you must, add a `# type: ignore[assignment]` with a comment explaining why
+- SQLAlchemy scalars return `Sequence[T]` — cast to `list` when your return type is `list[T]`: `return list(result.scalars().all())`
+- For `TYPE_CHECKING` guards: use `from __future__ import annotations` + `if TYPE_CHECKING:` block for forward references
+
+**Before pushing any backend code, run and confirm all three pass:**
+
+```powershell
+poetry run black . --check   # formatting
+poetry run flake8 .          # style + unused imports
+poetry run mypy src          # type checking — zero errors expected on new code
 ```
 
 ---

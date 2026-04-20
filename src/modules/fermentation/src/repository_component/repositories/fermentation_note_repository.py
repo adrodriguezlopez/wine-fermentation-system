@@ -9,7 +9,9 @@ from typing import Optional, List
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
+from src.modules.fermentation.src.domain.entities.fermentation_note import (
+    FermentationNote,
+)
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 from src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (
     FermentationNoteCreate,
@@ -25,7 +27,7 @@ from src.modules.fermentation.src.repository_component.errors import EntityNotFo
 class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
     """
     Repository for managing fermentation notes with multi-tenant security.
-    
+
     All operations validate that the fermentation belongs to the specified winery
     through JOIN queries with the fermentation table.
     """
@@ -38,15 +40,15 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
     ) -> FermentationNote:
         """
         Create a new fermentation note.
-        
+
         Args:
             fermentation_id: ID of the fermentation to add note to
             winery_id: ID of the winery (for multi-tenant validation)
             data: DTO containing note data
-            
+
         Returns:
             The created FermentationNote entity
-            
+
         Raises:
             EntityNotFoundError: If fermentation doesn't exist or doesn't belong to winery
         """
@@ -62,12 +64,12 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
             )
             result = await session.execute(fermentation_query)
             fermentation = result.scalar_one_or_none()
-            
+
             if not fermentation:
                 raise EntityNotFoundError(
                     f"Fermentation with id {fermentation_id} not found or does not belong to winery {winery_id}"
                 )
-            
+
             # Create the note
             note = FermentationNote(
                 fermentation_id=fermentation_id,
@@ -76,11 +78,11 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
                 created_by_user_id=data.created_by_user_id,
                 is_deleted=False,
             )
-            
+
             session.add(note)
             await session.flush()
             await session.refresh(note)
-            
+
             return note
 
     async def get_by_id(
@@ -90,11 +92,11 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
     ) -> Optional[FermentationNote]:
         """
         Retrieve a fermentation note by ID with multi-tenant validation.
-        
+
         Args:
             note_id: ID of the note to retrieve
             winery_id: ID of the winery (for multi-tenant validation)
-            
+
         Returns:
             The FermentationNote entity if found and belongs to winery, None otherwise
         """
@@ -111,7 +113,7 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
                     )
                 )
             )
-            
+
             result = await session.execute(query)
             return result.scalar_one_or_none()
 
@@ -122,11 +124,11 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
     ) -> List[FermentationNote]:
         """
         Retrieve all notes for a fermentation with multi-tenant validation.
-        
+
         Args:
             fermentation_id: ID of the fermentation
             winery_id: ID of the winery (for multi-tenant validation)
-            
+
         Returns:
             List of FermentationNote entities, ordered by created_at DESC
             Returns empty list if fermentation doesn't belong to winery
@@ -145,7 +147,7 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
                 )
                 .order_by(FermentationNote.created_at.desc())
             )
-            
+
             result = await session.execute(query)
             return list(result.scalars().all())
 
@@ -157,12 +159,12 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
     ) -> Optional[FermentationNote]:
         """
         Update an existing fermentation note with multi-tenant validation.
-        
+
         Args:
             note_id: ID of the note to update
             winery_id: ID of the winery (for multi-tenant validation)
             data: DTO containing fields to update (partial updates supported)
-            
+
         Returns:
             The updated FermentationNote entity if found, None otherwise
         """
@@ -180,22 +182,22 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
                     )
                 )
             )
-            
+
             result = await session.execute(query)
             note = result.scalar_one_or_none()
-            
+
             if not note:
                 return None
-            
+
             # Apply updates
             if data.note_text is not None:
                 note.note_text = data.note_text
             if data.action_taken is not None:
                 note.action_taken = data.action_taken
-            
+
             await session.flush()
             await session.refresh(note)
-            
+
             return note
 
     async def delete(
@@ -205,11 +207,11 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
     ) -> bool:
         """
         Soft delete a fermentation note with multi-tenant validation.
-        
+
         Args:
             note_id: ID of the note to delete
             winery_id: ID of the winery (for multi-tenant validation)
-            
+
         Returns:
             True if note was deleted, False if not found or doesn't belong to winery
         """
@@ -227,15 +229,15 @@ class FermentationNoteRepository(BaseRepository, IFermentationNoteRepository):
                     )
                 )
             )
-            
+
             result = await session.execute(query)
             note = result.scalar_one_or_none()
-            
+
             if not note:
                 return False
-            
+
             # Soft delete
             note.is_deleted = True
             await session.flush()
-            
+
             return True

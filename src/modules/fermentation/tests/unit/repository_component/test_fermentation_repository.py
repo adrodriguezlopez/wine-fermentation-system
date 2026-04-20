@@ -17,12 +17,16 @@ import pytest
 from datetime import datetime
 
 # Import domain entities and DTOs from their canonical locations
-from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
+from src.modules.fermentation.src.domain.enums.fermentation_status import (
+    FermentationStatus,
+)
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 from src.modules.fermentation.src.domain.dtos import FermentationCreate
 
 # Import repository implementation
-from src.modules.fermentation.src.repository_component.repositories import FermentationRepository
+from src.modules.fermentation.src.repository_component.repositories import (
+    FermentationRepository,
+)
 
 # Import ADR-012 testing utilities
 from src.shared.testing.unit import (
@@ -35,7 +39,7 @@ from src.shared.testing.unit import (
 
 class TestFermentationRepository:
     """Test FermentationRepository with proper mocking strategy.
-    
+
     Following ADR-012: Each test creates its own session manager and repository instance for isolation.
     """
 
@@ -43,6 +47,7 @@ class TestFermentationRepository:
     async def test_repository_inherits_from_base_repository(self):
         """Test that FermentationRepository extends BaseRepository."""
         from src.shared.infra.repository.base_repository import BaseRepository
+
         session_manager = MockSessionManagerBuilder().build()
         repository = FermentationRepository(session_manager)
         assert isinstance(repository, BaseRepository)
@@ -58,7 +63,7 @@ class TestFermentationRepository:
             input_mass_kg=100.0,
             initial_sugar_brix=20.0,
             initial_density=1.08,
-            vessel_code="V1"
+            vessel_code="V1",
         )
 
         # Create session manager and repository
@@ -67,7 +72,7 @@ class TestFermentationRepository:
 
         # This test verifies the repository interface contract
         # Full implementation tests require integration testing with real DB
-        assert hasattr(repository, 'create')
+        assert hasattr(repository, "create")
         assert callable(repository.create)
 
     @pytest.mark.asyncio
@@ -77,7 +82,9 @@ class TestFermentationRepository:
         empty_result = create_empty_result()
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        )
         repository = FermentationRepository(session_manager)
 
         # Call the method
@@ -101,14 +108,16 @@ class TestFermentationRepository:
             input_mass_kg=100.0,
             initial_sugar_brix=20.0,
             initial_density=1.08,
-            vessel_code="V1"
+            vessel_code="V1",
         )
 
         # Mock the query result
         query_result = create_query_result([mock_fermentation])
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(query_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(query_result).build()
+        )
         repository = FermentationRepository(session_manager)
 
         # Call the method
@@ -127,14 +136,14 @@ class TestFermentationRepository:
         empty_result = create_empty_result()
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(empty_result).build()
+        )
         repository = FermentationRepository(session_manager)
 
         # Call the method
         result = await repository.update_status(
-            fermentation_id=999,
-            winery_id=1,
-            new_status=FermentationStatus.COMPLETED
+            fermentation_id=999, winery_id=1, new_status=FermentationStatus.COMPLETED
         )
 
         # Verify result
@@ -145,24 +154,21 @@ class TestFermentationRepository:
         """Test that update_status returns updated Fermentation when update succeeds."""
         # Mock the SQLAlchemy entity
         mock_fermentation = create_mock_entity(
-            Fermentation,
-            id=1,
-            winery_id=1,
-            status="ACTIVE"
+            Fermentation, id=1, winery_id=1, status="ACTIVE"
         )
 
         # Mock the query result
         query_result = create_query_result([mock_fermentation])
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(query_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(query_result).build()
+        )
         repository = FermentationRepository(session_manager)
 
         # Call the method
         result = await repository.update_status(
-            fermentation_id=1,
-            winery_id=1,
-            new_status=FermentationStatus.COMPLETED
+            fermentation_id=1, winery_id=1, new_status=FermentationStatus.COMPLETED
         )
 
         # Verify result (check behavior, not type)
@@ -188,28 +194,26 @@ class TestFermentationRepository:
         """Test that get_by_status returns a list of fermentations with the specified status."""
         # Mock two fermentations with ACTIVE status
         mock_fermentation1 = create_mock_entity(
-            Fermentation,
-            id=1,
-            winery_id=1,
-            status="ACTIVE"
+            Fermentation, id=1, winery_id=1, status="ACTIVE"
         )
 
         mock_fermentation2 = create_mock_entity(
-            Fermentation,
-            id=2,
-            winery_id=1,
-            status="ACTIVE"
+            Fermentation, id=2, winery_id=1, status="ACTIVE"
         )
 
         # Mock the query result
         query_result = create_query_result([mock_fermentation1, mock_fermentation2])
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(query_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(query_result).build()
+        )
         repository = FermentationRepository(session_manager)
 
         # Call the method
-        result = await repository.get_by_status(status=FermentationStatus.ACTIVE, winery_id=1)
+        result = await repository.get_by_status(
+            status=FermentationStatus.ACTIVE, winery_id=1
+        )
 
         # Verify result (check structure and attributes, not types)
         assert isinstance(result, list)
@@ -222,17 +226,15 @@ class TestFermentationRepository:
     async def test_get_by_winery_returns_all_fermentations_for_winery(self):
         """Test that get_by_winery returns all fermentations for a winery."""
         # Mock a fermentation
-        mock_fermentation = create_mock_entity(
-            Fermentation,
-            id=1,
-            winery_id=1
-        )
+        mock_fermentation = create_mock_entity(Fermentation, id=1, winery_id=1)
 
         # Mock the query result
         query_result = create_query_result([mock_fermentation])
 
         # Create session manager and repository
-        session_manager = MockSessionManagerBuilder().with_execute_result(query_result).build()
+        session_manager = (
+            MockSessionManagerBuilder().with_execute_result(query_result).build()
+        )
         repository = FermentationRepository(session_manager)
 
         # Call the method
@@ -243,4 +245,3 @@ class TestFermentationRepository:
         assert len(result) == 1
         assert result[0].id == 1
         assert result[0].winery_id == 1
-

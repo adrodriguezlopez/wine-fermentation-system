@@ -18,7 +18,9 @@ from typing import List, TYPE_CHECKING
 from src.modules.fermentation.src.domain.dtos import LotSourceData
 
 if TYPE_CHECKING:
-    from src.modules.fermentation.src.domain.entities.fermentation_lot_source import FermentationLotSource
+    from src.modules.fermentation.src.domain.entities.fermentation_lot_source import (
+        FermentationLotSource,
+    )
 
 
 class ILotSourceRepository(ABC):
@@ -35,10 +37,7 @@ class ILotSourceRepository(ABC):
 
     @abstractmethod
     async def create(
-        self, 
-        fermentation_id: int, 
-        winery_id: int,
-        data: LotSourceData
+        self, fermentation_id: int, winery_id: int, data: LotSourceData
     ) -> FermentationLotSource:
         """
         Creates a new fermentation lot source record.
@@ -55,7 +54,7 @@ class ILotSourceRepository(ABC):
             RepositoryError: If creation fails
             IntegrityError: If constraints are violated (e.g., duplicate lot for same fermentation)
             NotFoundError: If fermentation_id or harvest_lot_id does not exist
-        
+
         Business Rules Enforced:
             - Fermentation and harvest lot must belong to same winery
             - No duplicate harvest lot per fermentation (unique constraint)
@@ -65,9 +64,7 @@ class ILotSourceRepository(ABC):
 
     @abstractmethod
     async def get_by_fermentation_id(
-        self, 
-        fermentation_id: int, 
-        winery_id: int
+        self, fermentation_id: int, winery_id: int
     ) -> List[FermentationLotSource]:
         """
         Retrieves all lot sources for a specific fermentation.
@@ -81,7 +78,7 @@ class ILotSourceRepository(ABC):
 
         Raises:
             RepositoryError: If database operation fails
-        
+
         Use Cases:
             - Display blend composition in fermentation detail view
             - Validate mass consistency (sum of masses = fermentation input mass)
@@ -90,11 +87,7 @@ class ILotSourceRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(
-        self, 
-        lot_source_id: int, 
-        winery_id: int
-    ) -> bool:
+    async def delete(self, lot_source_id: int, winery_id: int) -> bool:
         """
         Deletes a fermentation lot source record.
 
@@ -107,7 +100,7 @@ class ILotSourceRepository(ABC):
 
         Raises:
             RepositoryError: If database operation fails
-        
+
         Use Cases:
             - Modify blend composition before fermentation starts
             - Correct data entry errors
@@ -117,9 +110,7 @@ class ILotSourceRepository(ABC):
 
     @abstractmethod
     async def get_by_id(
-        self, 
-        lot_source_id: int, 
-        winery_id: int
+        self, lot_source_id: int, winery_id: int
     ) -> FermentationLotSource | None:
         """
         Retrieves a specific lot source by its ID.
@@ -133,7 +124,7 @@ class ILotSourceRepository(ABC):
 
         Raises:
             RepositoryError: If database operation fails
-        
+
         Use Cases:
             - Update operations (fetch before modify)
             - Detail views for specific lot source
@@ -142,10 +133,7 @@ class ILotSourceRepository(ABC):
 
     @abstractmethod
     async def update_mass(
-        self, 
-        lot_source_id: int, 
-        winery_id: int,
-        new_mass_kg: float
+        self, lot_source_id: int, winery_id: int, new_mass_kg: float
     ) -> FermentationLotSource:
         """
         Updates the mass used from a specific lot source.
@@ -162,7 +150,7 @@ class ILotSourceRepository(ABC):
             RepositoryError: If database operation fails
             NotFoundError: If lot source not found or access denied
             ValueError: If new_mass_kg <= 0
-        
+
         Use Cases:
             - Adjust blend proportions during fermentation setup
             - Correct measurement errors

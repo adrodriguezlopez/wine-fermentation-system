@@ -15,14 +15,18 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, TYPE_CHECKING
 
 # Import domain enums from their canonical location
-from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
+from src.modules.fermentation.src.domain.enums.fermentation_status import (
+    FermentationStatus,
+)
 
 # Import DTOs from domain.dtos package
 from src.modules.fermentation.src.domain.dtos import FermentationCreate
 
 if TYPE_CHECKING:
     from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
-    from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
+    from src.modules.fermentation.src.domain.entities.samples.base_sample import (
+        BaseSample,
+    )
 
 
 class IFermentationRepository(ABC):
@@ -55,7 +59,9 @@ class IFermentationRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_id(self, fermentation_id: int, winery_id: int) -> Optional[Fermentation]:
+    async def get_by_id(
+        self, fermentation_id: int, winery_id: int
+    ) -> Optional[Fermentation]:
         """
         Retrieves a fermentation by its ID with winery access control.
 
@@ -140,7 +146,10 @@ class IFermentationRepository(ABC):
 
     @abstractmethod
     async def get_by_winery(
-        self, winery_id: int, include_completed: bool = False, include_deleted: bool = False
+        self,
+        winery_id: int,
+        include_completed: bool = False,
+        include_deleted: bool = False,
     ) -> List[Fermentation]:
         """
         Retrieves all fermentations for a winery.

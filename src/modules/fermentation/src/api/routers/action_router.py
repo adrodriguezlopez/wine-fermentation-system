@@ -41,6 +41,7 @@ def _get_service(
 # POST /fermentations/{fermentation_id}/actions
 # =============================================================================
 
+
 @router.post(
     "/fermentations/{fermentation_id}/actions",
     response_model=ActionResponse,
@@ -76,6 +77,7 @@ async def record_action(
 # GET /fermentations/{fermentation_id}/actions
 # =============================================================================
 
+
 @router.get(
     "/fermentations/{fermentation_id}/actions",
     response_model=ActionListResponse,
@@ -106,6 +108,7 @@ async def list_fermentation_actions(
 # =============================================================================
 # GET /executions/{execution_id}/actions
 # =============================================================================
+
 
 @router.get(
     "/executions/{execution_id}/actions",
@@ -138,6 +141,7 @@ async def list_execution_actions(
 # GET /actions/{action_id}
 # =============================================================================
 
+
 @router.get(
     "/actions/{action_id}",
     response_model=ActionResponse,
@@ -155,14 +159,17 @@ async def get_action(
             winery_id=current_user.winery_id,
         )
     except ActionNotFoundError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Action {action_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Action {action_id} not found",
+        )
     return ActionResponse.model_validate(action)
 
 
 # =============================================================================
 # PATCH /actions/{action_id}/outcome
 # =============================================================================
+
 
 @router.patch(
     "/actions/{action_id}/outcome",
@@ -185,17 +192,21 @@ async def update_outcome(
             outcome_notes=body.outcome_notes,
         )
     except ActionNotFoundError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Action {action_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Action {action_id} not found",
+        )
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                            detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        )
     return ActionResponse.model_validate(action)
 
 
 # =============================================================================
 # DELETE /actions/{action_id}
 # =============================================================================
+
 
 @router.delete(
     "/actions/{action_id}",
@@ -213,5 +224,7 @@ async def delete_action(
             winery_id=current_user.winery_id,
         )
     except ActionNotFoundError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Action {action_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Action {action_id} not found",
+        )

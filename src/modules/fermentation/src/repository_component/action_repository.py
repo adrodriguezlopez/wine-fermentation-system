@@ -8,7 +8,9 @@ from typing import List, Optional, Tuple
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.fermentation.src.domain.entities.winemaker_action import WinemakerAction
+from src.modules.fermentation.src.domain.entities.winemaker_action import (
+    WinemakerAction,
+)
 from src.modules.fermentation.src.domain.repositories.action_repository_interface import (
     IActionRepository,
 )

@@ -15,29 +15,29 @@ from enum import Enum
 
 class StepType(str, Enum):
     """Categories of fermentation protocol work"""
-    
+
     # Pre-fermentation setup (cold soak, inoculation, etc.)
     INITIALIZATION = "INITIALIZATION"
-    
+
     # Observation & measurement (temperature, brix, H2S checks, visual inspection)
     MONITORING = "MONITORING"
-    
+
     # Nutrient & SO2 additions (DAP, MLF, other additions)
     ADDITIONS = "ADDITIONS"
-    
+
     # Cap management during active fermentation (punch down, pump over)
     CAP_MANAGEMENT = "CAP_MANAGEMENT"
-    
+
     # Post-fermentation processing (pressing, racking, filtering, settling, clarification, extended maceration)
     POST_FERMENTATION = "POST_FERMENTATION"
-    
+
     # Tasting & quality analysis
     QUALITY_CHECK = "QUALITY_CHECK"
 
 
 class ProtocolExecutionStatus(str, Enum):
     """Status of a protocol execution for a specific fermentation"""
-    
+
     NOT_STARTED = "NOT_STARTED"
     ACTIVE = "ACTIVE"
     PAUSED = "PAUSED"
@@ -48,9 +48,9 @@ class ProtocolExecutionStatus(str, Enum):
 class ProtocolState(str, Enum):
     """Lifecycle state for a FermentationProtocol (ADR-039)."""
 
-    DRAFT = "DRAFT"             # Being authored — not yet approved for use
-    FINAL = "FINAL"             # Approved and ready for use (or already in use)
-    DEPRECATED = "DEPRECATED"   # Retired — no new executions allowed
+    DRAFT = "DRAFT"  # Being authored — not yet approved for use
+    FINAL = "FINAL"  # Approved and ready for use (or already in use)
+    DEPRECATED = "DEPRECATED"  # Retired — no new executions allowed
 
 
 class ActionType(str, Enum):
@@ -73,10 +73,10 @@ class ActionType(str, Enum):
 class ActionOutcome(str, Enum):
     """Observed outcome after a winemaker action (ADR-041)."""
 
-    PENDING = "PENDING"        # Action taken, outcome not yet observed
-    RESOLVED = "RESOLVED"      # Problem resolved
-    NO_EFFECT = "NO_EFFECT"    # Action had no measurable effect
-    WORSENED = "WORSENED"      # Condition deteriorated after action
+    PENDING = "PENDING"  # Action taken, outcome not yet observed
+    RESOLVED = "RESOLVED"  # Problem resolved
+    NO_EFFECT = "NO_EFFECT"  # Action had no measurable effect
+    WORSENED = "WORSENED"  # Condition deteriorated after action
 
 
 class SkipReason(str, Enum):

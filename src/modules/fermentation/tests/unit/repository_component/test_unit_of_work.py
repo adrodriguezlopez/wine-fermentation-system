@@ -29,7 +29,7 @@ def mock_session_manager():
 
 class TestUnitOfWorkRepositoryAccess:
     """Test repository access via UnitOfWork facade."""
-    
+
     def test_fermentation_repo_accessible(self, mock_session_manager):
         """
         Given: A UnitOfWork instance
@@ -38,15 +38,15 @@ class TestUnitOfWorkRepositoryAccess:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         repo = uow.fermentation_repo
-        
+
         # Assert
         assert repo is not None
-        assert hasattr(repo, 'create')
-        assert hasattr(repo, 'get_by_id')
-    
+        assert hasattr(repo, "create")
+        assert hasattr(repo, "get_by_id")
+
     def test_sample_repo_accessible(self, mock_session_manager):
         """
         Given: A UnitOfWork instance
@@ -55,14 +55,14 @@ class TestUnitOfWorkRepositoryAccess:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         repo = uow.sample_repo
-        
+
         # Assert
         assert repo is not None
-        assert hasattr(repo, 'create')
-    
+        assert hasattr(repo, "create")
+
     def test_lot_source_repo_accessible(self, mock_session_manager):
         """
         Given: A UnitOfWork instance
@@ -71,13 +71,13 @@ class TestUnitOfWorkRepositoryAccess:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         repo = uow.lot_source_repo
-        
+
         # Assert
         assert repo is not None
-    
+
     def test_harvest_lot_repo_accessible(self, mock_session_manager):
         """
         Given: A UnitOfWork instance
@@ -86,13 +86,13 @@ class TestUnitOfWorkRepositoryAccess:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         repo = uow.harvest_lot_repo
-        
+
         # Assert
         assert repo is not None
-    
+
     def test_vineyard_repo_accessible(self, mock_session_manager):
         """
         Given: A UnitOfWork instance
@@ -101,13 +101,13 @@ class TestUnitOfWorkRepositoryAccess:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         repo = uow.vineyard_repo
-        
+
         # Assert
         assert repo is not None
-    
+
     def test_vineyard_block_repo_accessible(self, mock_session_manager):
         """
         Given: A UnitOfWork instance
@@ -116,17 +116,17 @@ class TestUnitOfWorkRepositoryAccess:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         repo = uow.vineyard_block_repo
-        
+
         # Assert
         assert repo is not None
 
 
 class TestUnitOfWorkLazyLoading:
     """Test lazy initialization of repositories."""
-    
+
     def test_repos_lazy_initialized(self, mock_session_manager):
         """
         Given: A newly created UnitOfWork
@@ -135,12 +135,12 @@ class TestUnitOfWorkLazyLoading:
         """
         # Arrange & Act
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Assert
         assert uow._fermentation_repo is None
         assert uow._sample_repo is None
         assert uow._lot_source_repo is None
-    
+
     def test_fermentation_repo_initialized_on_first_access(self, mock_session_manager):
         """
         Given: A UnitOfWork with no fermentation_repo
@@ -150,15 +150,15 @@ class TestUnitOfWorkLazyLoading:
         # Arrange
         uow = UnitOfWork(mock_session_manager)
         assert uow._fermentation_repo is None
-        
+
         # Act
         repo1 = uow.fermentation_repo
         repo2 = uow.fermentation_repo
-        
+
         # Assert
         assert repo1 is repo2  # Same instance (cached)
         assert uow._fermentation_repo is not None
-    
+
     def test_sample_repo_initialized_on_first_access(self, mock_session_manager):
         """
         Given: A UnitOfWork with no sample_repo
@@ -168,15 +168,15 @@ class TestUnitOfWorkLazyLoading:
         # Arrange
         uow = UnitOfWork(mock_session_manager)
         assert uow._sample_repo is None
-        
+
         # Act
         repo1 = uow.sample_repo
         repo2 = uow.sample_repo
-        
+
         # Assert
         assert repo1 is repo2  # Same instance (cached)
         assert uow._sample_repo is not None
-    
+
     def test_repos_initialized_independently(self, mock_session_manager):
         """
         Given: A UnitOfWork
@@ -185,10 +185,10 @@ class TestUnitOfWorkLazyLoading:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         _ = uow.fermentation_repo
-        
+
         # Assert
         assert uow._fermentation_repo is not None
         assert uow._sample_repo is None  # Still None
@@ -197,7 +197,7 @@ class TestUnitOfWorkLazyLoading:
 
 class TestUnitOfWorkSessionSharing:
     """Test that all repositories share the same session manager."""
-    
+
     def test_all_repos_use_same_session_manager(self, mock_session_manager):
         """
         Given: A UnitOfWork with session manager
@@ -206,17 +206,17 @@ class TestUnitOfWorkSessionSharing:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         ferm_repo = uow.fermentation_repo
         sample_repo = uow.sample_repo
         lot_repo = uow.lot_source_repo
-        
+
         # Assert - all repos were created
         assert ferm_repo is not None
         assert sample_repo is not None
         assert lot_repo is not None
-        
+
         # Verify they all have the session manager (checking public attribute)
         assert ferm_repo.session_manager is mock_session_manager
         assert sample_repo.session_manager is mock_session_manager
@@ -225,7 +225,7 @@ class TestUnitOfWorkSessionSharing:
 
 class TestUnitOfWorkFacadePattern:
     """Test UnitOfWork as a facade for repository access."""
-    
+
     def test_uow_provides_unified_interface(self, mock_session_manager):
         """
         Given: A UnitOfWork
@@ -234,15 +234,15 @@ class TestUnitOfWorkFacadePattern:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act & Assert - all repos accessible from one object
-        assert hasattr(uow, 'fermentation_repo')
-        assert hasattr(uow, 'sample_repo')
-        assert hasattr(uow, 'lot_source_repo')
-        assert hasattr(uow, 'harvest_lot_repo')
-        assert hasattr(uow, 'vineyard_repo')
-        assert hasattr(uow, 'vineyard_block_repo')
-    
+        assert hasattr(uow, "fermentation_repo")
+        assert hasattr(uow, "sample_repo")
+        assert hasattr(uow, "lot_source_repo")
+        assert hasattr(uow, "harvest_lot_repo")
+        assert hasattr(uow, "vineyard_repo")
+        assert hasattr(uow, "vineyard_block_repo")
+
     def test_uow_implements_interface(self, mock_session_manager):
         """
         Given: A UnitOfWork
@@ -250,14 +250,16 @@ class TestUnitOfWorkFacadePattern:
         Then: Should implement IUnitOfWork
         """
         # Arrange
-        from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import IUnitOfWork
-        
+        from src.modules.fermentation.src.domain.interfaces.unit_of_work_interface import (
+            IUnitOfWork,
+        )
+
         # Act
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Assert
         assert isinstance(uow, IUnitOfWork)
-    
+
     def test_uow_initialization_with_session_manager(self, mock_session_manager):
         """
         Given: A session manager
@@ -266,14 +268,14 @@ class TestUnitOfWorkFacadePattern:
         """
         # Act
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Assert
         assert uow._session_manager is mock_session_manager
 
 
 class TestUnitOfWorkCrossModuleSupport:
     """Test UnitOfWork provides repositories from multiple modules."""
-    
+
     def test_fermentation_module_repos_available(self, mock_session_manager):
         """
         Given: A UnitOfWork
@@ -282,17 +284,17 @@ class TestUnitOfWorkCrossModuleSupport:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         ferm_repo = uow.fermentation_repo
         sample_repo = uow.sample_repo
         lot_repo = uow.lot_source_repo
-        
+
         # Assert
         assert ferm_repo is not None
         assert sample_repo is not None
         assert lot_repo is not None
-    
+
     def test_fruit_origin_module_repos_available(self, mock_session_manager):
         """
         Given: A UnitOfWork
@@ -301,17 +303,17 @@ class TestUnitOfWorkCrossModuleSupport:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         harvest_repo = uow.harvest_lot_repo
         vineyard_repo = uow.vineyard_repo
         block_repo = uow.vineyard_block_repo
-        
+
         # Assert
         assert harvest_repo is not None
         assert vineyard_repo is not None
         assert block_repo is not None
-    
+
     def test_cross_module_session_sharing(self, mock_session_manager):
         """
         Given: A UnitOfWork
@@ -320,11 +322,11 @@ class TestUnitOfWorkCrossModuleSupport:
         """
         # Arrange
         uow = UnitOfWork(mock_session_manager)
-        
+
         # Act
         ferm_repo = uow.fermentation_repo  # fermentation module
         vineyard_repo = uow.vineyard_repo  # fruit_origin module
-        
+
         # Assert - both use same session manager
         assert ferm_repo.session_manager is mock_session_manager
         assert vineyard_repo.session_manager is mock_session_manager

@@ -10,4 +10,9 @@ from .sample_repository import SampleRepository
 from .lot_source_repository import LotSourceRepository
 from .fermentation_note_repository import FermentationNoteRepository
 
-__all__ = ['FermentationRepository', 'SampleRepository', 'LotSourceRepository', 'FermentationNoteRepository']
+__all__ = [
+    "FermentationRepository",
+    "SampleRepository",
+    "LotSourceRepository",
+    "FermentationNoteRepository",
+]

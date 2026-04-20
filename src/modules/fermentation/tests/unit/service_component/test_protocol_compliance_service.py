@@ -29,22 +29,34 @@ from src.modules.fermentation.src.service_component.services.protocol_compliance
 )
 
 # Repository interfaces
-from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import FermentationProtocolRepository
-from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
-from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
-from src.modules.fermentation.src.repository_component.step_completion_repository import StepCompletionRepository
+from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import (
+    FermentationProtocolRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+    ProtocolExecutionRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_step_repository import (
+    ProtocolStepRepository,
+)
+from src.modules.fermentation.src.repository_component.step_completion_repository import (
+    StepCompletionRepository,
+)
 
 # Domain entities
-from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol
-from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
+from src.modules.fermentation.src.domain.entities.protocol_protocol import (
+    FermentationProtocol,
+)
+from src.modules.fermentation.src.domain.entities.protocol_execution import (
+    ProtocolExecution,
+)
 from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
 from src.modules.fermentation.src.domain.entities.step_completion import StepCompletion
 from src.modules.fermentation.src.domain.enums.step_type import StepType, SkipReason
 
-
 # ============================================================================
 # Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def mock_protocol_repo() -> AsyncMock:
@@ -103,7 +115,7 @@ def sample_protocol() -> FermentationProtocol:
         is_active=True,
     )
     protocol.id = 1
-    
+
     # Add 3 steps: 2 critical, 1 optional
     steps = [
         ProtocolStep(
@@ -140,10 +152,10 @@ def sample_protocol() -> FermentationProtocol:
             criticality_score=0.5,
         ),
     ]
-    
+
     for idx, step in enumerate(steps, 1):
         step.id = idx
-    
+
     protocol.steps = steps
     return protocol
 
@@ -168,6 +180,7 @@ def sample_execution(sample_protocol) -> ProtocolExecution:
 # ============================================================================
 # Test Classes
 # ============================================================================
+
 
 class TestCalculateComplianceScore:
     """Test compliance score calculation."""
@@ -313,7 +326,11 @@ class TestCalculateComplianceScore:
         assert result.compliance_score >= 95  # Should be high score
         # Breakdown should show 60% credit for step 3
         step3_breakdown = next(
-            (s for s in result.breakdown["completion"].step_breakdown if s.step_id == 3),
+            (
+                s
+                for s in result.breakdown["completion"].step_breakdown
+                if s.step_id == 3
+            ),
             None,
         )
         assert step3_breakdown is not None
@@ -342,7 +359,8 @@ class TestCalculateComplianceScore:
             StepCompletion(
                 execution_id=1,
                 step_id=2,
-                completed_at=sample_execution.start_date + timedelta(days=3),  # 1 day late
+                completed_at=sample_execution.start_date
+                + timedelta(days=3),  # 1 day late
                 is_on_schedule=False,
                 days_late=1,
                 was_skipped=False,
@@ -412,7 +430,11 @@ class TestCalculateComplianceScore:
 
         # Assert: Unjustified skip should earn 0 credit
         step3_breakdown = next(
-            (s for s in result.breakdown["completion"].step_breakdown if s.step_id == 3),
+            (
+                s
+                for s in result.breakdown["completion"].step_breakdown
+                if s.step_id == 3
+            ),
             None,
         )
         assert step3_breakdown is not None
@@ -555,7 +577,8 @@ class TestDetectDeviations:
             StepCompletion(
                 execution_id=1,
                 step_id=2,
-                completed_at=sample_execution.start_date + timedelta(days=5),  # 3 days late
+                completed_at=sample_execution.start_date
+                + timedelta(days=5),  # 3 days late
                 is_on_schedule=False,
                 days_late=3,
                 was_skipped=False,
@@ -690,6 +713,7 @@ class TestGetOverdueSteps:
 # Integration-like Tests
 # ============================================================================
 
+
 class TestComplianceScoringFormula:
     """Test the overall compliance scoring formula (ADR-036)."""
 
@@ -736,4 +760,3 @@ class TestComplianceScoringFormula:
         assert result.compliance_score >= 90
         assert result.weighted_completion > 0
         assert result.timing_score > 0
-

@@ -13,24 +13,37 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
-from src.modules.fermentation.src.domain.entities.protocol_protocol import FermentationProtocol
-from src.modules.fermentation.src.domain.entities.protocol_execution import ProtocolExecution
+from src.modules.fermentation.src.domain.entities.protocol_protocol import (
+    FermentationProtocol,
+)
+from src.modules.fermentation.src.domain.entities.protocol_execution import (
+    ProtocolExecution,
+)
 from src.modules.fermentation.src.domain.entities.protocol_step import ProtocolStep
 from src.modules.fermentation.src.domain.entities.fermentation import Fermentation
 from src.modules.fermentation.src.domain.enums.step_type import ProtocolExecutionStatus
-from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import FermentationProtocolRepository
-from src.modules.fermentation.src.repository_component.protocol_execution_repository import ProtocolExecutionRepository
-from src.modules.fermentation.src.repository_component.protocol_step_repository import ProtocolStepRepository
-from src.modules.fermentation.src.service_component.services.protocol_compliance_service import ProtocolComplianceService
-
+from src.modules.fermentation.src.repository_component.fermentation_protocol_repository import (
+    FermentationProtocolRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_execution_repository import (
+    ProtocolExecutionRepository,
+)
+from src.modules.fermentation.src.repository_component.protocol_step_repository import (
+    ProtocolStepRepository,
+)
+from src.modules.fermentation.src.service_component.services.protocol_compliance_service import (
+    ProtocolComplianceService,
+)
 
 # ============================================================================
 # Data Models
 # ============================================================================
 
+
 @dataclass
 class ProtocolSummary:
     """Summary of a protocol for listing."""
+
     id: int
     winery_id: int
     varietal_name: str
@@ -46,6 +59,7 @@ class ProtocolSummary:
 @dataclass
 class ProtocolDetail:
     """Full protocol details with all steps."""
+
     id: int
     winery_id: int
     varietal_code: str
@@ -64,6 +78,7 @@ class ProtocolDetail:
 @dataclass
 class ExecutionStartResult:
     """Result of starting protocol execution."""
+
     execution_id: int
     fermentation_id: int
     protocol_id: int
@@ -76,10 +91,11 @@ class ExecutionStartResult:
 # Protocol Service
 # ============================================================================
 
+
 class ProtocolService:
     """
     High-level service for protocol management and execution.
-    
+
     Provides:
     - Protocol CRUD operations with multi-tenancy
     - Protocol activation and versioning
@@ -662,6 +678,7 @@ class ProtocolService:
             ValueError: Protocol not found, access denied, or version conflict
         """
         import re
+
         if not re.match(r"^\d+\.\d+$", new_version):
             raise ValueError("new_version must be semantic format (e.g. '2.0')")
 
@@ -891,8 +908,12 @@ class ProtocolService:
                 "completion": {
                     "score": score_result.breakdown["completion"].score,
                     "total_earned": score_result.breakdown["completion"].total_earned,
-                    "total_possible": score_result.breakdown["completion"].total_possible,
-                    "completed_count": score_result.breakdown["completion"].completed_count,
+                    "total_possible": score_result.breakdown[
+                        "completion"
+                    ].total_possible,
+                    "completed_count": score_result.breakdown[
+                        "completion"
+                    ].completed_count,
                     "skipped_count": score_result.breakdown["completion"].skipped_count,
                     "pending_count": score_result.breakdown["completion"].pending_count,
                 },

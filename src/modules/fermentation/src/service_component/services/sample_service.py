@@ -23,14 +23,24 @@ from datetime import datetime
 # ADR-027: Structured logging
 from src.shared.wine_fermentator_logging import get_logger, LogTimer
 
-from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import ISampleService
-from src.modules.fermentation.src.service_component.interfaces.validation_orchestrator_interface import IValidationOrchestrator
-from src.modules.fermentation.src.domain.repositories.sample_repository_interface import ISampleRepository
-from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import IFermentationRepository
+from src.modules.fermentation.src.service_component.interfaces.sample_service_interface import (
+    ISampleService,
+)
+from src.modules.fermentation.src.service_component.interfaces.validation_orchestrator_interface import (
+    IValidationOrchestrator,
+)
+from src.modules.fermentation.src.domain.repositories.sample_repository_interface import (
+    ISampleRepository,
+)
+from src.modules.fermentation.src.domain.repositories.fermentation_repository_interface import (
+    IFermentationRepository,
+)
 from src.modules.fermentation.src.domain.entities.samples.base_sample import BaseSample
 from src.modules.fermentation.src.domain.dtos.sample_dtos import SampleCreate
 from src.modules.fermentation.src.domain.enums.sample_type import SampleType
-from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import ValidationResult
+from src.modules.fermentation.src.service_component.models.schemas.validations.validation_result import (
+    ValidationResult,
+)
 
 logger = get_logger(__name__)
 
@@ -38,29 +48,29 @@ logger = get_logger(__name__)
 class SampleService(ISampleService):
     """
     Service for managing sample operations.
-    
+
     Responsibilities (per ADR-005):
     - Orchestrate business logic for samples
     - Coordinate validation and repository operations
     - Enforce multi-tenancy and audit trails
     - NO fermentation lifecycle operations (see FermentationService)
-    
+
     Design:
     - Depends on abstractions (ISampleRepository, IValidationOrchestrator, IFermentationRepository)
     - Returns domain entities (BaseSample), NOT primitives
     - Uses DTOs for input validation
     - Delegates validation to IValidationOrchestrator (SRP)
     """
-    
+
     def __init__(
         self,
         sample_repo: ISampleRepository,
         validation_orchestrator: IValidationOrchestrator,
-        fermentation_repo: IFermentationRepository
+        fermentation_repo: IFermentationRepository,
     ):
         """
         Initialize service with dependencies (Dependency Injection).
-        
+
         Args:
             sample_repo: Repository for sample data access
             validation_orchestrator: Orchestrator for sample validation
@@ -69,13 +79,9 @@ class SampleService(ISampleService):
         self._sample_repo = sample_repo
         self._validation_orchestrator = validation_orchestrator
         self._fermentation_repo = fermentation_repo
-    
+
     async def add_sample(
-        self,
-        fermentation_id: int,
-        winery_id: int,
-        user_id: int,
-        data: SampleCreate
+        self, fermentation_id: int, winery_id: int, user_id: int, data: SampleCreate
     ) -> BaseSample:
         """
         Adds a new sample with full validation.
@@ -103,46 +109,46 @@ class SampleService(ISampleService):
             ValidationError: If sample is invalid
             NotFoundError: If fermentation doesn't exist
             RepositoryError: If database operation fails
-            
+
         Status: ✅ Implemented via TDD (2025-10-21)
         """
         from src.modules.fermentation.src.service_component.errors import (
             NotFoundError,
             ValidationError as ServiceValidationError,
-            BusinessRuleViolation
+            BusinessRuleViolation,
         )
-        from src.modules.fermentation.src.domain.enums.fermentation_status import FermentationStatus
-        
+        from src.modules.fermentation.src.domain.enums.fermentation_status import (
+            FermentationStatus,
+        )
+
         # Step 1: Verify fermentation exists and belongs to winery
         fermentation = await self._fermentation_repo.get_by_id(
-            fermentation_id=fermentation_id,
-            winery_id=winery_id
+            fermentation_id=fermentation_id, winery_id=winery_id
         )
-        
+
         if fermentation is None:
             raise NotFoundError(
                 f"Fermentation {fermentation_id} not found or access denied"
             )
-        
+
         # Step 2: Verify fermentation is not COMPLETED
         if fermentation.status == FermentationStatus.COMPLETED:
             raise BusinessRuleViolation(
                 f"Cannot add sample to fermentation {fermentation_id}: status is COMPLETED"
             )
-        
+
         # Step 3: Create BaseSample entity for validation
         sample = self._create_sample_entity(
-            fermentation_id=fermentation_id,
-            user_id=user_id,
-            data=data
+            fermentation_id=fermentation_id, user_id=user_id, data=data
         )
-        
+
         # Step 4: Validate sample completely via orchestrator
-        validation_result = await self._validation_orchestrator.validate_sample_complete(
-            fermentation_id=fermentation_id,
-            new_sample=sample
+        validation_result = (
+            await self._validation_orchestrator.validate_sample_complete(
+                fermentation_id=fermentation_id, new_sample=sample
+            )
         )
-        
+
         if not validation_result.is_valid:
             # Collect all errors into message
             error_messages = "\n".join(
@@ -151,9 +157,9 @@ class SampleService(ISampleService):
             )
             raise ServiceValidationError(
                 f"Sample validation failed:\n{error_messages}",
-                errors=validation_result.errors
+                errors=validation_result.errors,
             )
-        
+
         with LogTimer(logger, "add_sample_service"):
             logger.info(
                 "adding_sample",
@@ -161,26 +167,23 @@ class SampleService(ISampleService):
                 winery_id=winery_id,
                 user_id=user_id,
                 sample_type=data.sample_type.value,
-                value=float(data.value)
+                value=float(data.value),
             )
-            
+
             # Step 5: Persist via repository (may raise RepositoryError)
             created_sample = await self._sample_repo.upsert_sample(sample)
-            
+
             logger.info(
                 "sample_added_success",
                 sample_id=created_sample.id,
                 fermentation_id=fermentation_id,
-                sample_type=data.sample_type.value
+                sample_type=data.sample_type.value,
             )
-            
+
             return created_sample
-    
+
     def _create_sample_entity(
-        self,
-        fermentation_id: int,
-        user_id: int,
-        data: SampleCreate
+        self, fermentation_id: int, user_id: int, data: SampleCreate
     ) -> BaseSample:
         """
         Factory method to create BaseSample entity from DTO.
@@ -195,21 +198,18 @@ class SampleService(ISampleService):
         sample.recorded_at = data.recorded_at  # Use timestamp from request
         sample.is_deleted = False
         return sample
-    
+
     def _get_units_for_sample_type(self, sample_type: SampleType) -> str:
         """Helper to get units for sample type."""
         units_map = {
             SampleType.SUGAR: "Brix",
             SampleType.TEMPERATURE: "°C",
-            SampleType.DENSITY: "g/cm³"
+            SampleType.DENSITY: "g/cm³",
         }
         return units_map.get(sample_type, "unknown")
-    
+
     async def get_sample(
-        self,
-        sample_id: int,
-        fermentation_id: int,
-        winery_id: int
+        self, sample_id: int, fermentation_id: int, winery_id: int
     ) -> Optional[BaseSample]:
         """
         Retrieves a specific sample by ID.
@@ -230,28 +230,28 @@ class SampleService(ISampleService):
         Raises:
             NotFoundError: If sample doesn't exist
             RepositoryError: If database operation fails
-            
+
         Status: ✅ Implemented via TDD (2025-10-21)
         """
-        from src.modules.fermentation.src.repository_component.errors import EntityNotFoundError
-        
+        from src.modules.fermentation.src.repository_component.errors import (
+            EntityNotFoundError,
+        )
+
         try:
             # ADR-025 LIGHT: Pass winery_id for multi-tenant security
             sample = await self._sample_repo.get_sample_by_id(
                 sample_id=sample_id,
                 fermentation_id=fermentation_id,
-                winery_id=winery_id  # ← ADR-025: Required for access control
+                winery_id=winery_id,  # ← ADR-025: Required for access control
             )
             return sample
         except EntityNotFoundError:
             # Convert repository's EntityNotFoundError to service's None return
             # This matches the interface contract (returns Optional[BaseSample])
             return None
-    
+
     async def get_samples_by_fermentation(
-        self,
-        fermentation_id: int,
-        winery_id: int
+        self, fermentation_id: int, winery_id: int
     ) -> List[BaseSample]:
         """
         Retrieves all samples for a fermentation in chronological order.
@@ -271,51 +271,50 @@ class SampleService(ISampleService):
         Raises:
             NotFoundError: If fermentation doesn't exist
             RepositoryError: If database operation fails
-            
+
         Status: ✅ Implemented via TDD (2025-10-22)
         """
         from src.modules.fermentation.src.service_component.errors import NotFoundError
-        
+
         logger.debug(
             "fetching_samples_by_fermentation",
             fermentation_id=fermentation_id,
-            winery_id=winery_id
+            winery_id=winery_id,
         )
-        
+
         # Step 1: Verify fermentation exists and belongs to winery
         fermentation = await self._fermentation_repo.get_by_id(
-            fermentation_id=fermentation_id,
-            winery_id=winery_id
+            fermentation_id=fermentation_id, winery_id=winery_id
         )
-        
+
         if fermentation is None:
             logger.warning(
                 "fermentation_not_found_for_samples",
                 fermentation_id=fermentation_id,
-                winery_id=winery_id
+                winery_id=winery_id,
             )
             raise NotFoundError(
                 f"Fermentation {fermentation_id} not found or access denied"
             )
-        
+
         # Step 2: Get samples via repository (already ordered chronologically)
         samples = await self._sample_repo.get_samples_by_fermentation_id(
             fermentation_id=fermentation_id
         )
-        
+
         logger.info(
             "samples_retrieved_by_fermentation_service",
             fermentation_id=fermentation_id,
-            count=len(samples)
+            count=len(samples),
         )
-        
+
         return samples
-    
+
     async def get_latest_sample(
         self,
         fermentation_id: int,
         winery_id: int,
-        sample_type: Optional[SampleType] = None
+        sample_type: Optional[SampleType] = None,
     ) -> Optional[BaseSample]:
         """
         Retrieves the most recent sample (optionally filtered by type).
@@ -336,41 +335,35 @@ class SampleService(ISampleService):
         Raises:
             NotFoundError: If fermentation doesn't exist
             RepositoryError: If database operation fails
-            
+
         Status: ✅ Implemented via TDD (2025-10-22)
         """
         from src.modules.fermentation.src.service_component.errors import NotFoundError
-        
+
         # Step 1: Verify fermentation exists and belongs to winery
         fermentation = await self._fermentation_repo.get_by_id(
-            fermentation_id=fermentation_id,
-            winery_id=winery_id
+            fermentation_id=fermentation_id, winery_id=winery_id
         )
-        
+
         if fermentation is None:
             raise NotFoundError(
                 f"Fermentation {fermentation_id} not found or access denied"
             )
-        
+
         # Step 2: Get latest sample via repository (with optional type filter)
         if sample_type:
             latest_sample = await self._sample_repo.get_latest_sample_by_type(
-                fermentation_id=fermentation_id,
-                sample_type=sample_type
+                fermentation_id=fermentation_id, sample_type=sample_type
             )
         else:
             latest_sample = await self._sample_repo.get_latest_sample(
                 fermentation_id=fermentation_id
             )
-        
+
         return latest_sample
-    
+
     async def get_samples_in_timerange(
-        self,
-        fermentation_id: int,
-        winery_id: int,
-        start: datetime,
-        end: datetime
+        self, fermentation_id: int, winery_id: int, start: datetime, end: datetime
     ) -> List[BaseSample]:
         """
         Retrieves samples within a specific time range.
@@ -394,45 +387,39 @@ class SampleService(ISampleService):
             ValidationError: If time range is invalid (start >= end)
             NotFoundError: If fermentation doesn't exist
             RepositoryError: If database operation fails
-            
+
         Status: ✅ Implemented via TDD (2025-10-22)
         """
         from src.modules.fermentation.src.service_component.errors import (
             NotFoundError,
-            ValidationError as ServiceValidationError
+            ValidationError as ServiceValidationError,
         )
-        
+
         # Step 1: Validate time range
         if start >= end:
             raise ServiceValidationError(
                 f"Invalid time range: start ({start}) must be before end ({end})"
             )
-        
+
         # Step 2: Verify fermentation exists and belongs to winery
         fermentation = await self._fermentation_repo.get_by_id(
-            fermentation_id=fermentation_id,
-            winery_id=winery_id
+            fermentation_id=fermentation_id, winery_id=winery_id
         )
-        
+
         if fermentation is None:
             raise NotFoundError(
                 f"Fermentation {fermentation_id} not found or access denied"
             )
-        
+
         # Step 3: Get samples in timerange via repository
         samples = await self._sample_repo.get_samples_in_timerange(
-            fermentation_id=fermentation_id,
-            start_time=start,
-            end_time=end
+            fermentation_id=fermentation_id, start_time=start, end_time=end
         )
-        
+
         return samples
-    
+
     async def validate_sample_data(
-        self,
-        fermentation_id: int,
-        winery_id: int,
-        data: SampleCreate
+        self, fermentation_id: int, winery_id: int, data: SampleCreate
     ) -> ValidationResult:
         """
         Validates sample data before adding (dry-run).
@@ -453,36 +440,37 @@ class SampleService(ISampleService):
             ValidationResult: Validation result with errors/warnings
 
         Note: Does NOT add sample, only validates
-        
+
         Status: ✅ Implemented via TDD (2025-10-22)
         """
         from src.modules.fermentation.src.service_component.errors import NotFoundError
-        
+
         # Step 1: Verify fermentation exists and belongs to winery
         fermentation = await self._fermentation_repo.get_by_id(
             fermentation_id=fermentation_id,
-            winery_id=winery_id  # Enforce multi-tenancy
+            winery_id=winery_id,  # Enforce multi-tenancy
         )
-        
+
         if fermentation is None:
             raise NotFoundError(
                 f"Fermentation {fermentation_id} not found or access denied"
             )
-        
+
         # Step 2: Create sample entity for validation (dry-run)
         # Use user_id=0 as placeholder since we're only validating, not persisting
         sample = self._create_sample_entity(
             fermentation_id=fermentation_id,
             user_id=0,  # Placeholder for validation-only
-            data=data
+            data=data,
         )
-        
+
         # Step 3: Validate via orchestrator (does NOT persist)
-        validation_result = await self._validation_orchestrator.validate_sample_complete(
-            fermentation_id=fermentation_id,
-            new_sample=sample
+        validation_result = (
+            await self._validation_orchestrator.validate_sample_complete(
+                fermentation_id=fermentation_id, new_sample=sample
+            )
         )
-        
+
         return validation_result
 
     # ==================================================================================
@@ -490,10 +478,7 @@ class SampleService(ISampleService):
     # ==================================================================================
 
     async def delete_sample(
-        self,
-        sample_id: int,
-        fermentation_id: int,
-        winery_id: int
+        self, sample_id: int, fermentation_id: int, winery_id: int
     ) -> None:
         """
         Soft deletes a sample.
@@ -514,34 +499,31 @@ class SampleService(ISampleService):
         Raises:
             NotFoundError: If sample or fermentation doesn't exist
             RepositoryError: If database operation fails
-        
+
         Status: ✅ Implemented via TDD (Phase 4 - 2025-10-22)
         """
         from src.modules.fermentation.src.service_component.errors import NotFoundError
-        
+
         # Step 1: Verify fermentation exists and belongs to winery
         fermentation = await self._fermentation_repo.get_by_id(
-            fermentation_id=fermentation_id,
-            winery_id=winery_id
+            fermentation_id=fermentation_id, winery_id=winery_id
         )
-        
+
         if fermentation is None:
             raise NotFoundError(
                 f"Fermentation {fermentation_id} not found or access denied"
             )
-        
+
         # Step 2: Verify sample exists and belongs to fermentation
         # ADR-025 LIGHT: Pass winery_id for multi-tenant security
         sample = await self._sample_repo.get_sample_by_id(
             sample_id=sample_id,
             fermentation_id=fermentation_id,
-            winery_id=winery_id  # ← ADR-025: Required for access control
+            winery_id=winery_id,  # ← ADR-025: Required for access control
         )
-        
+
         if sample is None:
-            raise NotFoundError(
-                f"Sample {sample_id} not found or access denied"
-            )
-        
+            raise NotFoundError(f"Sample {sample_id} not found or access denied")
+
         # Step 3: Soft delete the sample
         await self._sample_repo.soft_delete_sample(sample_id=sample_id)

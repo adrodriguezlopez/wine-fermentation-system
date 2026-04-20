@@ -1,4 +1,5 @@
 """Response schemas (Pydantic models for outgoing data)"""
+
 from .fermentation_responses import (
     FermentationResponse,
 )

@@ -13,9 +13,13 @@ from typing import List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.fermentation.src.domain.entities.winemaker_action import WinemakerAction
+from src.modules.fermentation.src.domain.entities.winemaker_action import (
+    WinemakerAction,
+)
 from src.modules.fermentation.src.domain.enums.step_type import ActionOutcome
-from src.modules.fermentation.src.repository_component.action_repository import ActionRepository
+from src.modules.fermentation.src.repository_component.action_repository import (
+    ActionRepository,
+)
 from src.modules.fermentation.src.repository_component.protocol_alert_repository import (
     ProtocolAlertRepository,
 )

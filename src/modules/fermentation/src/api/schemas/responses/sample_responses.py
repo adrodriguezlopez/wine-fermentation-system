@@ -11,38 +11,44 @@ from pydantic import BaseModel, ConfigDict, Field
 class SampleResponse(BaseModel):
     """
     Response DTO for Sample (BaseSample) entity
-    
+
     Returns sample measurement data to API clients.
     """
-    
+
     model_config = ConfigDict(from_attributes=True)
-    
+
     # Primary key
     id: int = Field(..., description="Sample unique identifier")
-    
+
     # Sample context
     fermentation_id: int = Field(..., description="Associated fermentation ID")
-    sample_type: str = Field(..., description="Type of sample (glucose, ethanol, temperature, etc.)", max_length=50)
-    
+    sample_type: str = Field(
+        ...,
+        description="Type of sample (glucose, ethanol, temperature, etc.)",
+        max_length=50,
+    )
+
     # Measurement data
     value: float = Field(..., description="Measured value")
-    units: str = Field(..., description="Measurement units (g/L, °C, etc.)", max_length=20)
-    
+    units: str = Field(
+        ..., description="Measurement units (g/L, °C, etc.)", max_length=20
+    )
+
     # Timing
     recorded_at: datetime = Field(..., description="When the sample was taken")
-    
+
     # Audit fields
     created_at: datetime = Field(..., description="Record creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
-    
+
     @classmethod
     def from_entity(cls, sample: "BaseSample") -> "SampleResponse":
         """
         Convert BaseSample entity to response DTO
-        
+
         Args:
             sample: Domain entity from database
-            
+
         Returns:
             SampleResponse with data from entity
         """

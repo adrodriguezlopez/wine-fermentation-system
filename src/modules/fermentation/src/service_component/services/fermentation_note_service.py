@@ -11,7 +11,9 @@ Responsibilities:
 
 from typing import List, Optional
 
-from src.modules.fermentation.src.domain.entities.fermentation_note import FermentationNote
+from src.modules.fermentation.src.domain.entities.fermentation_note import (
+    FermentationNote,
+)
 from src.modules.fermentation.src.domain.dtos.fermentation_note_dtos import (
     FermentationNoteCreate,
     FermentationNoteUpdate,

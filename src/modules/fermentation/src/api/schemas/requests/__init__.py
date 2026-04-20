@@ -1,4 +1,5 @@
 """Request schemas (Pydantic models for incoming data)"""
+
 from .fermentation_requests import (
     FermentationCreateRequest,
     FermentationUpdateRequest,
