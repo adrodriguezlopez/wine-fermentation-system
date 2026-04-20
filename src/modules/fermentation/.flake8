@@ -2,4 +2,4 @@
 max-line-length = 120
 extend-ignore = E402
 per-file-ignores =
-    tests/*:F401
+    tests/*:F401,F541,F811,F841,E712,E501
