@@ -5,3 +5,4 @@ export interface TokenStorage {
   setRefreshToken(token: string): Promise<void>
   clear(): Promise<void>
 }
+export { CookieTokenStorage } from './cookie'
