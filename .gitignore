@@ -76,3 +76,6 @@ hist_test.txt
 # General pattern: any *.txt test-dump at root level
 /*_test*.txt
 /*test_*.txt
+
+# Node
+node_modules/
