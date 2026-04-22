@@ -6,8 +6,8 @@ export function createRecommendationApi(client: ApiClient) {
     get(id: string): Promise<RecommendationDto> {
       return client.analysis.get(`/api/v1/recommendations/${id}`).then(r => r.data)
     },
-    apply(id: string): Promise<RecommendationDto> {
-      return client.analysis.put(`/api/v1/recommendations/${id}/apply`).then(r => r.data)
+    apply(id: string, notes?: string): Promise<RecommendationDto> {
+      return client.analysis.put(`/api/v1/recommendations/${id}/apply`, { notes }).then(r => r.data)
     },
   }
 }

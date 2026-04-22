@@ -1,16 +1,15 @@
 import type { ApiClient } from './client'
-import type { StepCompletionDto } from '../types/protocol'
-import type { StepCompletionFormData } from '@wine/ui/schemas'
+import type { StepCompletionDto, StepCompletionListDto, CompletionCreateRequest } from '../types/protocol'
 
 export function createStepCompletionApi(client: ApiClient) {
   return {
-    complete(executionId: string, data: StepCompletionFormData): Promise<StepCompletionDto> {
+    complete(executionId: number, data: CompletionCreateRequest): Promise<StepCompletionDto> {
       return client.fermentation.post(`/api/v1/executions/${executionId}/complete`, data).then(r => r.data)
     },
-    list(executionId: string): Promise<StepCompletionDto[]> {
+    list(executionId: number): Promise<StepCompletionListDto> {
       return client.fermentation.get(`/api/v1/executions/${executionId}/completions`).then(r => r.data)
     },
-    get(id: string): Promise<StepCompletionDto> {
+    get(id: number): Promise<StepCompletionDto> {
       return client.fermentation.get(`/api/v1/completions/${id}`).then(r => r.data)
     },
   }

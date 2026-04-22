@@ -1,5 +1,5 @@
 import type { ApiClient } from './client'
-import type { FermentationDto, PaginatedResponse, FermentationStatisticsDto } from '../types/fermentation'
+import type { FermentationDto, PaginatedResponse, FermentationStatisticsDto, TimelineResponse } from '../types/fermentation'
 import type { CreateFermentationData, BlendFermentationData, UpdateFermentationData } from '@wine/ui/schemas'
 
 export function createFermentationApi(client: ApiClient) {
@@ -25,7 +25,7 @@ export function createFermentationApi(client: ApiClient) {
     getStatistics(id: number): Promise<FermentationStatisticsDto> {
       return client.fermentation.get(`/api/v1/fermentations/${id}/statistics`).then(r => r.data)
     },
-    getTimeline(id: number): Promise<unknown[]> {
+    getTimeline(id: number): Promise<TimelineResponse> {
       return client.fermentation.get(`/api/v1/fermentations/${id}/timeline`).then(r => r.data)
     },
   }

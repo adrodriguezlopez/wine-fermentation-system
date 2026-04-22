@@ -1,4 +1,5 @@
 import type { FermentationStatus } from '@wine/ui/constants'
+import type { SampleDto } from './sample'
 
 export interface FermentationDto {
   id: number
@@ -36,4 +37,12 @@ export interface FermentationStatisticsDto {
   sugar_drop: number | null
   avg_temperature: number | null
   avg_samples_per_day: number | null
+}
+
+export interface TimelineResponse {
+  fermentation: FermentationDto
+  samples: SampleDto[]
+  sample_count: number
+  first_sample_date: string | null
+  last_sample_date: string | null
 }
