@@ -6,8 +6,8 @@ export function makeUseAuth(client: ApiClient) {
   return function useAuth() {
     const queryClient = useQueryClient()
 
-    const login = useCallback(async (username: string, password: string) => {
-      await client.login(username, password)
+    const login = useCallback(async (email: string, password: string) => {
+      await client.login(email, password)
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] })
     }, [queryClient])
 

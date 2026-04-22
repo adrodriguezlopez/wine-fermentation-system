@@ -2,7 +2,7 @@ import type { AlertType, AlertStatus } from '@wine/ui/constants'
 
 export interface AlertDto {
   id: string
-  execution_id: string
+  execution_id: number
   alert_type: AlertType
   status: AlertStatus
   message: string

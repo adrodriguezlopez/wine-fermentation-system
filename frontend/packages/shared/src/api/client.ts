@@ -106,10 +106,10 @@ export class ApiClient {
     return instance
   }
 
-  async login(username: string, password: string): Promise<LoginResponseDto> {
+  async login(email: string, password: string): Promise<LoginResponseDto> {
     const response = await this.fermentation.post<LoginResponseDto>(
       '/api/v1/auth/login',
-      { username, password }
+      { email, password }
     )
     await this.tokenStorage.setAccessToken(response.data.access_token)
     await this.tokenStorage.setRefreshToken(response.data.refresh_token)

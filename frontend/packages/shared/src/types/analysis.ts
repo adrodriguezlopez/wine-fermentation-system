@@ -30,9 +30,23 @@ export interface RecommendationDto {
 }
 
 export interface AdvisoryDto {
-  id: string
-  fermentation_id: string
-  message: string
-  acknowledged: boolean
+  id: string                   // UUID
+  fermentation_id: string      // UUID
+  analysis_id: string          // UUID
+  execution_id: string | null  // UUID
+  advisory_type: string        // ACCELERATE_STEP | SKIP_STEP | ADD_STEP
+  target_step_type: string
+  risk_level: string           // CRITICAL | HIGH | MEDIUM | LOW
+  suggestion: string
+  reasoning: string
+  confidence: number           // 0-1
+  is_acknowledged: boolean
+  acknowledged_at: string | null
   created_at: string
+}
+
+export interface AdvisoryListDto {
+  items: AdvisoryDto[]
+  total: number
+  unacknowledged_count: number
 }

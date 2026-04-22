@@ -1,11 +1,11 @@
 import type { FermentationStatus } from '@wine/ui/constants'
 
 export interface FermentationDto {
-  id: string
-  winery_id: string
+  id: number
+  winery_id: number
   vintage_year: number
   yeast_strain: string
-  vessel_code: string
+  vessel_code: string | null
   input_mass_kg: number
   initial_sugar_brix: number
   initial_density: number | null
@@ -21,7 +21,7 @@ export interface PaginatedResponse<T> {
   total: number
   page: number
   size: number
-  pages: number
+  // removed: pages — backend does not serialize this field
 }
 
 export interface FermentationStatisticsDto {
