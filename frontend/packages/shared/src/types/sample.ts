@@ -7,7 +7,6 @@ export interface SampleDto {
   value: number
   units: string
   recorded_at: string
-  notes: string | null
   created_at: string
   updated_at: string
 }

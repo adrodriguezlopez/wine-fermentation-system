@@ -7,7 +7,7 @@ export function createFermentationApi(client: ApiClient) {
     list(params?: { page?: number; size?: number; status?: string }): Promise<PaginatedResponse<FermentationDto>> {
       return client.fermentation.get('/api/v1/fermentations', { params }).then(r => r.data)
     },
-    get(id: string): Promise<FermentationDto> {
+    get(id: number): Promise<FermentationDto> {
       return client.fermentation.get(`/api/v1/fermentations/${id}`).then(r => r.data)
     },
     create(data: CreateFermentationData): Promise<FermentationDto> {
@@ -16,16 +16,16 @@ export function createFermentationApi(client: ApiClient) {
     createBlend(data: BlendFermentationData): Promise<FermentationDto> {
       return client.fermentation.post('/api/v1/fermentations/blends', data).then(r => r.data)
     },
-    update(id: string, data: UpdateFermentationData): Promise<FermentationDto> {
+    update(id: number, data: UpdateFermentationData): Promise<FermentationDto> {
       return client.fermentation.patch(`/api/v1/fermentations/${id}`, data).then(r => r.data)
     },
-    complete(id: string): Promise<FermentationDto> {
+    complete(id: number): Promise<FermentationDto> {
       return client.fermentation.post(`/api/v1/fermentations/${id}/complete`).then(r => r.data)
     },
-    getStatistics(id: string): Promise<FermentationStatisticsDto> {
+    getStatistics(id: number): Promise<FermentationStatisticsDto> {
       return client.fermentation.get(`/api/v1/fermentations/${id}/statistics`).then(r => r.data)
     },
-    getTimeline(id: string): Promise<unknown[]> {
+    getTimeline(id: number): Promise<unknown[]> {
       return client.fermentation.get(`/api/v1/fermentations/${id}/timeline`).then(r => r.data)
     },
   }

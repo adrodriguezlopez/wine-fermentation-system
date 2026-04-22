@@ -1,15 +1,15 @@
 import type { ApiClient } from './client'
-import type { AlertDto } from '../types/alert'
+import type { AlertDto, AlertListResponse } from '../types/alert'
 
 export function createAlertApi(client: ApiClient) {
   return {
-    listForExecution(executionId: string): Promise<AlertDto[]> {
+    listForExecution(executionId: number): Promise<AlertListResponse> {
       return client.fermentation.get(`/api/v1/executions/${executionId}/alerts`).then(r => r.data)
     },
-    acknowledge(alertId: string): Promise<AlertDto> {
+    acknowledge(alertId: number): Promise<AlertDto> {
       return client.fermentation.post(`/api/v1/alerts/${alertId}/acknowledge`).then(r => r.data)
     },
-    dismiss(alertId: string): Promise<AlertDto> {
+    dismiss(alertId: number): Promise<AlertDto> {
       return client.fermentation.post(`/api/v1/alerts/${alertId}/dismiss`).then(r => r.data)
     },
   }

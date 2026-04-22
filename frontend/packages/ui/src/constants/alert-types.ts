@@ -5,7 +5,7 @@ export type AlertType =
   | 'EXECUTION_BEHIND_SCHEDULE'
   | 'CRITICAL_DEVIATION'
 
-export type AlertStatus = 'PENDING' | 'SENT' | 'DISMISSED'
+export type AlertStatus = 'PENDING' | 'SENT' | 'DISMISSED' | 'ACKNOWLEDGED'
 
 export const ALERT_TYPE_LABEL: Record<AlertType, string> = {
   STEP_OVERDUE: 'Step Overdue',
@@ -19,4 +19,5 @@ export const ALERT_STATUS_LABEL: Record<AlertStatus, string> = {
   PENDING: 'Pending',
   SENT: 'Sent',
   DISMISSED: 'Dismissed',
+  ACKNOWLEDGED: 'Acknowledged',
 }

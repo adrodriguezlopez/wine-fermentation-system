@@ -25,9 +25,15 @@ export interface PaginatedResponse<T> {
 }
 
 export interface FermentationStatisticsDto {
-  days_fermenting: number
-  current_density: number | null
-  temperature_current: number | null
-  density_drop_percent: number | null
-  estimated_alcohol: number | null
+  fermentation_id: number
+  status: string
+  start_date: string
+  duration_days: number | null
+  total_samples: number
+  samples_by_type: Record<string, number>
+  initial_sugar: number | null
+  latest_sugar: number | null
+  sugar_drop: number | null
+  avg_temperature: number | null
+  avg_samples_per_day: number | null
 }
