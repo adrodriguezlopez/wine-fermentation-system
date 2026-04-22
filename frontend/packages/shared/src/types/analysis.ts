@@ -1,6 +1,7 @@
 export interface DensityReadingRequest {
+  /** ISO datetime string (UTC) — maps to backend `timestamp` field */
+  timestamp: string
   density: number
-  recorded_at: string
 }
 
 export interface AnalysisCreateRequest {

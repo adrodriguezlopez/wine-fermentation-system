@@ -1,6 +1,5 @@
 import type { ApiClient } from './client'
 import type { AnalysisDto, AnalysisSummaryDto, AnalysisCreateRequest } from '../types/analysis'
-import type { PaginatedResponse } from '../types/fermentation'
 
 export function createAnalysisApi(client: ApiClient) {
   return {
@@ -10,8 +9,11 @@ export function createAnalysisApi(client: ApiClient) {
     get(id: string): Promise<AnalysisDto> {
       return client.analysis.get(`/api/v1/analyses/${id}`).then(r => r.data)
     },
-    listForFermentation(fermentationId: string): Promise<PaginatedResponse<AnalysisSummaryDto>> {
-      return client.analysis.get(`/api/v1/analyses/fermentation/${fermentationId}`).then(r => r.data)
+    /** Returns plain array (most recent first) — backend returns List[AnalysisSummaryResponse], not paginated */
+    listForFermentation(fermentationId: string, limit = 10): Promise<AnalysisSummaryDto[]> {
+      return client.analysis
+        .get(`/api/v1/analyses/fermentation/${fermentationId}`, { params: { limit } })
+        .then(r => r.data)
     },
   }
 }

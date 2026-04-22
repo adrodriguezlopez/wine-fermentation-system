@@ -12,7 +12,6 @@ export interface FermentationDto {
   initial_density: number | null
   start_date: string
   status: FermentationStatus
-  notes: string | null
   created_at: string
   updated_at: string
 }
