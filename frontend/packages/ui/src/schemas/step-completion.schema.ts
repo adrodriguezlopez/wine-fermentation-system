@@ -17,10 +17,12 @@ export const StepCompletionSchema = z
     days_late: z.number().int().min(0).default(0),
     skip_reason: z
       .enum([
-        'EQUIPMENT_MALFUNCTION',
-        'WEATHER_CONDITIONS',
-        'QUALITY_ISSUE',
-        'RESOURCE_UNAVAILABLE',
+        'EQUIPMENT_FAILURE',
+        'CONDITION_NOT_MET',
+        'FERMENTATION_ENDED',
+        'FERMENTATION_FAILED',
+        'WINEMAKER_DECISION',
+        'REPLACED_BY_ALTERNATIVE',
         'OTHER',
       ])
       .optional(),
