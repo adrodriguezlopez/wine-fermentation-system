@@ -2,6 +2,11 @@ import type { ApiClient } from './client'
 import type { ProtocolDto, ProtocolListDto } from '../types/protocol'
 import type { ProtocolFormData } from '@wine/ui/schemas'
 
+export interface ProtocolCloneRequest {
+  new_version: string
+  new_protocol_name?: string
+}
+
 export function createProtocolApi(client: ApiClient) {
   return {
     list(): Promise<ProtocolListDto> {
@@ -19,8 +24,10 @@ export function createProtocolApi(client: ApiClient) {
     delete(id: number): Promise<void> {
       return client.fermentation.delete(`/api/v1/protocols/${id}`).then(() => undefined)
     },
-    clone(id: number): Promise<ProtocolDto> {
-      return client.fermentation.post(`/api/v1/protocols/${id}/clone`).then(r => r.data)
+    /** Backend requires new_version (semver X.Y) and optional new_protocol_name */
+    clone(id: number, data: ProtocolCloneRequest): Promise<ProtocolDto> {
+      return client.fermentation.post(`/api/v1/protocols/${id}/clone`, data).then(r => r.data)
     },
   }
 }
+

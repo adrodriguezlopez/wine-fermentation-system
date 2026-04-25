@@ -74,6 +74,11 @@ export class ApiClient {
 
           try {
             const refreshToken = await this.tokenStorage.getRefreshToken()
+            // Guard: if refresh token is missing (cleared cookies, expired storage),
+            // treat it as an expired session immediately instead of sending null to the backend.
+            if (!refreshToken) {
+              throw new AuthExpiredError()
+            }
             const response = await axios.post<RefreshResponseDto>(
               `${this.fermentation.defaults.baseURL}/api/v1/auth/refresh`,
               { refresh_token: refreshToken }
