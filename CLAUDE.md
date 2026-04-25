@@ -2,25 +2,24 @@
 
 ## Project Skills
 
-This project has custom skills in `.github/skills/`. The `Skill` tool **cannot** load them
-(it only sees installed plugins and `.claude/` skills). When a skill is needed, read it directly
-with the `Read` tool and follow its contents.
+Skills live in `.claude/skills/` and are loaded automatically by the `Skill` tool.
+Use the `Skill` tool (not `Read`) for all skills below.
 
-| Skill name | Path |
+| Skill name | When to use |
 |---|---|
-| `wine-adr` | `.github/skills/wine-adr/SKILL.md` |
-| `wine-backend-dev` | `.github/skills/wine-backend-dev/SKILL.md` |
-| `wine-frontend-context` | `.github/skills/wine-frontend-context/SKILL.md` |
-| `frontend-design` | `.github/skills/frontend-design/SKILL.md` |
-| `nextjs-app-router` | `.github/skills/nextjs-app-router/SKILL.md` |
-| `tanstack-query-v5` | `.github/skills/tanstack-query-v5/SKILL.md` |
-| `shadcn-ui` | `.github/skills/shadcn-ui/SKILL.md` |
-| `turborepo-monorepo` | `.github/skills/turborepo-monorepo/SKILL.md` |
-| `skill-creator` | `.github/skills/skill-creator/SKILL.md` |
+| `wine-adr` | Any architectural decision |
+| `wine-backend-dev` | Any backend feature or bugfix |
+| `wine-frontend-context` | Any frontend feature, UI component, or API integration |
+| `frontend-design` | UI/UX design decisions |
+| `nextjs-app-router` | Next.js App Router patterns |
+| `tanstack-query-v5` | TanStack Query / React Query usage |
+| `shadcn-ui` | shadcn/ui components |
+| `turborepo-monorepo` | Turborepo / monorepo configuration |
+| `skill-creator` | Creating or editing skills |
 
-**Rule:** Whenever a task calls for one of the above skills, READ the SKILL.md before doing
-any work. Treat the file contents as binding instructions for that task, exactly as if the
-`Skill` tool had loaded it.
+**Additional rule for frontend DTO/type work:** After invoking `wine-frontend-context`,
+also read the actual backend `*_responses.py` and `*_schemas.py` files before writing
+TypeScript types. Never trust plan-provided types without verifying against the real backend source.
 
 ## Project Overview
 
@@ -30,7 +29,3 @@ Wine Fermentation System — Python FastAPI backend (4 microservices) + Next.js 
 - **Frontend:** `frontend/` — Turborepo monorepo with Next.js 14 App Router
 - **Architecture context:** `.ai-context/project-context.md`
 - **ADR index:** `.ai-context/adr/ADR-INDEX.md`
-
-For any architectural decision, read `.github/skills/wine-adr/SKILL.md` before writing an ADR.
-For any backend feature, read `.github/skills/wine-backend-dev/SKILL.md` before writing code.
-For any frontend feature, read `.github/skills/wine-frontend-context/SKILL.md` before writing code.

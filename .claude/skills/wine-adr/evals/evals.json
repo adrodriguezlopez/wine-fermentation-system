@@ -1,0 +1,46 @@
+{
+  "skill_name": "wine-adr",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to add a FermentationNote entity to the fermentation module — notes that winemakers attach to fermentations with free text and a timestamp. Should I write an ADR first, and if so, write it.",
+      "expected_output": "Checks ADR-INDEX for existing related ADRs, determines correct next number, writes a complete ADR using the template, updates ADR-INDEX.md, links from fermentation module-context.md, and stops without implementing.",
+      "files": [],
+      "assertions": [
+        "Reads ADR-INDEX.md before assigning a number — does not invent one",
+        "Writes ADR file at correct path /.ai-context/adr/ADR-NNN-*.md",
+        "ADR covers multi-tenancy scoping for the new entity",
+        "Updates ADR-INDEX.md with the new entry",
+        "Links the ADR from the fermentation module-context.md",
+        "Stops after writing the ADR — does not start implementing"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "We want to add a caching layer to the analysis engine so we don't re-run anomaly detection on the same sample data. Write the ADR.",
+      "expected_output": "Checks ADR-INDEX first and finds that an ADR for this already exists (ADR-042), reports this, and does NOT create a duplicate. If no ADR exists, writes one with the correct number.",
+      "files": [],
+      "assertions": [
+        "Reads ADR-INDEX.md before creating anything",
+        "Detects that a related ADR already exists and avoids duplication",
+        "References the existing ADR by number and explains why no new one is needed",
+        "Does not create a duplicate ADR file",
+        "Tells the developer what the next step is"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We want to add a WinerySettings entity to store per-winery configuration like notification preferences, default protocols, and alert thresholds. Should we write an ADR first, and if so write it.",
+      "expected_output": "Determines ADR is required (new entity, new schema, cross-module impact). Reads ADR-INDEX for next number. Writes ADR covering storage choice, multi-tenancy, cross-module references. Updates ADR-INDEX.md. Links from winery module-context.md. Stops.",
+      "files": [],
+      "assertions": [
+        "Reads ADR-INDEX.md before assigning a number",
+        "Identifies cross-module impact (touches notifications ADR-040 and/or analysis ADR-020)",
+        "ADR covers the storage strategy decision (separate table vs columns vs JSON)",
+        "Updates ADR-INDEX.md with the new entry",
+        "Links the ADR from the winery module-context.md",
+        "Stops after writing the ADR — does not start implementing"
+      ]
+    }
+  ]
+}

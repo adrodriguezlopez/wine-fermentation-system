@@ -1,4 +1,17 @@
 {
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"MANDATORY BEFORE ANY WORK IN THIS PROJECT:\\n\\nProject skills are now in .claude/skills/ — use the Skill tool (NOT Read) to load them.\\n\\nSkills required by task type:\\n- Any frontend work: Skill tool → wine-frontend-context\\n- Any frontend DTO/type work: ALSO read the actual backend *_responses.py and *_schemas.py files before writing TypeScript types. NEVER trust plan-provided types without verifying against the real backend source.\\n- Any backend work: Skill tool → wine-backend-dev\\n- TanStack Query usage: Skill tool → tanstack-query-v5\\n- Architecture decisions: Skill tool → wine-adr\\n- shadcn/ui components: Skill tool → shadcn-ui\\n- Next.js App Router: Skill tool → nextjs-app-router\\n\\nFull skill table is in CLAUDE.md.\"}}'",
+            "statusMessage": "Loading project skill requirements..."
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(powershell -Command \"cd 'C:\\\\dev\\\\wine-fermentation-system'; docker compose -f docker-compose.inttest.yml up --wait 2>&1 | tail -15\")",
