@@ -10,8 +10,18 @@ export function createActionApi(client: ApiClient) {
     listForFermentation(fermentationId: number, params?: { skip?: number; limit?: number }): Promise<ActionListResponse> {
       return client.fermentation.get(`/api/v1/fermentations/${fermentationId}/actions`, { params }).then(r => r.data)
     },
+    listForExecution(executionId: number, params?: { skip?: number; limit?: number }): Promise<ActionListResponse> {
+      return client.fermentation.get(`/api/v1/executions/${executionId}/actions`, { params }).then(r => r.data)
+    },
+    get(id: number): Promise<ActionDto> {
+      return client.fermentation.get(`/api/v1/actions/${id}`).then(r => r.data)
+    },
     updateOutcome(id: number, data: UpdateActionOutcomeData): Promise<ActionDto> {
       return client.fermentation.patch(`/api/v1/actions/${id}/outcome`, data).then(r => r.data)
     },
+    delete(id: number): Promise<void> {
+      return client.fermentation.delete(`/api/v1/actions/${id}`).then(() => undefined)
+    },
   }
 }
+
