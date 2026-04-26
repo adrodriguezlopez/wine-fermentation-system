@@ -144,13 +144,4 @@ apps/mobile (future) ──────────────┤──► pack
 ---
 
 ## Status
-Implemented — 2026-04-26
-
-**Foundation implemented (Iterations 1–3):**
-- Turborepo workspace with `packages/ui`, `packages/shared`, `apps/web` scaffolded and building
-- `packages/ui`: Zod schemas, formatters, constants — all tested, zero React confirmed
-- `packages/shared`: `ApiClient` with 401 auto-refresh + `refreshSubscribers` queue, `AuthExpiredError`, `CookieTokenStorage`, `makeUseAuth`, `makeUseCurrentUser`, `usePolling`, `useRole`, `SyncQueue`
-- `apps/web`: Shadcn/ui wine theme (`--primary: 349 69% 32%`), login page, `(auth)` + `(dashboard)` route groups, `QueryProvider`, `AuthProvider`, Zustand auth store, `AdminLayout` role guard (WINEMAKER → `/403`), `Sidebar`, `Topbar`, dev proxy rewrites
-- All TDD tests passing: 7 in `apps/web`, full suite in `packages/shared` and `packages/ui`
-
-**Pending (next iterations):** Actual screen content for all dashboard routes; `apps/mobile` (Expo) — after web screens complete.
+Proposed

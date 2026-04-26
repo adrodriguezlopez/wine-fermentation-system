@@ -90,31 +90,7 @@ src/app/
 
 ## Implementation status
 
-**Status**: ✅ FOUNDATION COMPLETE — Iteration 3 (2026-04-19)
-
-**Delivered in foundation (Iteration 3):**
-- Turborepo workspace scaffold: `apps/web` with Next.js 14 App Router, Tailwind CSS, Shadcn/ui wine theme (`--primary: 349 69% 32%`), Vitest + RTL + MSW
-- `src/lib/api-client.ts` — `ApiClient` singleton with `CookieTokenStorage` and `baseURLs` for all 4 services
-- `src/stores/auth-store.ts` — Zustand store (`user: UserDto | null`, `setUser`, `clearUser`)
-- `src/providers/query-provider.tsx` — stable `QueryClient` via `useState`
-- `src/providers/auth-provider.tsx` — syncs `makeUseCurrentUser` result to auth store, redirects to `/login` on error
-- Route group layouts: `(auth)/layout.tsx` (passthrough), `(dashboard)/layout.tsx` (wraps `AuthProvider` + `Sidebar` + `Topbar`)
-- `src/app/(auth)/login/page.tsx` — React Hook Form + Zod, calls `login(email, password)`, `isSubmitting` state
-- `src/components/layout/sidebar.tsx` — role-based nav (ADMIN sees admin section, WINEMAKER does not)
-- `src/components/layout/topbar.tsx` — user display + logout
-- `src/components/layout/admin-layout.tsx` — role guard, redirects WINEMAKER from `/admin/*` to `/403`
-- `src/app/(dashboard)/dashboard/page.tsx` — placeholder
-- `src/app/403/page.tsx` — access denied page
-- `src/app/page.tsx` — root redirect to `/dashboard`
-- `next.config.ts` — dev proxy rewrites to ports 8000–8003
-- `.env.local` / `.env.example` — `NEXT_PUBLIC_*_API_URL` vars
-
-**Not yet implemented (next iterations):**
-- Actual screen content: fermentation list/detail, protocols, fruit origin, admin/wineries
-- TanStack Query hooks for each domain resource
-- MSW handlers for integration tests
-- Recharts density chart component
-- Framer Motion animations
+**Status**: 🔲 NOT STARTED — Phase 3 of FRONTEND-PLAN.md
 
 ## Component contexts
 

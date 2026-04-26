@@ -52,6 +52,4 @@ The `frontend/` directory (introduced in ADR-045) is treated as a first-class mo
 ---
 
 ## Status
-Implemented — 2026-04-26
-
-`frontend/.ai-context/module-context.md` created. File documents the Turborepo workspace structure, technology stack, architectural constraints, governing ADRs, and per-module context file links.
+Proposed

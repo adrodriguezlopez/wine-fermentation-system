@@ -44,19 +44,7 @@
 
 ## Implementation status
 
-**Status**: ✅ FOUNDATION COMPLETE — Iteration 2 (2026-04-19)
-
-**Delivered in foundation (Iteration 2):**
-- `src/types/` — TypeScript DTO interfaces: `UserDto`, `UserRole`, `FermentationDto`, `SampleDto`, `ProtocolDto`, `AlertDto`, `VineyardDto`, `HarvestLotDto`, `AnalysisDto`, `RecommendationDto`, `AdvisoryDto`, and all related create/update request types
-- `src/storage/` — `TokenStorage` interface + `CookieTokenStorage` (js-cookie) + `SecureStoreTokenStorage` (Expo, future)
-- `src/api/` — `ApiClient` class with Axios instances for all 4 services, Bearer token injection, 401 auto-refresh with `refreshSubscribers` queue, `AuthExpiredError`; typed API function factories per domain
-- `src/hooks/` — `makeUseAuth(client)`, `makeUseCurrentUser(client)`, `useRole()`, `usePolling(queryKey, options)`
-- `src/sync/` — `SyncQueue` with AsyncStorage persistence and on-reconnect flush (mobile)
-- Barrel exports via `src/index.ts`
-
-**Not yet used in full:**
-- `SyncQueue` — not yet exercised by any app (mobile not implemented)
-- `SecureStoreTokenStorage` — wired but not used until mobile app is built
+**Status**: 🔲 NOT STARTED — Phase 1 of FRONTEND-PLAN.md
 
 ## Component contexts
 
