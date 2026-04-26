@@ -33,7 +33,14 @@ Without this package, `SampleSchema` would be duplicated in `apps/web` and `apps
 
 ## Implementation status
 
-**Status**: 🔲 NOT STARTED — Phase 1 of FRONTEND-PLAN.md
+**Status**: ✅ FOUNDATION COMPLETE — Iteration 1 (2026-04-19)
+
+**Delivered in foundation (Iteration 1):**
+- `src/schemas/` — Zod v3 schemas: `CreateFermentationSchema`, `CreateSampleSchema`, `CreateProtocolSchema`, `CreateVineyardSchema`, `CreateHarvestLotSchema`, `LoginSchema`, and matching update schemas
+- `src/formatters/` — pure functions: `formatDensity`, `formatBrix`, `formatTemperature`, `formatDays`, `formatDeviationScore`, `formatDate`, `formatRelativeDate`
+- `src/constants/` — display maps: `FERMENTATION_STATUS_LABEL`, `FERMENTATION_STATUS_COLOR`, `SAMPLE_TYPE_LABEL`, `ALERT_SEVERITY_COLOR`, `ROLE_LABEL`
+- Barrel exports via `src/index.ts`
+- All tests run in Node environment (no jsdom needed)
 
 ## Component contexts
 
