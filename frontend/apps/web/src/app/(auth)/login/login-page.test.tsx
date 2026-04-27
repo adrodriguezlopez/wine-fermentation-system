@@ -4,10 +4,13 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import LoginPage from './page'
 
+vi.mock('@wine/shared', () => ({
+  makeUseAuth: () => () => ({ login: vi.fn() }),
+  makeUseCurrentUser: () => () => ({ data: null, isError: false }),
+}))
+
 vi.mock('@/lib/api-client', () => ({
-  apiClient: {
-    auth: { login: vi.fn(), refresh: vi.fn(), me: vi.fn() },
-  },
+  apiClient: {},
 }))
 
 function wrapper({ children }: { children: React.ReactNode }) {
