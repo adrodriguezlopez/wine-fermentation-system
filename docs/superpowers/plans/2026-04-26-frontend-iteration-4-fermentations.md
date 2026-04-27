@@ -603,6 +603,16 @@ On submit: `useRecordAction()` → invalidates actions list.
 
 ---
 
+## Next planning
+
+After Iteration 4 is merged, the next iteration plans to write are:
+
+- **Iteration 5 — Protocols + Fruit Origin screens** (`/protocols`, `/protocols/new`, `/protocols/[id]`, `/fruit-origin`, `/fruit-origin/vineyards/[id]`, `/fruit-origin/vineyards/new`)
+- **Iteration 6 — Admin screens** (`/admin/wineries`, `/admin/wineries/new`, `/admin/wineries/[id]`) — ADMIN role only
+- **Iteration 7 — apps/mobile** (Expo SDK 52 + Expo Router) — field winemaker experience, offline support via SyncQueue
+
+---
+
 ## Final checks
 
 - [ ] `pnpm vitest run` in `apps/web` — all tests pass, no skipped
