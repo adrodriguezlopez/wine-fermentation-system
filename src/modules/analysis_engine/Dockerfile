@@ -14,7 +14,7 @@ COPY shared/ ./src/shared/
 COPY modules/analysis_engine/poetry.lock modules/analysis_engine/pyproject.toml ./src/modules/analysis_engine/
 
 WORKDIR /app/src/modules/analysis_engine
-RUN poetry install --no-root --no-interaction --without dev
+RUN poetry install --no-root --no-interaction --without dev && pip install "uvicorn[standard]>=0.23.2"
 
 WORKDIR /app
 COPY modules/analysis_engine/src/ ./src/modules/analysis_engine/src/
