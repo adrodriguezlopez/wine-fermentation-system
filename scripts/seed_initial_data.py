@@ -187,7 +187,8 @@ async def create_admin_user(config: Dict[str, Any], winery_id: int, session: Asy
         full_name=user_config.get('full_name', 'System Administrator'),
         winery_id=winery_id,
         role=UserRole.ADMIN.value,  # Use enum value
-        is_active=True
+        is_active=True,
+        is_verified=True
     )
     
     session.add(user)

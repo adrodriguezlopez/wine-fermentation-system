@@ -7,10 +7,17 @@ WORKDIR /app
 # Disable Poetry virtualenvs (we're already inside a container)
 RUN poetry config virtualenvs.create false
 
-COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-root --no-interaction --without dev
+# Mirror the full src/ tree so that:
+#   - pyproject.toml path dep "../../shared" → /app/src/modules/winery/../../shared = /app/src/shared ✓
+#   - runtime imports src.modules.winery.* and src.shared.* both resolve under PYTHONPATH=/app ✓
+COPY shared/ ./src/shared/
+COPY modules/winery/poetry.lock modules/winery/pyproject.toml ./src/modules/winery/
 
-COPY src/ ./src/
+WORKDIR /app/src/modules/winery
+RUN poetry install --no-root --no-interaction --without dev && pip install "uvicorn[standard]>=0.23.2"
+
+WORKDIR /app
+COPY modules/winery/src/ ./src/modules/winery/src/
 ENV PYTHONPATH=/app
 
 RUN useradd -m appuser

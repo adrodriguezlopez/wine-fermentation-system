@@ -4,12 +4,20 @@ RUN pip install --upgrade pip && pip install poetry==1.8.3
 
 WORKDIR /app
 
+# Disable Poetry virtualenvs (we're already inside a container)
 RUN poetry config virtualenvs.create false
 
-COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-root --no-interaction --without dev
+# Mirror the full src/ tree so that:
+#   - pyproject.toml path dep "../../shared" → /app/src/modules/fruit_origin/../../shared = /app/src/shared ✓
+#   - runtime imports src.modules.fruit_origin.* and src.shared.* both resolve under PYTHONPATH=/app ✓
+COPY shared/ ./src/shared/
+COPY modules/fruit_origin/poetry.lock modules/fruit_origin/pyproject.toml ./src/modules/fruit_origin/
 
-COPY src/ ./src/
+WORKDIR /app/src/modules/fruit_origin
+RUN poetry install --no-root --no-interaction --without dev && pip install "uvicorn[standard]>=0.23.2"
+
+WORKDIR /app
+COPY modules/fruit_origin/src/ ./src/modules/fruit_origin/src/
 ENV PYTHONPATH=/app
 
 RUN useradd -m appuser

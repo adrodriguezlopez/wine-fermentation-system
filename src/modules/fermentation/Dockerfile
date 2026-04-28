@@ -4,16 +4,24 @@ RUN pip install --upgrade pip && pip install poetry==1.8.3
 
 WORKDIR /app
 
-# Desactiva virtualenvs de Poetry
+# Disable Poetry virtualenvs (we're already inside a container)
 RUN poetry config virtualenvs.create false
 
-COPY poetry.lock pyproject.toml ./
+# Mirror the full src/ tree so that:
+#   - pyproject.toml path dep "../../shared" → /app/src/modules/fermentation/../../shared = /app/src/shared ✓
+#   - runtime imports src.modules.fermentation.* and src.shared.* both resolve under PYTHONPATH=/app ✓
+COPY shared/ ./src/shared/
+COPY modules/fermentation/poetry.lock modules/fermentation/pyproject.toml ./src/modules/fermentation/
+
+WORKDIR /app/src/modules/fermentation
 RUN poetry install --no-root --no-interaction
 
-COPY src/ ./src/
+WORKDIR /app
+COPY modules/fermentation/src/ ./src/modules/fermentation/src/
 ENV PYTHONPATH=/app
 
 RUN useradd -m appuser
 USER appuser
 
+EXPOSE 8000
 CMD ["uvicorn", "src.modules.fermentation.src.main:app", "--host", "0.0.0.0", "--port", "8000"]
