@@ -14,7 +14,7 @@ COPY shared/ ./src/shared/
 COPY modules/fruit_origin/poetry.lock modules/fruit_origin/pyproject.toml ./src/modules/fruit_origin/
 
 WORKDIR /app/src/modules/fruit_origin
-RUN poetry install --no-root --no-interaction --without dev
+RUN poetry install --no-root --no-interaction --without dev && pip install "uvicorn[standard]>=0.23.2"
 
 WORKDIR /app
 COPY modules/fruit_origin/src/ ./src/modules/fruit_origin/src/

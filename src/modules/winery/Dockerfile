@@ -14,7 +14,7 @@ COPY shared/ ./src/shared/
 COPY modules/winery/poetry.lock modules/winery/pyproject.toml ./src/modules/winery/
 
 WORKDIR /app/src/modules/winery
-RUN poetry install --no-root --no-interaction --without dev
+RUN poetry install --no-root --no-interaction --without dev && pip install "uvicorn[standard]>=0.23.2"
 
 WORKDIR /app
 COPY modules/winery/src/ ./src/modules/winery/src/
