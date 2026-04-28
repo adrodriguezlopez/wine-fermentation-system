@@ -81,9 +81,13 @@ export function useRecordAction() {
 }
 
 export function useUpdateActionOutcome() {
+  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ actionId, data }: { actionId: number; data: Record<string, unknown> }) =>
+    mutationFn: ({ actionId, data }: { actionId: number; fermentationId: number; data: Record<string, unknown> }) =>
       apiClient.fermentation.patch(`/actions/${actionId}/outcome`, data).then(r => r.data),
+    onSuccess: (_, { fermentationId }) => {
+      queryClient.invalidateQueries({ queryKey: ['fermentation', fermentationId, 'actions'] })
+    },
   })
 }
 
