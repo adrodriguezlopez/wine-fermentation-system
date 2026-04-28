@@ -17,7 +17,15 @@ const baseFermentation = {
 }
 
 const fermentation1 = { ...baseFermentation, id: 1 }
-const fermentation2 = { ...baseFermentation, id: 2, vessel_code: 'VAT-02' }
+const fermentation2 = {
+  ...baseFermentation,
+  id: 2,
+  vessel_code: 'VAT-02',
+  vintage_year: 2022,
+  yeast_strain: 'RC-212',
+  initial_sugar_brix: 22.0,
+  initial_density: 1.092,
+}
 
 const sampleDensity = {
   id: 1,
@@ -195,31 +203,17 @@ const statisticsDto = {
   avg_samples_per_day: 3,
 }
 
-export const fermentationHandlers = [
-  // GET /api/fermentation/fermentations
-  http.get('/api/fermentation/fermentations', () => {
-    return HttpResponse.json({
-      items: [fermentation1, fermentation2],
-      total: 2,
-      page: 1,
-      size: 20,
-    })
-  }),
+const FIXED_TIMESTAMP = '2024-06-15T14:30:00.000Z'
 
-  // GET /api/fermentation/fermentations/:id
-  http.get('/api/fermentation/fermentations/:id', ({ params }) => {
-    const id = Number(params.id)
-    return HttpResponse.json({ ...fermentation1, id, execution_id: 1 })
+export const fermentationHandlers = [
+  // GET /api/fermentation/fermentations/:id/samples/latest  (most specific first)
+  http.get('/api/fermentation/fermentations/:id/samples/latest', () => {
+    return HttpResponse.json(sampleDensity)
   }),
 
   // GET /api/fermentation/fermentations/:id/samples
   http.get('/api/fermentation/fermentations/:id/samples', () => {
     return HttpResponse.json([sampleDensity, sampleTemperature, sampleSugar])
-  }),
-
-  // GET /api/fermentation/fermentations/:id/samples/latest
-  http.get('/api/fermentation/fermentations/:id/samples/latest', () => {
-    return HttpResponse.json(sampleDensity)
   }),
 
   // POST /api/fermentation/fermentations/:id/samples
@@ -245,10 +239,33 @@ export const fermentationHandlers = [
     )
   }),
 
-  // PATCH /api/fermentation/actions/:id/outcome
-  http.patch('/api/fermentation/actions/:id/outcome', async ({ params, request }) => {
-    const body = await request.json() as Record<string, unknown>
-    return HttpResponse.json({ ...actionDto, id: Number(params.id), ...body })
+  // GET /api/fermentation/fermentations/:id/statistics
+  http.get('/api/fermentation/fermentations/:id/statistics', ({ params }) => {
+    return HttpResponse.json({ ...statisticsDto, fermentation_id: Number(params.id) })
+  }),
+
+  // POST /api/fermentation/fermentations/:id/execute
+  http.post('/api/fermentation/fermentations/:id/execute', ({ params }) => {
+    return HttpResponse.json(
+      { ...executionDto, fermentation_id: Number(params.id) },
+      { status: 201 }
+    )
+  }),
+
+  // GET /api/fermentation/fermentations/:id
+  http.get('/api/fermentation/fermentations/:id', ({ params }) => {
+    const id = Number(params.id)
+    return HttpResponse.json({ ...fermentation1, id, execution_id: 1 })
+  }),
+
+  // GET /api/fermentation/fermentations
+  http.get('/api/fermentation/fermentations', () => {
+    return HttpResponse.json({
+      items: [fermentation1, fermentation2],
+      total: 2,
+      page: 1,
+      size: 20,
+    })
   }),
 
   // POST /api/fermentation/fermentations
@@ -260,45 +277,15 @@ export const fermentationHandlers = [
     )
   }),
 
-  // GET /api/fermentation/executions/:id
-  http.get('/api/fermentation/executions/:id', ({ params }) => {
-    return HttpResponse.json({ ...executionDto, id: Number(params.id) })
+  // PATCH /api/fermentation/actions/:id/outcome
+  http.patch('/api/fermentation/actions/:id/outcome', async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({ ...actionDto, id: Number(params.id), ...body })
   }),
 
   // GET /api/fermentation/executions/:id/alerts
   http.get('/api/fermentation/executions/:id/alerts', () => {
     return HttpResponse.json({ items: [alertDto], total: 1, pending_count: 1 })
-  }),
-
-  // POST /api/fermentation/alerts/:id/acknowledge
-  http.post('/api/fermentation/alerts/:id/acknowledge', ({ params }) => {
-    return HttpResponse.json({
-      ...alertDto,
-      id: Number(params.id),
-      status: 'ACKNOWLEDGED',
-      acknowledged_at: new Date().toISOString(),
-    })
-  }),
-
-  // POST /api/fermentation/alerts/:id/dismiss
-  http.post('/api/fermentation/alerts/:id/dismiss', ({ params }) => {
-    return HttpResponse.json({
-      ...alertDto,
-      id: Number(params.id),
-      status: 'DISMISSED',
-      dismissed_at: new Date().toISOString(),
-    })
-  }),
-
-  // GET /api/fermentation/protocols
-  http.get('/api/fermentation/protocols', () => {
-    return HttpResponse.json({
-      items: [protocolDto1, protocolDto2],
-      total_count: 2,
-      page: 1,
-      page_size: 20,
-      total_pages: 1,
-    })
   }),
 
   // GET /api/fermentation/executions/:id/completions
@@ -315,20 +302,43 @@ export const fermentationHandlers = [
     ])
   }),
 
-  // POST /api/fermentation/fermentations/:id/execute
-  http.post('/api/fermentation/fermentations/:id/execute', ({ params }) => {
-    return HttpResponse.json(
-      { ...executionDto, fermentation_id: Number(params.id) },
-      { status: 201 }
-    )
+  // GET /api/fermentation/executions/:id
+  http.get('/api/fermentation/executions/:id', ({ params }) => {
+    return HttpResponse.json({ ...executionDto, id: Number(params.id) })
   }),
 
-  // GET /api/fermentation/fermentations/:id/statistics
-  http.get('/api/fermentation/fermentations/:id/statistics', ({ params }) => {
-    return HttpResponse.json({ ...statisticsDto, fermentation_id: Number(params.id) })
+  // POST /api/fermentation/alerts/:id/acknowledge
+  http.post('/api/fermentation/alerts/:id/acknowledge', ({ params }) => {
+    return HttpResponse.json({
+      ...alertDto,
+      id: Number(params.id),
+      status: 'ACKNOWLEDGED',
+      acknowledged_at: FIXED_TIMESTAMP,
+    })
   }),
 
-  // GET /api/analysis/analyses/fermentation/:id
+  // POST /api/fermentation/alerts/:id/dismiss
+  http.post('/api/fermentation/alerts/:id/dismiss', ({ params }) => {
+    return HttpResponse.json({
+      ...alertDto,
+      id: Number(params.id),
+      status: 'DISMISSED',
+      dismissed_at: FIXED_TIMESTAMP,
+    })
+  }),
+
+  // GET /api/fermentation/protocols
+  http.get('/api/fermentation/protocols', () => {
+    return HttpResponse.json({
+      items: [protocolDto1, protocolDto2],
+      total_count: 2,
+      page: 1,
+      page_size: 20,
+      total_pages: 1,
+    })
+  }),
+
+  // GET /api/analysis/analyses/fermentation/:id  (more specific first)
   http.get('/api/analysis/analyses/fermentation/:id', () => {
     return HttpResponse.json({
       items: [analysisSummaryDto],
@@ -371,7 +381,7 @@ export const fermentationHandlers = [
       ...analysisDto.recommendations[0],
       id: String(params.id),
       applied: true,
-      applied_at: new Date().toISOString(),
+      applied_at: FIXED_TIMESTAMP,
     })
   }),
 ]
