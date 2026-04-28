@@ -17,6 +17,30 @@ Clean Architecture + TDD strictly. Every implementation decision must respect bo
 
 ---
 
+## ⛔ HARD RULE — Never commit to `main` directly
+
+**You MUST NEVER commit code directly to `main` or push to `main`.** This applies without
+exception — no matter how small the fix, how urgent the request, or how trivial it seems.
+
+Every change must go through a feature branch and a PR:
+
+```powershell
+git checkout main && git pull
+git checkout -b feat/<name>   # or fix/<name>, refactor/<name>
+# ... make changes, commit ...
+# Then open a PR — never push to main
+```
+
+If you realize you are on `main` with uncommitted changes: create the branch first
+(`git checkout -b fix/<name>`) — your changes carry over automatically.
+
+If commits have already landed on `main` by mistake: cherry-pick them onto the correct
+feature branch, then communicate the error clearly to the user.
+
+**No exceptions. No "just this once". The rule exists to protect the PR review process.**
+
+---
+
 ## Context hierarchy — read before acting
 
 The `.ai-context/` system is hierarchical. Before starting any task, read context top-down.
