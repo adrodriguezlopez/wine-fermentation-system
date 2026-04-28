@@ -47,8 +47,8 @@ services:
   # ---------------------------------------------------------------------------
   fermentation:
     build:
-      context: ./src/modules/fermentation
-      dockerfile: Dockerfile
+      context: ./src
+      dockerfile: modules/fermentation/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_ASYNC_URL}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
@@ -74,8 +74,8 @@ services:
   # ---------------------------------------------------------------------------
   winery:
     build:
-      context: ./src/modules/winery
-      dockerfile: Dockerfile
+      context: ./src
+      dockerfile: modules/winery/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_ASYNC_URL}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
@@ -100,8 +100,8 @@ services:
   # ---------------------------------------------------------------------------
   fruit_origin:
     build:
-      context: ./src/modules/fruit_origin
-      dockerfile: Dockerfile
+      context: ./src
+      dockerfile: modules/fruit_origin/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_ASYNC_URL}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
@@ -126,8 +126,8 @@ services:
   # ---------------------------------------------------------------------------
   analysis_engine:
     build:
-      context: ./src/modules/analysis_engine
-      dockerfile: Dockerfile
+      context: ./src
+      dockerfile: modules/analysis_engine/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_ASYNC_URL}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}

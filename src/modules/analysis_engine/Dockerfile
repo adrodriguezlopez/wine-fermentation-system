@@ -4,12 +4,20 @@ RUN pip install --upgrade pip && pip install poetry==1.8.3
 
 WORKDIR /app
 
+# Disable Poetry virtualenvs (we're already inside a container)
 RUN poetry config virtualenvs.create false
 
-COPY poetry.lock pyproject.toml ./
+# Mirror the full src/ tree so that:
+#   - pyproject.toml path dep "../../shared" → /app/src/modules/analysis_engine/../../shared = /app/src/shared ✓
+#   - runtime imports src.modules.analysis_engine.* and src.shared.* both resolve under PYTHONPATH=/app ✓
+COPY shared/ ./src/shared/
+COPY modules/analysis_engine/poetry.lock modules/analysis_engine/pyproject.toml ./src/modules/analysis_engine/
+
+WORKDIR /app/src/modules/analysis_engine
 RUN poetry install --no-root --no-interaction --without dev
 
-COPY src/ ./src/
+WORKDIR /app
+COPY modules/analysis_engine/src/ ./src/modules/analysis_engine/src/
 ENV PYTHONPATH=/app
 
 RUN useradd -m appuser
