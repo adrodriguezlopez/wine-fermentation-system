@@ -8,6 +8,10 @@ import { FermentationStatusBadge } from '@/components/fermentation/fermentation-
 import { NoProtocolBanner } from '@/components/fermentation/no-protocol-banner'
 import { FermentationTabs, type TabId } from '@/components/fermentation/fermentation-tabs'
 import { OverviewTab } from '@/components/fermentation/overview-tab'
+import { SamplesTab } from '@/components/fermentation/samples-tab'
+import { AlertsTab } from '@/components/fermentation/alerts-tab'
+import { ProtocolTab } from '@/components/fermentation/protocol-tab'
+import { ActionsTab } from '@/components/fermentation/actions-tab'
 
 interface Props {
   params: { id: string }
@@ -74,22 +78,22 @@ export default function FermentationDetailPage({ params }: Props) {
         )}
         {activeTab === 'samples' && (
           <div data-testid="tab-samples">
-            <p className="text-muted-foreground">Samples tab — coming in Task 8</p>
+            <SamplesTab fermentation={fermentation} />
           </div>
         )}
         {activeTab === 'alerts' && (
           <div data-testid="tab-alerts">
-            <p className="text-muted-foreground">Alerts tab — coming in Task 9</p>
+            <AlertsTab executionId={execution?.id} executionStatus={execution?.status} />
           </div>
         )}
         {activeTab === 'protocol' && (
           <div data-testid="tab-protocol">
-            <p className="text-muted-foreground">Protocol tab — coming in Task 10</p>
+            <ProtocolTab fermentationId={fermentationId} executionId={execution?.id} />
           </div>
         )}
         {activeTab === 'actions' && (
           <div data-testid="tab-actions">
-            <p className="text-muted-foreground">Actions tab — coming in Task 11</p>
+            <ActionsTab fermentation={fermentation} />
           </div>
         )}
       </div>
