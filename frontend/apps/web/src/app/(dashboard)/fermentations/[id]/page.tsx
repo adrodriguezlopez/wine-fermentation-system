@@ -7,6 +7,7 @@ import { useFermentation, useExecution, useExecutionAlerts } from '@/hooks'
 import { FermentationStatusBadge } from '@/components/fermentation/fermentation-status-badge'
 import { NoProtocolBanner } from '@/components/fermentation/no-protocol-banner'
 import { FermentationTabs, type TabId } from '@/components/fermentation/fermentation-tabs'
+import { OverviewTab } from '@/components/fermentation/overview-tab'
 
 interface Props {
   params: { id: string }
@@ -66,9 +67,9 @@ export default function FermentationDetailPage({ params }: Props) {
       />
 
       <div>
-        {activeTab === 'overview' && (
+        {activeTab === 'overview' && fermentation && (
           <div data-testid="tab-overview">
-            <p className="text-muted-foreground">Overview tab — coming in Task 7</p>
+            <OverviewTab fermentation={fermentation} />
           </div>
         )}
         {activeTab === 'samples' && (
