@@ -11,7 +11,7 @@ export default function DashboardPage() {
   const items = data?.items ?? []
 
   const activeCount = items.filter(
-    (f) => f.status === 'ACTIVE' || f.status === 'LAG' || f.status === 'SLOW' || f.status === 'STUCK' || f.status === 'DECLINE'
+    (f) => f.status === 'ACTIVE'
   ).length
 
   const now = new Date()

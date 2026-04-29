@@ -24,4 +24,16 @@ describe('ActiveFermentationsList', () => {
       expect(screen.getByText('No active fermentations')).toBeInTheDocument()
     })
   })
+
+  it('shows error message when network request fails', async () => {
+    server.use(
+      http.get('/api/fermentation/fermentations', () => {
+        return HttpResponse.error()
+      })
+    )
+    renderWithProviders(<ActiveFermentationsList />)
+    await waitFor(() => {
+      expect(screen.getByText('Failed to load fermentations.')).toBeInTheDocument()
+    })
+  })
 })
