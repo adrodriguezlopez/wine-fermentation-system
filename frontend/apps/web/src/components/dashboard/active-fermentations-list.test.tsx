@@ -15,7 +15,7 @@ describe('ActiveFermentationsList', () => {
 
   it('shows "No active fermentations" when handler returns empty list', async () => {
     server.use(
-      http.get('/api/fermentation/fermentations', () => {
+      http.get('/api/fermentation/api/v1/fermentations', () => {
         return HttpResponse.json({ items: [], total: 0, page: 1, size: 20 })
       })
     )
@@ -27,7 +27,7 @@ describe('ActiveFermentationsList', () => {
 
   it('shows error message when network request fails', async () => {
     server.use(
-      http.get('/api/fermentation/fermentations', () => {
+      http.get('/api/fermentation/api/v1/fermentations', () => {
         return HttpResponse.error()
       })
     )

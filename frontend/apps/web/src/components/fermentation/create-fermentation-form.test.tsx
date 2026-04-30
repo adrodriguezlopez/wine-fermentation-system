@@ -51,7 +51,7 @@ it('submits and navigates on success', async () => {
 
 it('shows error message on server error', async () => {
   server.use(
-    http.post('/api/fermentation/fermentations', () =>
+    http.post('/api/fermentation/api/v1/fermentations', () =>
       HttpResponse.json({ detail: 'Validation error' }, { status: 422 })
     )
   )

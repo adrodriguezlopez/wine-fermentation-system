@@ -35,7 +35,7 @@ describe('AnalysisDetailPage', () => {
   it('Apply button calls PUT /recommendations/:id/apply via MSW', async () => {
     let applied = false
     server.use(
-      http.put('/api/analysis/recommendations/:id/apply', ({ params }) => {
+      http.put('/api/analysis/api/v1/recommendations/:id/apply', ({ params }) => {
         applied = true
         return HttpResponse.json({
           id: String(params.id),

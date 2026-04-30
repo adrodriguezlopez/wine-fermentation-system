@@ -13,7 +13,7 @@ export function AnalysesTab({ fermentationId }: Props) {
   const { data, isLoading } = useFermentationAnalyses(fermentationId)
   const { mutate: triggerAnalysis, isPending } = useTriggerAnalysis()
 
-  const analyses = data?.items ?? []
+  const analyses = Array.isArray(data) ? data : []
 
   return (
     <div className="space-y-4 pt-4">

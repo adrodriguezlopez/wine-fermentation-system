@@ -19,7 +19,7 @@ export function ProtocolTab({ fermentationId, executionId }: Props) {
   const { data: protocolsData } = useProtocols()
   const { mutate: assignProtocol, isPending } = useAssignProtocol()
   const protocols = protocolsData?.items ?? []
-  const completions = Array.isArray(completionsData) ? completionsData : []
+  const completions = completionsData?.items ?? []
 
   if (!executionId || !execution) {
     return (

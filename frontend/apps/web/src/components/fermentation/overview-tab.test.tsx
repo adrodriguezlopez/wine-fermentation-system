@@ -34,7 +34,7 @@ it('renders statistics section', async () => {
 
 it('shows "not enough data" when only 1 density sample', async () => {
   server.use(
-    http.get('/api/fermentation/fermentations/:id/samples', () =>
+    http.get('/api/fermentation/api/v1/fermentations/:id/samples', () =>
       HttpResponse.json([
         { id: 1, fermentation_id: 1, sample_type: 'density', value: 1.095, units: 'g/cm³', recorded_at: '2024-06-01T10:00:00Z', created_at: '2024-06-01T10:00:00Z', updated_at: '2024-06-01T10:00:00Z' }
       ])

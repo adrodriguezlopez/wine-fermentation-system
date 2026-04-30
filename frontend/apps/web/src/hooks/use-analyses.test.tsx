@@ -31,7 +31,8 @@ describe('useFermentationAnalyses', () => {
   it('returns a list with 1 analysis item', async () => {
     const { result } = renderHook(() => useFermentationAnalyses(1), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data?.items).toHaveLength(1)
+    expect(Array.isArray(result.current.data)).toBe(true)
+    expect(result.current.data).toHaveLength(1)
   })
 })
 

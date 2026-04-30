@@ -11,7 +11,7 @@ it('shows alerts list when execution is active', async () => {
 
 it('shows "Protocol completed" banner when execution completed', async () => {
   server.use(
-    http.get('/api/fermentation/executions/:id/alerts', () =>
+    http.get('/api/fermentation/api/v1/executions/:id/alerts', () =>
       HttpResponse.json({ items: [], total: 0, pending_count: 0 })
     )
   )

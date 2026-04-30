@@ -23,7 +23,7 @@ describe('AnalysesTab', () => {
   it("'Run Analysis' button calls POST /analyses via MSW", async () => {
     let posted = false
     server.use(
-      http.post('/api/analysis/analyses', async () => {
+      http.post('/api/analysis/api/v1/analyses', async () => {
         posted = true
         return HttpResponse.json({ id: 'analysis-new', fermentation_id: '1' }, { status: 201 })
       })
@@ -41,7 +41,7 @@ describe('AnalysesTab', () => {
 
   it('button is disabled while mutation in flight', async () => {
     server.use(
-      http.post('/api/analysis/analyses', async () => {
+      http.post('/api/analysis/api/v1/analyses', async () => {
         await new Promise((resolve) => setTimeout(resolve, 500))
         return HttpResponse.json({ id: 'analysis-new', fermentation_id: '1' }, { status: 201 })
       })
@@ -59,8 +59,8 @@ describe('AnalysesTab', () => {
 
   it('shows empty state when no analyses', async () => {
     server.use(
-      http.get('/api/analysis/analyses/fermentation/:id', () => {
-        return HttpResponse.json({ items: [], total: 0, page: 1, size: 20 })
+      http.get('/api/analysis/api/v1/analyses/fermentation/:id', () => {
+        return HttpResponse.json([])
       })
     )
 

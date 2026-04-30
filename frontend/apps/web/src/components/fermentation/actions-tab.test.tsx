@@ -22,7 +22,7 @@ it('shows empty state when no actions', async () => {
   const { http, HttpResponse } = await import('msw')
   const { server } = await import('@/test/setup')
   server.use(
-    http.get('/api/fermentation/fermentations/:id/actions', () =>
+    http.get('/api/fermentation/api/v1/fermentations/:id/actions', () =>
       HttpResponse.json({ items: [], total: 0, skip: 0, limit: 20 })
     )
   )

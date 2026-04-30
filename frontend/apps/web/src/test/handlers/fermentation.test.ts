@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 
 describe('MSW fermentation handlers', () => {
   it('GET /api/fermentation/fermentations returns paginated response with 2 items', async () => {
-    const res = await fetch('/api/fermentation/fermentations')
+    const res = await fetch('/api/fermentation/api/v1/fermentations')
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.items).toHaveLength(2)
@@ -12,7 +12,7 @@ describe('MSW fermentation handlers', () => {
   })
 
   it('GET /api/fermentation/fermentations/:id returns single fermentation with correct shape', async () => {
-    const res = await fetch('/api/fermentation/fermentations/1')
+    const res = await fetch('/api/fermentation/api/v1/fermentations/1')
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.id).toBe(1)
@@ -25,7 +25,7 @@ describe('MSW fermentation handlers', () => {
   })
 
   it('fermentation fixtures are meaningfully different', async () => {
-    const res = await fetch('/api/fermentation/fermentations')
+    const res = await fetch('/api/fermentation/api/v1/fermentations')
     const data = await res.json()
     const [f1, f2] = data.items
     expect(f1.id).not.toBe(f2.id)
@@ -36,7 +36,7 @@ describe('MSW fermentation handlers', () => {
   })
 
   it('POST /api/fermentation/fermentations returns 201 with fermentation id', async () => {
-    const res = await fetch('/api/fermentation/fermentations', {
+    const res = await fetch('/api/fermentation/api/v1/fermentations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vessel_code: 'VAT-10', vintage_year: 2023 }),
@@ -47,7 +47,7 @@ describe('MSW fermentation handlers', () => {
   })
 
   it('POST /api/fermentation/fermentations/:id/samples returns 201', async () => {
-    const res = await fetch('/api/fermentation/fermentations/1/samples', {
+    const res = await fetch('/api/fermentation/api/v1/fermentations/1/samples', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sample_type: 'density', value: 1.09, units: 'g/cm3' }),
@@ -56,22 +56,23 @@ describe('MSW fermentation handlers', () => {
   })
 
   it('GET /api/fermentation/executions/:id/alerts returns items with 1 alert and pending_count > 0', async () => {
-    const res = await fetch('/api/fermentation/executions/1/alerts')
+    const res = await fetch('/api/fermentation/api/v1/executions/1/alerts')
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.items).toHaveLength(1)
     expect(data.pending_count).toBeGreaterThan(0)
   })
 
-  it('GET /api/analysis/analyses/fermentation/:id returns items array with 1 analysis', async () => {
-    const res = await fetch('/api/analysis/analyses/fermentation/1')
+  it('GET /api/analysis/api/v1/analyses/fermentation/:id returns flat array with 1 analysis', async () => {
+    const res = await fetch('/api/analysis/api/v1/analyses/fermentation/1')
     expect(res.status).toBe(200)
     const data = await res.json()
-    expect(data.items).toHaveLength(1)
+    expect(Array.isArray(data)).toBe(true)
+    expect(data).toHaveLength(1)
   })
 
   it('POST /api/fermentation/alerts/:id/acknowledge returns 200 with acknowledged_at set', async () => {
-    const res = await fetch('/api/fermentation/alerts/1/acknowledge', { method: 'POST' })
+    const res = await fetch('/api/fermentation/api/v1/alerts/1/acknowledge', { method: 'POST' })
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.acknowledged_at).toBeTruthy()
