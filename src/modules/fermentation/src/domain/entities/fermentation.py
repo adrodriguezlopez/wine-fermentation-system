@@ -35,8 +35,8 @@ class Fermentation(BaseEntity):
         ForeignKey("users.id"), nullable=False, index=True
     )
     winery_id: Mapped[int] = mapped_column(
-        ForeignKey("wineries.id"), nullable=False, index=True
-    )
+        Integer, nullable=False, index=True
+    )  # Plain int — no ORM FK (ADR-028: wineries table is owned by winery service)
 
     # Wine production details (simplified - no longer duplicate vineyard/variety info)
     vintage_year: Mapped[int] = mapped_column(Integer, nullable=False)

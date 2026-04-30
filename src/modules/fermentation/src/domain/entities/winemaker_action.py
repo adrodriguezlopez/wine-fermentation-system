@@ -56,7 +56,7 @@ class WinemakerAction(BaseEntity):
     )
 
     # Multi-tenancy
-    winery_id: Mapped[int] = mapped_column(ForeignKey("wineries.id"), nullable=False)
+    winery_id: Mapped[int] = mapped_column(Integer, nullable=False)  # Plain int — no ORM FK (ADR-028)
 
     # Optional contextual links (any combination may be present)
     fermentation_id: Mapped[Optional[int]] = mapped_column(

@@ -6,7 +6,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { FERMENTATION_STATUS_LABEL } from '@wine/ui'
 
 function daysActive(startDate: string): number {
-  return Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
+  // Backend stores datetimes as UTC-naive strings (no 'Z'). Append 'Z' so
+  // the browser parses them as UTC instead of local time, avoiding negative values.
+  const utc = startDate.endsWith('Z') ? startDate : startDate + 'Z'
+  return Math.floor((Date.now() - new Date(utc).getTime()) / (1000 * 60 * 60 * 24))
 }
 
 export function ActiveFermentationsList() {

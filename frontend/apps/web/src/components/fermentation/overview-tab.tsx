@@ -16,7 +16,9 @@ export function OverviewTab({ fermentation }: Props) {
   const { data: stats } = useFermentationStatistics(fermentation.id)
 
   const daysActive = fermentation.start_date
-    ? Math.floor((Date.now() - new Date(fermentation.start_date).getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.floor((Date.now() - new Date(
+        fermentation.start_date.endsWith('Z') ? fermentation.start_date : fermentation.start_date + 'Z'
+      ).getTime()) / (1000 * 60 * 60 * 24))
     : null
 
   return (

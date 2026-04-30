@@ -53,8 +53,8 @@ class FermentationProtocol(BaseEntity):
 
     # Foreign keys
     winery_id: Mapped[int] = mapped_column(
-        ForeignKey("wineries.id"), nullable=False, index=True
-    )
+        Integer, nullable=False, index=True
+    )  # Plain int — no ORM FK (ADR-028: wineries table is owned by winery service)
     created_by_user_id: Mapped[int] = mapped_column(
         Integer, nullable=False
     )  # Audit: user who created - no FK to avoid module dependencies

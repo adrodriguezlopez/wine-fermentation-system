@@ -20,9 +20,16 @@ Implements ADR-027 Structured Logging:
 - Security audit trail (WHO accessed WHAT)
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy import select
+
+
+def _naive(dt: datetime) -> datetime:
+    """Strip tzinfo so asyncpg can insert into TIMESTAMP WITHOUT TIME ZONE columns."""
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 # ADR-027: Structured logging
 from src.shared.wine_fermentator_logging import get_logger, LogTimer
@@ -92,7 +99,7 @@ class FermentationRepository(BaseRepository, IFermentationRepository):
                         input_mass_kg=data.input_mass_kg,
                         initial_sugar_brix=data.initial_sugar_brix,
                         initial_density=data.initial_density,
-                        start_date=data.start_date or datetime.now(),
+                        start_date=_naive(data.start_date or datetime.utcnow()),
                         status=FermentationStatus.ACTIVE.value,
                     )
 
