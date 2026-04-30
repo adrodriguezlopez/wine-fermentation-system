@@ -25,3 +25,21 @@ export function useTriggerAnalysis() {
     },
   })
 }
+
+export function useFermentationAdvisories(fermentationId: number) {
+  return useQuery({
+    queryKey: ['advisories', 'fermentation', fermentationId],
+    queryFn: () => apiClient.analysis.get(`/fermentations/${fermentationId}/advisories`).then(r => r.data),
+  })
+}
+
+export function useApplyRecommendation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.analysis.put(`/recommendations/${id}/apply`).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['analysis'] })
+    },
+  })
+}

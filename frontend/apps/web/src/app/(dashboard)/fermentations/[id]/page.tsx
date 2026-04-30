@@ -12,6 +12,7 @@ import { SamplesTab } from '@/components/fermentation/samples-tab'
 import { AlertsTab } from '@/components/fermentation/alerts-tab'
 import { ProtocolTab } from '@/components/fermentation/protocol-tab'
 import { ActionsTab } from '@/components/fermentation/actions-tab'
+import { AnalysesTab } from '@/components/fermentation/analyses-tab'
 
 interface Props {
   params: { id: string }
@@ -22,8 +23,9 @@ export default function FermentationDetailPage({ params }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>('overview')
 
   const { data: fermentation, isLoading, isError } = useFermentation(fermentationId)
-  // Use fermentationId as a proxy for executionId (works with test fixtures)
-  const { data: execution } = useExecution(fermentationId)
+  // execution_id is returned by the backend but not yet in the shared FermentationDto type
+  const executionId = (fermentation as unknown as { execution_id?: number })?.execution_id
+  const { data: execution } = useExecution(executionId, fermentation?.status)
   const { data: alertsData } = useExecutionAlerts(execution?.id, execution?.status)
 
   const hasExecution = execution != null
@@ -94,6 +96,11 @@ export default function FermentationDetailPage({ params }: Props) {
         {activeTab === 'actions' && (
           <div data-testid="tab-actions">
             <ActionsTab fermentation={fermentation} />
+          </div>
+        )}
+        {activeTab === 'analyses' && (
+          <div data-testid="tab-analyses">
+            <AnalysesTab fermentationId={fermentationId} />
           </div>
         )}
       </div>

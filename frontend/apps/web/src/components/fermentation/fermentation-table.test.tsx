@@ -25,7 +25,7 @@ it('renders 2 rows from data', () => {
 
 it('renders status badges', () => {
   render(<FermentationTable fermentations={mockFermentations} isLoading={false} />)
-  const badges = screen.getAllByText('ACTIVE')
+  const badges = screen.getAllByText('Active')
   expect(badges.length).toBe(2)
 })
 

@@ -4,7 +4,7 @@ import { useExecution, useExecutionCompletions, useProtocols, useAssignProtocol 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { CheckCircle, Clock, XCircle } from 'lucide-react'
+import { CheckCircle, Clock } from 'lucide-react'
 
 interface Props {
   fermentationId: number
@@ -19,7 +19,7 @@ export function ProtocolTab({ fermentationId, executionId }: Props) {
   const { data: protocolsData } = useProtocols()
   const { mutate: assignProtocol, isPending } = useAssignProtocol()
   const protocols = protocolsData?.items ?? []
-  const completions = completionsData?.items ?? []
+  const completions = Array.isArray(completionsData) ? completionsData : []
 
   if (!executionId || !execution) {
     return (
@@ -76,15 +76,12 @@ export function ProtocolTab({ fermentationId, executionId }: Props) {
           <div className="space-y-2">
             {completions.map((c) => (
               <div key={c.id} className="flex items-center gap-2 rounded-md border p-2 text-sm">
-                {c.was_skipped ? (
-                  <XCircle className="h-4 w-4 text-red-500" />
-                ) : c.completed_at ? (
+                {c.completed_at ? (
                   <CheckCircle className="h-4 w-4 text-green-500" />
                 ) : (
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 )}
-                <span>Step {c.step_id}</span>
-                {c.days_late > 0 && <span className="text-red-500">({c.days_late}d late)</span>}
+                <span>{c.step_name ?? `Step ${c.step_id}`}</span>
               </div>
             ))}
           </div>

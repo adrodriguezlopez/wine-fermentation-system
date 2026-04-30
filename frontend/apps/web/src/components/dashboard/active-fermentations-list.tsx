@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useFermentations } from '@/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
+import { FERMENTATION_STATUS_LABEL } from '@wine/ui'
 
 function daysActive(startDate: string): number {
   return Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
@@ -60,7 +61,7 @@ export function ActiveFermentationsList() {
                 onClick={() => router.push(`/fermentations/${f.id}`)}
               >
                 <td className="py-2 pr-4">{f.vessel_code ?? '—'}</td>
-                <td className="py-2 pr-4">{f.status}</td>
+                <td className="py-2 pr-4">{FERMENTATION_STATUS_LABEL[f.status] ?? f.status}</td>
                 <td className="py-2 pr-4">{f.vintage_year}</td>
                 <td className="py-2 pr-4">{f.input_mass_kg}</td>
                 <td className="py-2 pr-4">{new Date(f.start_date).toLocaleDateString()}</td>

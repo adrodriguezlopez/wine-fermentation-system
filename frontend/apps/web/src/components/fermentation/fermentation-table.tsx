@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { FERMENTATION_STATUS_COLOR } from '@wine/ui'
+import { FERMENTATION_STATUS_COLOR, FERMENTATION_STATUS_LABEL } from '@wine/ui'
 import type { FermentationDto } from '@wine/shared'
 
 interface Props {
@@ -55,7 +55,7 @@ export function FermentationTable({ fermentations, isLoading }: Props) {
             <TableCell>{f.input_mass_kg}</TableCell>
             <TableCell>
               <Badge style={{ backgroundColor: FERMENTATION_STATUS_COLOR[f.status], color: '#fff' }}>
-                {f.status}
+                {FERMENTATION_STATUS_LABEL[f.status] ?? f.status}
               </Badge>
             </TableCell>
             <TableCell>{new Date(f.start_date).toLocaleDateString()}</TableCell>

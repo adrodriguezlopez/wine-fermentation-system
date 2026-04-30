@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 
-export type TabId = 'overview' | 'samples' | 'alerts' | 'protocol' | 'actions'
+export type TabId = 'overview' | 'samples' | 'alerts' | 'protocol' | 'actions' | 'analyses'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -11,6 +11,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'alerts', label: 'Alerts' },
   { id: 'protocol', label: 'Protocol' },
   { id: 'actions', label: 'Actions' },
+  { id: 'analyses', label: 'Analyses' },
 ]
 
 interface Props {

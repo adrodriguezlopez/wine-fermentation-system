@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 
-export function useExecution(executionId: number | undefined) {
+export function useExecution(executionId: number | undefined, fermentationStatus?: string) {
   return useQuery({
     queryKey: ['execution', executionId],
     queryFn: () => apiClient.fermentation.get(`/executions/${executionId}`).then(r => r.data),
     enabled: executionId !== undefined,
-    refetchInterval: 2 * 60 * 1000,
+    refetchInterval: fermentationStatus === 'COMPLETED' ? false : 2 * 60 * 1000,
   })
 }
 
