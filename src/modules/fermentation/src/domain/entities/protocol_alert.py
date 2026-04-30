@@ -52,9 +52,9 @@ class ProtocolAlert(BaseEntity):
         nullable=False,
     )
     winery_id: Mapped[int] = mapped_column(
-        ForeignKey("wineries.id"),
+        Integer,
         nullable=False,
-    )
+    )  # Plain int — no ORM FK (ADR-028: wineries table is owned by winery service)
 
     # Optional step link (null for execution-level alerts)
     step_id: Mapped[Optional[int]] = mapped_column(

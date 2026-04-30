@@ -1,0 +1,109 @@
+"use client"
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
+import { useFermentation, useExecution, useExecutionAlerts } from '@/hooks'
+import { FermentationStatusBadge } from '@/components/fermentation/fermentation-status-badge'
+import { NoProtocolBanner } from '@/components/fermentation/no-protocol-banner'
+import { FermentationTabs, type TabId } from '@/components/fermentation/fermentation-tabs'
+import { OverviewTab } from '@/components/fermentation/overview-tab'
+import { SamplesTab } from '@/components/fermentation/samples-tab'
+import { AlertsTab } from '@/components/fermentation/alerts-tab'
+import { ProtocolTab } from '@/components/fermentation/protocol-tab'
+import { ActionsTab } from '@/components/fermentation/actions-tab'
+import { AnalysesTab } from '@/components/fermentation/analyses-tab'
+
+interface Props {
+  params: { id: string }
+}
+
+export default function FermentationDetailPage({ params }: Props) {
+  const fermentationId = parseInt(params.id, 10)
+  const [activeTab, setActiveTab] = useState<TabId>('overview')
+
+  const { data: fermentation, isLoading, isError } = useFermentation(fermentationId)
+  // execution_id is returned by the backend but not yet in the shared FermentationDto type
+  const executionId = (fermentation as unknown as { execution_id?: number })?.execution_id
+  const { data: execution } = useExecution(executionId, fermentation?.status)
+  const { data: alertsData } = useExecutionAlerts(execution?.id, execution?.status)
+
+  const hasExecution = execution != null
+  const alertCount = alertsData?.pending_count ?? 0
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-6 w-24 animate-pulse rounded bg-muted" />
+      </div>
+    )
+  }
+
+  if (isError || !fermentation) {
+    return (
+      <div className="space-y-4">
+        <p className="text-destructive">Fermentation not found</p>
+        <Link href="/fermentations" className="text-sm text-muted-foreground underline">
+          Back to fermentations
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <Link href="/fermentations" className="text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <h1 className="text-2xl font-semibold">
+          {fermentation.vessel_code ?? `Batch ${fermentation.id}`}
+        </h1>
+        <FermentationStatusBadge status={fermentation.status} />
+      </div>
+
+      <NoProtocolBanner hasExecution={hasExecution} />
+
+      <FermentationTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        hasExecution={hasExecution}
+        alertCount={alertCount}
+      />
+
+      <div>
+        {activeTab === 'overview' && fermentation && (
+          <div data-testid="tab-overview">
+            <OverviewTab fermentation={fermentation} />
+          </div>
+        )}
+        {activeTab === 'samples' && (
+          <div data-testid="tab-samples">
+            <SamplesTab fermentation={fermentation} />
+          </div>
+        )}
+        {activeTab === 'alerts' && (
+          <div data-testid="tab-alerts">
+            <AlertsTab executionId={execution?.id} executionStatus={execution?.status} />
+          </div>
+        )}
+        {activeTab === 'protocol' && (
+          <div data-testid="tab-protocol">
+            <ProtocolTab fermentationId={fermentationId} executionId={execution?.id} />
+          </div>
+        )}
+        {activeTab === 'actions' && (
+          <div data-testid="tab-actions">
+            <ActionsTab fermentation={fermentation} />
+          </div>
+        )}
+        {activeTab === 'analyses' && (
+          <div data-testid="tab-analyses">
+            <AnalysesTab fermentationId={fermentationId} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

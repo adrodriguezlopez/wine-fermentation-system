@@ -19,6 +19,14 @@ Production Ready: Yes
 """
 
 from typing import Optional, List
+from datetime import timezone as _tz
+
+
+def _naive(dt):
+    """Strip tzinfo for TIMESTAMP WITHOUT TIME ZONE columns."""
+    if dt is not None and dt.tzinfo is not None:
+        return dt.astimezone(_tz.utc).replace(tzinfo=None)
+    return dt
 
 # ADR-027: Structured logging
 from src.shared.wine_fermentator_logging import get_logger, LogTimer
@@ -399,7 +407,7 @@ class FermentationService(IFermentationService):
             fermentation.vintage_year = data.vintage_year
 
         if data.start_date is not None:
-            fermentation.start_date = data.start_date
+            fermentation.start_date = _naive(data.start_date)
 
         # Note: Repository doesn't have update method yet,
         # but SQLAlchemy ORM tracks changes and commits automatically
@@ -588,7 +596,7 @@ class FermentationService(IFermentationService):
             )
 
         # Step 2: Calculate duration
-        duration_days = (datetime.now() - fermentation.start_date).days
+        duration_days = (datetime.utcnow() - fermentation.start_date).days
 
         # Step 3: Validate completion criteria
         completion_validation = self._validator.validate_completion_criteria(

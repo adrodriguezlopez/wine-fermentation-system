@@ -79,3 +79,12 @@ hist_test.txt
 
 # Node
 node_modules/
+
+# Next.js — auto-generated, must not be committed (per Next.js docs)
+frontend/apps/web/next-env.d.ts
+
+# Turborepo cache
+.turbo/
+
+# Claude Code local settings
+.claude/settings.local.json

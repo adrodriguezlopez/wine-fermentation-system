@@ -59,8 +59,8 @@ class ProtocolExecution(BaseEntity):
         ForeignKey("fermentation_protocols.id"), nullable=False, index=True
     )
     winery_id: Mapped[int] = mapped_column(
-        ForeignKey("wineries.id"), nullable=False, index=True
-    )
+        Integer, nullable=False, index=True
+    )  # Plain int — no ORM FK (ADR-028: wineries table is owned by winery service)
 
     # Execution lifecycle
     start_date: Mapped[datetime] = mapped_column(

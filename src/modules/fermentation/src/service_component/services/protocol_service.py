@@ -9,9 +9,15 @@ Provides high-level protocol operations:
 - Multi-tenant support with winery scoping
 """
 
-from datetime import datetime
+from datetime import datetime, timezone as _tz
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
+
+
+def _naive(dt):
+    if dt is not None and dt.tzinfo is not None:
+        return dt.astimezone(_tz.utc).replace(tzinfo=None)
+    return dt
 
 from src.modules.fermentation.src.domain.entities.protocol_protocol import (
     FermentationProtocol,
@@ -495,7 +501,7 @@ class ProtocolService:
             )
 
         # Create execution
-        start_date = start_date or datetime.utcnow()
+        start_date = _naive(start_date) if start_date else datetime.utcnow()
         execution = ProtocolExecution(
             fermentation_id=fermentation_id,
             protocol_id=protocol_id,

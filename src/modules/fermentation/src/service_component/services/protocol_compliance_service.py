@@ -13,7 +13,13 @@ Provides deterministic, explainable compliance scoring based on:
 Performance Target: <100ms per calculation
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as _tz
+
+
+def _naive(dt):
+    if dt is not None and dt.tzinfo is not None:
+        return dt.astimezone(_tz.utc).replace(tzinfo=None)
+    return dt
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
@@ -290,7 +296,7 @@ class ProtocolComplianceService:
         completion = StepCompletion(
             execution_id=execution_id,
             step_id=step_id,
-            completed_at=completed_at,
+            completed_at=_naive(completed_at),
             completed_by_user_id=completed_by_user_id,
             verified_by_user_id=verified_by_user_id,
             notes=notes,

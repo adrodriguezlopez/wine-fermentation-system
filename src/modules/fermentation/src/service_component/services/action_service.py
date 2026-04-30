@@ -8,8 +8,15 @@ Responsibilities:
   - get_action / delete_action: single-item access
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Tuple
+
+
+def _naive(dt: datetime) -> datetime:
+    """Strip tzinfo so asyncpg can insert into TIMESTAMP WITHOUT TIME ZONE columns."""
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -73,7 +80,7 @@ class ActionService:
             taken_by_user_id=taken_by_user_id,
             action_type=action_type,
             description=description,
-            taken_at=taken_at,
+            taken_at=_naive(taken_at),
             fermentation_id=fermentation_id,
             execution_id=execution_id,
             step_id=step_id,

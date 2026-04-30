@@ -20,9 +20,16 @@ Implements ADR-027 Structured Logging:
 - Security audit trail (WHO recorded WHAT WHEN)
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from decimal import Decimal
+
+
+def _naive(dt: datetime) -> datetime:
+    """Strip tzinfo so asyncpg can insert into TIMESTAMP WITHOUT TIME ZONE columns."""
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 # ADR-027: Structured logging
 from src.shared.wine_fermentator_logging import get_logger, LogTimer
@@ -110,7 +117,7 @@ class SampleRepository(BaseRepository, ISampleRepository):
                             sample_type=sample_type_value,
                             value=sample.value,
                             units=sample.units,
-                            recorded_at=sample.recorded_at,
+                            recorded_at=_naive(sample.recorded_at),
                         )
                     elif (
                         sample_type_value == SampleType.DENSITY.value
@@ -122,7 +129,7 @@ class SampleRepository(BaseRepository, ISampleRepository):
                             sample_type=sample_type_value,
                             value=sample.value,
                             units=sample.units,
-                            recorded_at=sample.recorded_at,
+                            recorded_at=_naive(sample.recorded_at),
                         )
                     elif (
                         sample_type_value == SampleType.TEMPERATURE.value
@@ -134,7 +141,7 @@ class SampleRepository(BaseRepository, ISampleRepository):
                             sample_type=sample_type_value,
                             value=sample.value,
                             units=sample.units,
-                            recorded_at=sample.recorded_at,
+                            recorded_at=_naive(sample.recorded_at),
                         )
                     else:
                         # Generic BaseSample for other types
@@ -148,7 +155,7 @@ class SampleRepository(BaseRepository, ISampleRepository):
                             sample_type=sample_type_value,
                             value=sample.value,
                             units=sample.units,
-                            recorded_at=sample.recorded_at,
+                            recorded_at=_naive(sample.recorded_at),
                         )
 
                     session.add(sql_sample)
