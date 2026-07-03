@@ -11,7 +11,7 @@ RUN poetry config virtualenvs.create false
 #   - pyproject.toml path dep "../../shared" → /app/src/modules/winery/../../shared = /app/src/shared ✓
 #   - runtime imports src.modules.winery.* and src.shared.* both resolve under PYTHONPATH=/app ✓
 COPY shared/ ./src/shared/
-COPY modules/winery/poetry.lock modules/winery/pyproject.toml ./src/modules/winery/
+COPY modules/winery/pyproject.toml ./src/modules/winery/
 
 WORKDIR /app/src/modules/winery
 RUN poetry install --no-root --no-interaction --without dev && pip install "uvicorn[standard]>=0.23.2"

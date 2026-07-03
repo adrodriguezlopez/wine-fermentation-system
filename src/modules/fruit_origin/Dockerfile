@@ -11,7 +11,7 @@ RUN poetry config virtualenvs.create false
 #   - pyproject.toml path dep "../../shared" → /app/src/modules/fruit_origin/../../shared = /app/src/shared ✓
 #   - runtime imports src.modules.fruit_origin.* and src.shared.* both resolve under PYTHONPATH=/app ✓
 COPY shared/ ./src/shared/
-COPY modules/fruit_origin/poetry.lock modules/fruit_origin/pyproject.toml ./src/modules/fruit_origin/
+COPY modules/fruit_origin/pyproject.toml ./src/modules/fruit_origin/
 
 WORKDIR /app/src/modules/fruit_origin
 RUN poetry install --no-root --no-interaction --without dev && pip install "uvicorn[standard]>=0.23.2"
