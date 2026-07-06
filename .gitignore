@@ -79,3 +79,6 @@ hist_test.txt
 
 # Node
 node_modules/
+
+# Claude skill evaluation workspaces
+.github/skills/*-workspace/
