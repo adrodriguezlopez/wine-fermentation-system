@@ -11,7 +11,7 @@ RUN poetry config virtualenvs.create false
 #   - pyproject.toml path dep "../../shared" → /app/src/modules/fermentation/../../shared = /app/src/shared ✓
 #   - runtime imports src.modules.fermentation.* and src.shared.* both resolve under PYTHONPATH=/app ✓
 COPY shared/ ./src/shared/
-COPY modules/fermentation/poetry.lock modules/fermentation/pyproject.toml ./src/modules/fermentation/
+COPY modules/fermentation/pyproject.toml ./src/modules/fermentation/
 
 WORKDIR /app/src/modules/fermentation
 RUN poetry install --no-root --no-interaction

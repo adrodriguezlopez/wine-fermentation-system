@@ -129,6 +129,14 @@ Welcome to the **UML Diagrams** folder! This folder contains **30+ professional 
 - 🐳 Docker Compose infrastructure
 - 🚀 CI/CD pipeline
 
+### 📌 `07-ENTITY-RELATIONSHIP-DIAGRAM.md`
+**What**: Full database ER diagram from migrations  
+**Best for**: Understanding table-level relationships and integration boundaries  
+**Contains**:
+- 🗄️ Full relational ERD (Mermaid)
+- 🔗 Explicit FK relationships
+- 🧩 Notes on intentional cross-module non-FK links
+
 ### 📌 `GENERATION-SUMMARY.md`
 **What**: Summary of what was generated  
 **Best for**: Verification and overview  
@@ -172,14 +180,17 @@ Welcome to the **UML Diagrams** folder! This folder contains **30+ professional 
 ### "What's the database schema?"
 → [06-DEPLOYMENT-INFRASTRUCTURE.md#database-schema-architecture](06-DEPLOYMENT-INFRASTRUCTURE.md#database-schema-architecture)
 
+### "What's the full ERD from migrations?"
+→ [07-ENTITY-RELATIONSHIP-DIAGRAM.md](07-ENTITY-RELATIONSHIP-DIAGRAM.md)
+
 ---
 
 ## 📊 By the Numbers
 
 ```
-Total Files:          9 (8 documentation + 1 summary)
-Total Diagrams:       30+
-Total Content:        44+ KB
+Total Files:          10 (9 documentation + 1 summary)
+Total Diagrams:       31+
+Total Content:        45+ KB
 Time to Read All:     ~2-3 hours
 Time to Read Summary: ~15 minutes
 

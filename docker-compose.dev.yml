@@ -82,3 +82,28 @@ services:
     depends_on:
       seed:
         condition: service_completed_successfully
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      INTERNAL_FERMENTATION_API_URL: http://fermentation:8000
+      INTERNAL_WINERY_API_URL: http://winery:8001
+      INTERNAL_FRUIT_ORIGIN_API_URL: http://fruit_origin:8002
+      INTERNAL_ANALYSIS_API_URL: http://analysis_engine:8003
+      NEXT_PUBLIC_FERMENTATION_API_URL: ${NEXT_PUBLIC_FERMENTATION_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_WINERY_API_URL: ${NEXT_PUBLIC_WINERY_API_URL:-http://localhost:8001}
+      NEXT_PUBLIC_FRUIT_ORIGIN_API_URL: ${NEXT_PUBLIC_FRUIT_ORIGIN_API_URL:-http://localhost:8002}
+      NEXT_PUBLIC_ANALYSIS_API_URL: ${NEXT_PUBLIC_ANALYSIS_API_URL:-http://localhost:8003}
+    ports:
+      - "${WEB_HOST_PORT:-3000}:3000"
+    depends_on:
+      fermentation:
+        condition: service_healthy
+      winery:
+        condition: service_healthy
+      fruit_origin:
+        condition: service_healthy
+      analysis_engine:
+        condition: service_healthy

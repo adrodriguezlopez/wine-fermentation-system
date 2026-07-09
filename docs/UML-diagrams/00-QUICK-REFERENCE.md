@@ -12,6 +12,7 @@ graph TB
     D["04: Sequence Diagrams"]
     E["05: Use Cases"]
     F["06: Deployment & Infrastructure"]
+    H["07: Entity Relationship Diagram"]
     G["00: README & Index"]
     
     A -->|defines| B
@@ -19,6 +20,7 @@ graph TB
     C -->|realized by| D
     D -->|illustrates| E
     E -->|deployed via| F
+    F -->|expanded schema| H
     G -.->|navigates all| A
     
     style A fill:#f57f17,color:#fff
@@ -27,6 +29,7 @@ graph TB
     style D fill:#0277bd,color:#fff
     style E fill:#0277bd,color:#fff
     style F fill:#2e7d32,color:#fff
+    style H fill:#6a1b9a,color:#fff
     style G fill:#d32f2f,color:#fff
 ```
 
@@ -76,6 +79,9 @@ graph TB
 
 **"How do we deploy this?"**
 → Study [06-DEPLOYMENT-INFRASTRUCTURE.md](06-DEPLOYMENT-INFRASTRUCTURE.md)
+
+**"What is the full database ERD from migrations?"**
+→ Read [07-ENTITY-RELATIONSHIP-DIAGRAM.md](07-ENTITY-RELATIONSHIP-DIAGRAM.md)
 - Cloud deployment (AWS/Azure/DigitalOcean)
 - On-premise deployment
 - Database schema
@@ -95,8 +101,9 @@ graph TB
 | 04-SEQUENCE-DIAGRAMS.md | 7 | 9.8 KB | Feb 6, 2026 |
 | 05-USE-CASES.md | 5 | 6.2 KB | Feb 6, 2026 |
 | 06-DEPLOYMENT-INFRASTRUCTURE.md | 6 | 7.4 KB | Feb 6, 2026 |
+| 07-ENTITY-RELATIONSHIP-DIAGRAM.md | 1 | 9.0 KB | Jul 2, 2026 |
 | README.md | - | 4.1 KB | Feb 6, 2026 |
-| **TOTAL** | **30+** | **44.1 KB** | - |
+| **TOTAL** | **31+** | **53+ KB** | - |
 
 ---
 
@@ -161,6 +168,7 @@ TOTAL                 30+
 
 ### Data Management
 - **Database schema**: [06-DEPLOYMENT-INFRASTRUCTURE.md#database-schema-architecture](06-DEPLOYMENT-INFRASTRUCTURE.md#database-schema-architecture)
+- **Full ERD**: [07-ENTITY-RELATIONSHIP-DIAGRAM.md](07-ENTITY-RELATIONSHIP-DIAGRAM.md)
 - **Data flow**: [06-DEPLOYMENT-INFRASTRUCTURE.md#data-flow-end-to-end](06-DEPLOYMENT-INFRASTRUCTURE.md#data-flow-end-to-end)
 - **Soft delete**: [04-SEQUENCE-DIAGRAMS.md#soft-delete-sequence](04-SEQUENCE-DIAGRAMS.md#soft-delete-sequence)
 
@@ -295,7 +303,7 @@ You're ready to code! 🚀
 
 ---
 
-**Total System Documentation**: 30+ Mermaid diagrams across 7 files  
+**Total System Documentation**: 31+ Mermaid diagrams across 8 files  
 **Last Generated**: February 6, 2026  
 **System Stability**: Production-ready with test coverage >85%
 

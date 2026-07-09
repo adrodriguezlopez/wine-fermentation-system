@@ -11,7 +11,7 @@ RUN poetry config virtualenvs.create false
 #   - pyproject.toml path dep "../../shared" → /app/src/modules/analysis_engine/../../shared = /app/src/shared ✓
 #   - runtime imports src.modules.analysis_engine.* and src.shared.* both resolve under PYTHONPATH=/app ✓
 COPY shared/ ./src/shared/
-COPY modules/analysis_engine/poetry.lock modules/analysis_engine/pyproject.toml ./src/modules/analysis_engine/
+COPY modules/analysis_engine/pyproject.toml ./src/modules/analysis_engine/
 
 WORKDIR /app/src/modules/analysis_engine
 RUN poetry install --no-root --no-interaction --without dev && pip install "uvicorn[standard]>=0.23.2"

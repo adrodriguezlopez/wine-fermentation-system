@@ -85,18 +85,7 @@
       "Bash(dir \"C:\\\\Users\\\\saint\\\\.claude\")",
       "Read(//c/Users/alvar/.claude/**)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'Evals count: {len\\(d[\\\\\"evals\\\\\"]\\)}'\\)\")",
-      "Bash(node -e ' *)",
-      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('c:/dev/wine-fermentation-system/.github/skills/wine-frontend-context-workspace/iteration-1/fermentation-detail-screen/eval_metadata.json','utf8'\\)\\); d.assertions.forEach\\(\\(a,i\\)=>console.log\\(\\(i+1\\)+'. '+a\\)\\)\")",
-      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('c:/dev/wine-fermentation-system/.github/skills/wine-frontend-context-workspace/iteration-1/auth-token-refresh/eval_metadata.json','utf8'\\)\\); d.assertions.forEach\\(\\(a,i\\)=>console.log\\(\\(i+1\\)+'. '+a\\)\\)\")",
-      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('c:/dev/wine-fermentation-system/.github/skills/wine-frontend-context-workspace/iteration-1/screen-endpoint-mapping/eval_metadata.json','utf8'\\)\\); d.assertions.forEach\\(\\(a,i\\)=>console.log\\(\\(i+1\\)+'. '+a\\)\\)\")",
-      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('c:/dev/wine-fermentation-system/.github/skills/wine-backend-dev-workspace/iteration-1/new-entity-fermentation-note/eval_metadata.json','utf8'\\)\\); d.assertions.forEach\\(\\(a,i\\)=>console.log\\(\\(i+1\\)+'. '+a\\)\\)\")",
-      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('c:/dev/wine-fermentation-system/.github/skills/wine-backend-dev-workspace/iteration-1/new-module-setup/eval_metadata.json','utf8'\\)\\); d.assertions.forEach\\(\\(a,i\\)=>console.log\\(\\(i+1\\)+'. '+a\\)\\)\")",
-      "Bash(mkdir -p \"c:/dev/wine-fermentation-system/.github/skills/wine-frontend-context-workspace/iteration-1/fermentation-detail-screen/with_skill/outputs\")",
-      "Bash(mkdir -p \"c:/dev/wine-fermentation-system/.github/skills/wine-frontend-context-workspace/iteration-1/fermentation-detail-screen/without_skill/outputs\")",
-      "Bash(mkdir -p \"c:/dev/wine-fermentation-system/.github/skills/wine-frontend-context-workspace/iteration-1/auth-token-refresh/with_skill/outputs\")",
-      "Bash(mkdir -p \"c:/dev/wine-fermentation-system/.github/skills/wine-frontend-context-workspace/iteration-1/auth-token-refresh/without_skill/outputs\")",
-      "Bash(mkdir -p \"c:/dev/wine-fermentation-system/.github/skills/wine-frontend-context-workspace/iteration-1/screen-endpoint-mapping/with_skill/outputs\")",
-      "Bash(python -m scripts.aggregate_benchmark \"../wine-frontend-context-workspace/iteration-1\" --skill-name \"wine-frontend-context\")"
+      "Bash(node -e ' *)"
     ]
   }
 }

@@ -24,6 +24,7 @@ Quick summary:
 | **Sequence Diagrams** | [04-SEQUENCE-DIAGRAMS.md](04-SEQUENCE-DIAGRAMS.md) | Workflow interactions (Create fermentation, Add sample, Analysis, Login, etc.) |
 | **Use Case Diagrams** | [05-USE-CASES.md](05-USE-CASES.md) | User interactions and system behaviors (UC-001 through UC-012) |
 | **Deployment & Infrastructure** | [06-DEPLOYMENT-INFRASTRUCTURE.md](06-DEPLOYMENT-INFRASTRUCTURE.md) | System deployment, data flow, CI/CD pipeline, database schema |
+| **Entity Relationship Diagram** | [07-ENTITY-RELATIONSHIP-DIAGRAM.md](07-ENTITY-RELATIONSHIP-DIAGRAM.md) | Full table-level schema from Alembic migrations |
 
 ---
 
@@ -70,6 +71,12 @@ Quick summary:
 - ✅ Docker Compose infrastructure
 - ✅ CI/CD pipeline (GitHub Actions)
 - **File**: [06-DEPLOYMENT-INFRASTRUCTURE.md](06-DEPLOYMENT-INFRASTRUCTURE.md)
+
+### Database ER Diagram
+- ✅ Full schema-level ERD from migrations
+- ✅ Explicit FK relationships across modules
+- ✅ Notes on intentional non-FK cross-module links
+- **File**: [07-ENTITY-RELATIONSHIP-DIAGRAM.md](07-ENTITY-RELATIONSHIP-DIAGRAM.md)
 
 ---
 
@@ -299,11 +306,12 @@ Security: winery_id enforced at all layers
 | **Sequences** | ✅ Complete | 100% (7 workflows) |
 | **Use Cases** | ✅ Complete | 100% (12 use cases) |
 | **Deployment** | ✅ Complete | 100% |
+| **Entity Relationship Diagram** | ✅ Complete | 100% (migration-derived) |
 
 ---
 
-**Last Updated**: February 6, 2026  
+**Last Updated**: July 2, 2026  
 **System Status**: MVP Phase (Core functionality complete, Analysis Engine Phase 2-5 pending)  
-**Total Diagrams**: 30+ Mermaid diagrams  
-**Documentation Pages**: 6
+**Total Diagrams**: 31+ Mermaid diagrams  
+**Documentation Pages**: 7
 

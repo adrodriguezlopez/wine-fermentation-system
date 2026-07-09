@@ -239,6 +239,8 @@ graph TB
 
 ## Database Schema Architecture
 
+For the full migration-derived ERD (table-level relationships), see [07-ENTITY-RELATIONSHIP-DIAGRAM.md](07-ENTITY-RELATIONSHIP-DIAGRAM.md).
+
 ```mermaid
 graph TB
     subgraph Tenancy["🔐 Multi-Tenancy"]

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import Cookies from 'js-cookie'
 import { makeUseCurrentUser } from '@wine/shared'
 import { apiClient } from '@/lib/api-client'
 import { useAuthStore } from '@/stores/auth-store'
@@ -13,6 +14,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const setUser = useAuthStore((s) => s.setUser)
   const clearUser = useAuthStore((s) => s.clearUser)
+  const hasSession = Boolean(
+    Cookies.get('wine_access_token') || Cookies.get('wine_refresh_token')
+  )
 
   const { data: user, isError } = useCurrentUser()
 
@@ -23,13 +27,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, setUser])
 
   useEffect(() => {
-    if (isError) {
+    if (!hasSession && !pathname.startsWith('/login')) {
+      clearUser()
+      router.replace('/login')
+      return
+    }
+
+    if (isError && hasSession) {
       clearUser()
       if (!pathname.startsWith('/login')) {
         router.replace('/login')
       }
     }
-  }, [isError, clearUser, router, pathname])
+  }, [hasSession, isError, clearUser, router, pathname])
 
   return <>{children}</>
 }
